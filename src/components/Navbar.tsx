@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ArrowLeftRight } from 'lucide-react';
 import styles from './Navbar.module.scss';
 
 interface User {
@@ -41,6 +42,15 @@ export function Navbar() {
         <div className={styles.links}>
           {user ? (
             <div className={styles.userMenu}>
+              {user.role === 'HOST' && (
+                pathname.startsWith('/dashboard/host')
+                  ? <button onClick={() => router.push('/')} className={styles.modeToggle}>
+                      <ArrowLeftRight size={14} /> Explorează
+                    </button>
+                  : <button onClick={() => router.push('/dashboard/host')} className={styles.modeToggle}>
+                      <ArrowLeftRight size={14} /> Mod gazdă
+                    </button>
+              )}
               <Link href={dashboardLink} className={styles.link}>Dashboard</Link>
               <span className={styles.userName}>{user.name}</span>
               <button onClick={logout} className="btn-secondary text-sm !py-1 !px-3">Ieși</button>

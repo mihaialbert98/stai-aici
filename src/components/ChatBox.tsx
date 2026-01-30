@@ -21,7 +21,8 @@ export function ChatBox({ bookingId, currentUserId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(0);
 
   const fetchMessages = async () => {
     const res = await fetch(`/api/messages?bookingId=${bookingId}`);
@@ -31,13 +32,15 @@ export function ChatBox({ bookingId, currentUserId }: Props) {
 
   useEffect(() => {
     fetchMessages();
-    // Poll every 5 seconds
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [bookingId]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length !== prevCountRef.current && messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
+    prevCountRef.current = messages.length;
   }, [messages]);
 
   const send = async () => {
@@ -55,7 +58,7 @@ export function ChatBox({ bookingId, currentUserId }: Props) {
 
   return (
     <div className={styles.container}>
-      <div className={styles.messages}>
+      <div className={styles.messages} ref={messagesRef}>
         {messages.map((m) => {
           const isOwn = m.sender.id === currentUserId;
           const isSupport = m.role === 'ADMIN';
@@ -70,7 +73,6 @@ export function ChatBox({ bookingId, currentUserId }: Props) {
             </div>
           );
         })}
-        <div ref={endRef} />
       </div>
       <div className={styles.inputArea}>
         <input

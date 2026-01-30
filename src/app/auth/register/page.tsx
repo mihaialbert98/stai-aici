@@ -24,14 +24,14 @@ export default function RegisterPage() {
       body: JSON.stringify({ name, email, password, role }),
     });
     const data = await res.json();
-    setLoading(false);
 
     if (!res.ok) {
       setError(data.error);
+      setLoading(false);
       return;
     }
 
-    router.push(role === 'HOST' ? '/dashboard/host' : '/dashboard/guest/bookings');
+    router.push('/');
     router.refresh();
   };
 

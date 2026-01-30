@@ -22,17 +22,14 @@ export default function LoginPage() {
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
-    setLoading(false);
 
     if (!res.ok) {
       setError(data.error);
+      setLoading(false);
       return;
     }
 
-    const role = data.user.role;
-    if (role === 'ADMIN') router.push('/dashboard/admin');
-    else if (role === 'HOST') router.push('/dashboard/host');
-    else router.push('/dashboard/guest/bookings');
+    router.push('/');
     router.refresh();
   };
 
