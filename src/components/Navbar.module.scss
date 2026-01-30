@@ -1,0 +1,27 @@
+.nav {
+  @apply bg-white border-b border-gray-200 sticky top-0 z-50;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 h-16 flex items-center justify-between;
+}
+
+.logo {
+  @apply text-xl font-bold text-primary-600;
+}
+
+.links {
+  @apply flex items-center gap-4;
+}
+
+.link {
+  @apply text-sm text-gray-600 hover:text-primary-600 transition;
+}
+
+.userMenu {
+  @apply flex items-center gap-3;
+}
+
+.userName {
+  @apply text-sm font-medium text-gray-700;
+}

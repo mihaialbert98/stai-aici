@@ -1,0 +1,35 @@
+.card {
+  @apply bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer;
+}
+
+.imageWrapper {
+  @apply relative aspect-[4/3] bg-gray-200;
+}
+
+.image {
+  @apply w-full h-full object-cover;
+}
+
+.body {
+  @apply p-4;
+}
+
+.city {
+  @apply text-xs text-gray-500 uppercase tracking-wide mb-1;
+}
+
+.title {
+  @apply text-lg font-semibold text-gray-900 line-clamp-1;
+}
+
+.details {
+  @apply flex items-center gap-2 mt-2 text-sm text-gray-500;
+}
+
+.price {
+  @apply text-primary-600 font-bold text-lg mt-2;
+}
+
+.priceUnit {
+  @apply text-sm font-normal text-gray-500;
+}

@@ -1,0 +1,32 @@
+.wrapper {
+  @apply relative;
+}
+
+.inputWrapper {
+  @apply relative;
+}
+
+.icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none;
+}
+
+.input {
+  @apply w-full h-[42px] pl-10 pr-3 border border-gray-300 rounded-lg text-gray-900 bg-white
+    placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition text-sm;
+}
+
+.dropdown {
+  @apply absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-60 overflow-y-auto;
+}
+
+.option {
+  @apply px-4 py-2.5 text-sm text-gray-700 cursor-pointer hover:bg-primary-50 hover:text-primary-700 transition;
+}
+
+.optionActive {
+  @apply px-4 py-2.5 text-sm bg-primary-50 text-primary-700 cursor-pointer;
+}
+
+.noResults {
+  @apply px-4 py-3 text-sm text-gray-400;
+}

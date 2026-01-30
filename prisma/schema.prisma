@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  HOST
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum MessageRole {
+  GUEST
+  HOST
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role      @default(GUEST)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  properties      Property[]
+  bookingsAsGuest Booking[]  @relation("GuestBookings")
+  bookingsAsHost  Booking[]  @relation("HostBookings")
+  messages        Message[]
+}
+
+model Property {
+  id             String   @id @default(cuid())
+  hostId         String
+  title          String
+  description    String
+  city           String
+  address        String
+  pricePerNight  Float
+  maxGuests      Int
+  checkInInfo    String?  // check-in instructions
+  houseRules     String?
+  localTips      String?  // local recommendations
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  host           User              @relation(fields: [hostId], references: [id])
+  images         PropertyImage[]
+  amenities      PropertyAmenity[]
+  bookings       Booking[]
+  blockedDates   BlockedDate[]
+
+  @@index([city])
+  @@index([hostId])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  order      Int      @default(0)
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model Amenity {
+  id         String            @id @default(cuid())
+  name       String            @unique
+  icon       String?
+
+  properties PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  propertyId String
+  amenityId  String
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  propertyId String
+  guestId    String
+  hostId     String
+  startDate  DateTime
+  endDate    DateTime
+  status     BookingStatus @default(PENDING)
+  totalPrice Float
+  guests     Int           @default(1)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  property   Property  @relation(fields: [propertyId], references: [id])
+  guest      User      @relation("GuestBookings", fields: [guestId], references: [id])
+  host       User      @relation("HostBookings", fields: [hostId], references: [id])
+  messages   Message[]
+
+  @@index([propertyId])
+  @@index([guestId])
+  @@index([hostId])
+}
+
+model BlockedDate {
+  id         String   @id @default(cuid())
+  propertyId String
+  date       DateTime
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, date])
+  @@index([propertyId])
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  bookingId String
+  senderId  String
+  role      MessageRole
+  content   String
+  createdAt DateTime    @default(now())
+
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender    User    @relation(fields: [senderId], references: [id])
+
+  @@index([bookingId])
+}

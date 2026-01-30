@@ -1,0 +1,85 @@
+.wrapper {
+  @apply relative;
+}
+
+.trigger {
+  @apply w-full h-[42px] px-3 border border-gray-300 rounded-lg text-left text-gray-900 bg-white cursor-pointer
+    focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition flex items-center gap-2 text-sm;
+}
+
+.triggerIcon {
+  @apply text-gray-400 flex-shrink-0;
+}
+
+.placeholder {
+  @apply text-gray-400;
+}
+
+.value {
+  @apply text-gray-900;
+}
+
+.dropdown {
+  @apply absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-5 z-50 text-gray-900;
+  width: 620px;
+}
+
+.header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.monthLabel {
+  @apply font-semibold text-sm capitalize text-gray-900;
+}
+
+.navBtn {
+  @apply p-1 rounded hover:bg-gray-100 transition;
+}
+
+.weekRow {
+  @apply grid grid-cols-7 gap-0 text-center text-xs text-gray-500 mb-1 select-none;
+}
+
+.dayGrid {
+  @apply grid grid-cols-7 gap-0;
+}
+
+.day {
+  @apply h-9 flex items-center justify-center text-sm rounded-lg cursor-pointer transition;
+}
+
+.dayDefault {
+  @apply text-gray-900 hover:bg-gray-100;
+}
+
+.dayInRange {
+  @apply bg-primary-50 text-primary-700;
+}
+
+.daySelected {
+  @apply bg-primary-600 text-white font-medium;
+}
+
+.dayDisabled {
+  @apply text-gray-300 cursor-default;
+}
+
+.footer {
+  @apply flex items-center justify-between mt-3 pt-3 border-t border-gray-100;
+}
+
+.clearBtn {
+  @apply text-sm text-gray-500 hover:text-gray-700 transition;
+}
+
+.confirmBtn {
+  @apply text-sm bg-primary-600 text-white px-3 py-1 rounded-lg hover:bg-primary-700 transition;
+}
+
+.months {
+  @apply flex gap-8;
+}
+
+.month {
+  @apply flex-1 min-w-0;
+}
