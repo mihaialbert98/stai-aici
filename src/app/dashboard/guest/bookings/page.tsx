@@ -34,13 +34,13 @@ export default function GuestBookingsPage() {
                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                   {b.property.images[0] && <img src={b.property.images[0].url} className="w-full h-full object-cover" />}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{b.property.title}</h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900">{b.property.title}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{formatDate(b.startDate)} – {formatDate(b.endDate)}</p>
+                  <div className="flex items-center gap-3 mt-2">
                     <StatusBadge status={b.status} />
+                    <span className="text-sm font-medium text-primary-600">{formatRON(b.totalPrice)}</span>
                   </div>
-                  <p className="text-sm text-gray-500">{formatDate(b.startDate)} – {formatDate(b.endDate)}</p>
-                  <p className="text-sm font-medium text-primary-600 mt-1">{formatRON(b.totalPrice)}</p>
                 </div>
               </div>
             </Link>

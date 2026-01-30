@@ -250,6 +250,7 @@ function PropertyContent() {
                       endDate={checkOut}
                       onChange={(start, end) => { setCheckIn(start); setCheckOut(end); }}
                       placeholder="Selectează perioada"
+                      unavailableDates={unavailableDates}
                     />
                   </div>
                   <div>

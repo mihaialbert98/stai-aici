@@ -73,6 +73,10 @@
   @apply text-gray-300 cursor-default;
 }
 
+.dayUnavailable {
+  @apply text-gray-400 cursor-default line-through bg-gray-50;
+}
+
 .footer {
   @apply flex items-center justify-between mt-3 pt-3 border-t border-gray-100;
 }

@@ -14,6 +14,7 @@ interface Props {
   endDate: string;
   onChange: (start: string, end: string) => void;
   placeholder?: string;
+  unavailableDates?: string[];
 }
 
 function parseDate(s: string): Date | null {
@@ -34,7 +35,7 @@ function localToday(): Date {
   return new Date(n.getFullYear(), n.getMonth(), n.getDate());
 }
 
-export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'Selectează perioada' }: Props) {
+export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'Selectează perioada', unavailableDates = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
@@ -47,6 +48,7 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
   const start = parseDate(startDate);
   const end = parseDate(endDate);
   const today = localToday();
+  const blockedSet = new Set(unavailableDates);
 
   // Close on outside click (desktop only — mobile uses backdrop)
   useEffect(() => {
@@ -69,6 +71,7 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
 
   const handleDayClick = useCallback((day: Date) => {
     if (isBefore(day, today)) return;
+    if (blockedSet.has(toDateStr(day))) return;
 
     if (phase === 'start') {
       onChange(toDateStr(day), '');
@@ -87,6 +90,7 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
 
   const getDayClass = (day: Date): string => {
     if (isBefore(day, today)) return styles.dayDisabled;
+    if (blockedSet.has(toDateStr(day))) return styles.dayUnavailable;
     if (start && isSameDay(day, start)) return styles.daySelected;
     if (end && isSameDay(day, end)) return styles.daySelected;
 
