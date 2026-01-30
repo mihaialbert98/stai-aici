@@ -1,9 +1,9 @@
 .wrapper {
-  @apply flex min-h-[calc(100vh-4rem)];
+  @apply flex h-[calc(100vh-4rem)] overflow-hidden;
 }
 
 .sidebar {
-  @apply w-64 bg-white border-r border-gray-200 p-4 hidden md:block;
+  @apply w-64 bg-white border-r border-gray-200 p-4 hidden md:block overflow-y-auto shrink-0;
 }
 
 .sidebarTitle {
@@ -19,5 +19,5 @@
 }
 
 .content {
-  @apply flex-1 p-6;
+  @apply flex-1 p-6 overflow-y-auto;
 }
