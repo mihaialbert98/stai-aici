@@ -19,9 +19,18 @@
   @apply text-gray-900;
 }
 
+/* Mobile: bottom sheet, Desktop: absolute dropdown */
 .dropdown {
-  @apply absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-5 z-50 text-gray-900;
-  width: 620px;
+  @apply bg-white rounded-xl shadow-xl border border-gray-200 p-4 md:p-5 z-50 text-gray-900;
+  /* Mobile */
+  @apply fixed inset-x-0 bottom-0 rounded-b-none max-h-[85vh] overflow-y-auto;
+  /* Desktop */
+  @apply md:absolute md:relative md:inset-auto md:top-full md:left-0 md:mt-2 md:rounded-xl md:max-h-none md:overflow-visible;
+  @apply md:w-[620px];
+}
+
+.backdrop {
+  @apply fixed inset-0 bg-black/30 z-40 md:hidden;
 }
 
 .header {
@@ -45,7 +54,7 @@
 }
 
 .day {
-  @apply h-9 flex items-center justify-center text-sm rounded-lg cursor-pointer transition;
+  @apply h-10 md:h-9 flex items-center justify-center text-sm rounded-lg cursor-pointer transition;
 }
 
 .dayDefault {
@@ -77,9 +86,14 @@
 }
 
 .months {
-  @apply flex gap-8;
+  @apply flex flex-col md:flex-row gap-4 md:gap-8;
 }
 
 .month {
   @apply flex-1 min-w-0;
+}
+
+/* Hide second month on mobile */
+.monthSecond {
+  @apply hidden md:block flex-1 min-w-0;
 }

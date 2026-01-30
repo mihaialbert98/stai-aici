@@ -12,13 +12,21 @@ interface Props {
     maxGuests: number;
     images: { url: string }[];
   };
+  searchParams?: { checkIn?: string; checkOut?: string; guests?: string };
 }
 
-export function PropertyCard({ property }: Props) {
+export function PropertyCard({ property, searchParams }: Props) {
   const image = property.images[0]?.url || '/placeholder.jpg';
 
+  const params = new URLSearchParams();
+  if (searchParams?.checkIn) params.set('checkIn', searchParams.checkIn);
+  if (searchParams?.checkOut) params.set('checkOut', searchParams.checkOut);
+  if (searchParams?.guests) params.set('guests', searchParams.guests);
+  const qs = params.toString();
+  const href = `/property/${property.id}${qs ? `?${qs}` : ''}`;
+
   return (
-    <Link href={`/property/${property.id}`}>
+    <Link href={href}>
       <div className={styles.card}>
         <div className={styles.imageWrapper}>
           <img src={image} alt={property.title} className={styles.image} />

@@ -10,8 +10,8 @@
   @apply text-xl font-bold text-primary-600;
 }
 
-.links {
-  @apply flex items-center gap-4;
+.desktopLinks {
+  @apply hidden md:flex items-center gap-4;
 }
 
 .link {
@@ -29,4 +29,21 @@
 .modeToggle {
   @apply flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-300 text-gray-600
     hover:border-primary-500 hover:text-primary-600 transition cursor-pointer;
+}
+
+/* Mobile */
+.hamburger {
+  @apply md:hidden p-2 text-gray-600 hover:text-gray-900;
+}
+
+.mobileMenu {
+  @apply md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1;
+}
+
+.mobileUserName {
+  @apply text-sm font-semibold text-gray-800 px-3 py-2 border-b border-gray-100 mb-1;
+}
+
+.mobileLink {
+  @apply flex items-center gap-2 w-full text-left text-sm text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition;
 }

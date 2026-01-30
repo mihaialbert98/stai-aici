@@ -18,7 +18,6 @@ interface Props {
 
 function parseDate(s: string): Date | null {
   if (!s) return null;
-  // Parse yyyy-MM-dd as local date (not UTC)
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
@@ -42,7 +41,6 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
-  // phase: 'start' = next click picks start, 'end' = next click picks end
   const [phase, setPhase] = useState<'start' | 'end'>('start');
   const ref = useRef<HTMLDivElement>(null);
 
@@ -50,7 +48,7 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
   const end = parseDate(endDate);
   const today = localToday();
 
-  // Close on outside click
+  // Close on outside click (desktop only — mobile uses backdrop)
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -59,6 +57,16 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Prevent body scroll when open on mobile
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   const handleDayClick = useCallback((day: Date) => {
     if (isBefore(day, today)) return;
 
@@ -66,13 +74,11 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
       onChange(toDateStr(day), '');
       setPhase('end');
     } else {
-      // phase === 'end'
       if (start && !isBefore(day, start) && !isSameDay(day, start)) {
         onChange(startDate, toDateStr(day));
         setPhase('start');
         setOpen(false);
       } else {
-        // Clicked same day or before start — restart selection
         onChange(toDateStr(day), '');
         setPhase('end');
       }
@@ -84,7 +90,6 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
     if (start && isSameDay(day, start)) return styles.daySelected;
     if (end && isSameDay(day, end)) return styles.daySelected;
 
-    // In-range highlighting
     const rangeEnd = end || (phase === 'end' && start && hoveredDate && isAfter(hoveredDate, start) ? hoveredDate : null);
     if (start && rangeEnd && isAfter(day, start) && isBefore(day, rangeEnd)) {
       return styles.dayInRange;
@@ -93,14 +98,14 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
     return styles.dayDefault;
   };
 
-  const renderMonth = (monthDate: Date) => {
+  const renderMonth = (monthDate: Date, className?: string) => {
     const ms = startOfMonth(monthDate);
     const me = endOfMonth(monthDate);
     const days = eachDayOfInterval({ start: ms, end: me });
     const startPad = getDay(ms) === 0 ? 6 : getDay(ms) - 1;
 
     return (
-      <div className={styles.month}>
+      <div className={className || styles.month}>
         <div className={styles.weekRow}>
           {['Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sâ', 'Du'].map(d => <span key={d}>{d}</span>)}
         </div>
@@ -146,32 +151,39 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
       </button>
 
       {open && (
-        <div className={styles.dropdown} onMouseDown={(e) => e.preventDefault()}>
-          <div className={styles.header}>
-            <button type="button" onClick={() => setCurrentMonth(m => addMonths(m, -1))} className={styles.navBtn}>
-              <ChevronLeft size={18} />
-            </button>
-            <div className="flex gap-8">
-              <span className={styles.monthLabel}>{format(currentMonth, 'LLLL yyyy', { locale: ro })}</span>
-              <span className={styles.monthLabel}>{format(nextMonth, 'LLLL yyyy', { locale: ro })}</span>
+        <>
+          {/* Mobile backdrop */}
+          <div className={styles.backdrop} onClick={() => setOpen(false)} />
+
+          <div className={styles.dropdown} onMouseDown={(e) => e.preventDefault()}>
+            {/* Header with nav arrows — desktop shows both month names, mobile just arrows */}
+            <div className={styles.header}>
+              <button type="button" onClick={() => setCurrentMonth(m => addMonths(m, -1))} className={styles.navBtn}>
+                <ChevronLeft size={18} />
+              </button>
+              <div className="hidden md:flex gap-8 text-center">
+                <span className={styles.monthLabel}>{format(currentMonth, 'LLLL yyyy', { locale: ro })}</span>
+                <span className={styles.monthLabel}>{format(nextMonth, 'LLLL yyyy', { locale: ro })}</span>
+              </div>
+              <span className={`${styles.monthLabel} md:hidden`}>{format(currentMonth, 'LLLL yyyy', { locale: ro })}</span>
+              <button type="button" onClick={() => setCurrentMonth(m => addMonths(m, 1))} className={styles.navBtn}>
+                <ChevronRight size={18} />
+              </button>
             </div>
-            <button type="button" onClick={() => setCurrentMonth(m => addMonths(m, 1))} className={styles.navBtn}>
-              <ChevronRight size={18} />
-            </button>
-          </div>
 
-          <div className={styles.months}>
-            {renderMonth(currentMonth)}
-            {renderMonth(nextMonth)}
-          </div>
+            <div className={styles.months}>
+              {renderMonth(currentMonth)}
+              {renderMonth(nextMonth, styles.monthSecond)}
+            </div>
 
-          <div className={styles.footer}>
-            <button type="button" onClick={clear} className={styles.clearBtn}>Șterge datele</button>
-            {start && end && (
-              <button type="button" onClick={() => setOpen(false)} className={styles.confirmBtn}>Confirmă</button>
-            )}
+            <div className={styles.footer}>
+              <button type="button" onClick={clear} className={styles.clearBtn}>Șterge datele</button>
+              {start && end && (
+                <button type="button" onClick={() => setOpen(false)} className={styles.confirmBtn}>Confirmă</button>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -25,12 +25,12 @@ export default function HostMessagesPage() {
       ) : (
         <div className="space-y-3">
           {bookings.map(b => (
-            <Link key={b.id} href={`/dashboard/host/bookings/${b.id}`}>
+            <Link key={b.id} href={`/dashboard/host/bookings/${b.id}`} className="block">
               <div className="card hover:shadow-md transition">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">{b.property.title}</h3>
-                    <p className="text-sm text-gray-500">Oaspete: {b.guest.name}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-medium truncate">{b.property.title}</h3>
+                    <p className="text-sm text-gray-500 truncate">Oaspete: {b.guest.name}</p>
                   </div>
                   <StatusBadge status={b.status} />
                 </div>

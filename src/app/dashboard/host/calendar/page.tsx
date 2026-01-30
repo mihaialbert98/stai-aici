@@ -54,6 +54,7 @@ export default function HostCalendarPage() {
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState<{ booking: BookingData; x: number; y: number } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +82,15 @@ export default function HostCalendarPage() {
 
       setLoading(false);
     })();
+  }, []);
+
+  // Track mobile breakpoint
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(!e.matches);
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   // Close tooltip and dropdown on outside click
@@ -197,7 +207,7 @@ export default function HostCalendarPage() {
             <button
               type="button"
               onClick={() => setDropdownOpen(o => !o)}
-              className="input text-left flex items-center justify-between max-w-md"
+              className="input text-left flex items-center justify-between w-full md:max-w-md"
             >
               <span className="truncate">
                 {selectedProps.size === properties.length
@@ -209,7 +219,7 @@ export default function HostCalendarPage() {
               <ChevronRight size={16} className={`text-gray-400 transition-transform ${dropdownOpen ? 'rotate-90' : ''}`} />
             </button>
             {dropdownOpen && (
-              <div className="absolute z-30 mt-1 w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+              <div className="absolute z-30 mt-1 w-full md:max-w-md bg-white border border-gray-200 rounded-lg shadow-lg py-1">
                 <label className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100">
                   <input
                     type="checkbox"
@@ -267,9 +277,20 @@ export default function HostCalendarPage() {
             </div>
 
             {/* Day headers */}
-            <div className="grid grid-cols-7 gap-0 text-center text-sm font-medium text-gray-500 mb-1 border-b border-gray-200 pb-2">
-              {['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'].map(d => (
-                <span key={d}>{d}</span>
+            <div className="grid grid-cols-7 gap-0 text-center text-xs md:text-sm font-medium text-gray-500 mb-1 border-b border-gray-200 pb-2">
+              {[
+                { short: 'Lu', full: 'Luni' },
+                { short: 'Ma', full: 'Marți' },
+                { short: 'Mi', full: 'Miercuri' },
+                { short: 'Jo', full: 'Joi' },
+                { short: 'Vi', full: 'Vineri' },
+                { short: 'Sâ', full: 'Sâmbătă' },
+                { short: 'Du', full: 'Duminică' },
+              ].map(d => (
+                <span key={d.short}>
+                  <span className="md:hidden">{d.short}</span>
+                  <span className="hidden md:inline">{d.full}</span>
+                </span>
               ))}
             </div>
 
@@ -277,7 +298,7 @@ export default function HostCalendarPage() {
             <div className="relative">
               <div className="grid grid-cols-7 gap-0">
                 {Array.from({ length: startPad }).map((_, i) => (
-                  <div key={`pad-${i}`} className="h-24 border-b border-r border-gray-100" />
+                  <div key={`pad-${i}`} className="h-14 md:h-24 border-b border-r border-gray-100" />
                 ))}
                 {days.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
@@ -285,11 +306,11 @@ export default function HostCalendarPage() {
                   return (
                     <div
                       key={dateStr}
-                      className={`h-24 border-b border-r border-gray-100 p-1 text-right ${
+                      className={`h-14 md:h-24 border-b border-r border-gray-100 p-0.5 md:p-1 text-right ${
                         isToday(day) ? 'bg-primary-50' : ''
                       } ${isBlockedForAny ? 'bg-red-50' : ''}`}
                     >
-                      <span className={`inline-flex items-center justify-center w-7 h-7 text-sm rounded-full ${
+                      <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 text-xs md:text-sm rounded-full ${
                         isToday(day) ? 'bg-primary-600 text-white font-bold' : 'text-gray-700'
                       }`}>
                         {format(day, 'd')}
@@ -305,7 +326,9 @@ export default function HostCalendarPage() {
                 const pillRows = getPillInfo(booking);
 
                 return pillRows.map((pr, ri) => {
-                  const top = (pr.row * 96) + 30; // 96px = h-24, offset for date number
+                  const cellH = isMobile ? 56 : 96;
+                  const pillOffset = isMobile ? 26 : 30;
+                  const top = (pr.row * cellH) + pillOffset;
                   const left = `${(pr.colStart / 7) * 100}%`;
                   const width = `${((pr.colEnd - pr.colStart + 1) / 7) * 100}%`;
                   // Stack pills if multiple bookings on same row
@@ -322,17 +345,17 @@ export default function HostCalendarPage() {
                       key={`${booking.id}-${ri}`}
                       data-pill
                       onClick={(e) => handlePillClick(e, booking)}
-                      className={`absolute ${color.pill} border rounded-md px-2 py-0.5 text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                      className={`absolute ${color.pill} border rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity`}
                       style={{
                         top: `${top}px`,
                         left,
                         width,
-                        height: '22px',
+                        height: isMobile ? '18px' : '22px',
                         zIndex: 10,
                       }}
                       title={`${booking.guest.name} - ${booking.property.title}`}
                     >
-                      {booking.guest.name} {selectedProps.size > 1 && `· ${booking.property.title}`}
+                      {isMobile ? booking.guest.name.split(' ')[0] : booking.guest.name} {!isMobile && selectedProps.size > 1 && `· ${booking.property.title}`}
                     </div>
                   );
                 });
