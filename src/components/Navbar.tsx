@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import styles from './Navbar.module.scss';
 
@@ -15,10 +15,11 @@ interface User {
 export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(d => setUser(d.user));
-  }, []);
+    fetch('/api/auth/me').then(r => r.json()).then(d => setUser(d.user || null));
+  }, [pathname]);
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
