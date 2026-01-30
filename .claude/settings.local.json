@@ -13,7 +13,13 @@
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial V1 – StaiAici accommodation booking platform\n\n- Next.js 14 App Router + TypeScript + Tailwind + SCSS Modules\n- PostgreSQL + Prisma ORM with full schema\n- JWT auth with role-based middleware \\(Guest/Host/Admin\\)\n- Public search with city autocomplete, date range picker, filters\n- Property CRUD, availability calendar, booking request flow\n- Per-booking chat with support role\n- Guest/Host/Admin dashboards\n- Seed script with demo data\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gh repo create:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db seed:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx tsx:*)",
+      "Bash(gh:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

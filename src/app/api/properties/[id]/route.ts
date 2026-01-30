@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { propertySchema } from '@/lib/validations';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/properties/[id]
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const property = await prisma.property.findUnique({

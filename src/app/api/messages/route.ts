@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { messageSchema } from '@/lib/validations';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/messages?bookingId=xxx
 export async function GET(req: NextRequest) {
   const session = await getSession();

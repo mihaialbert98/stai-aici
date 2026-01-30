@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/properties/[id]/blocked-dates – toggle blocked dates
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getSession();

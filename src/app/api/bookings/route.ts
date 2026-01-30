@@ -4,6 +4,8 @@ import { getSession } from '@/lib/auth';
 import { bookingSchema } from '@/lib/validations';
 import { differenceInDays, eachDayOfInterval, parseISO } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/bookings – get user's bookings
 export async function GET(req: NextRequest) {
   const session = await getSession();

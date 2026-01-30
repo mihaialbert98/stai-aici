@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { propertySchema } from '@/lib/validations';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/properties – public search
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
