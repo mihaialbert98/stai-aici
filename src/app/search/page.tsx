@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PropertyCard } from '@/components/PropertyCard';
 import { CityPicker } from '@/components/CityPicker';
@@ -9,6 +9,14 @@ import { SlidersHorizontal } from 'lucide-react';
 interface Amenity { id: string; name: string }
 
 export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="max-w-6xl mx-auto py-10 px-4">Se încarcă...</div>}>
+      <SearchContent />
+    </Suspense>
+  );
+}
+
+function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
