@@ -14,11 +14,13 @@ export default function HomePage() {
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState('');
   const [featured, setFeatured] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/properties?limit=6')
       .then(r => r.json())
-      .then(d => setFeatured(d.properties || []));
+      .then(d => setFeatured(d.properties || []))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -61,22 +63,33 @@ export default function HomePage() {
       </section>
 
       {/* Featured properties */}
-      {featured.length > 0 && (
-        <section className="max-w-6xl mx-auto py-16 px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Cazări recomandate</h2>
-            <button
-              onClick={() => router.push('/search')}
-              className="text-primary-600 text-sm font-medium hover:underline"
-            >
-              Vezi toate →
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featured.map((p) => <PropertyCard key={p.id} property={p} />)}
-          </div>
-        </section>
-      )}
+      <section className="max-w-6xl mx-auto py-16 px-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Cazări recomandate</h2>
+          <button
+            onClick={() => router.push('/search')}
+            className="text-primary-600 text-sm font-medium hover:underline"
+          >
+            Vezi toate →
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="animate-pulse rounded-xl overflow-hidden border border-gray-100">
+                  <div className="bg-gray-200 h-48 w-full" />
+                  <div className="p-4 space-y-3">
+                    <div className="bg-gray-200 h-4 w-1/3 rounded" />
+                    <div className="bg-gray-200 h-5 w-3/4 rounded" />
+                    <div className="bg-gray-200 h-4 w-1/2 rounded" />
+                    <div className="bg-gray-200 h-5 w-1/4 rounded" />
+                  </div>
+                </div>
+              ))
+            : featured.map((p) => <PropertyCard key={p.id} property={p} />)
+          }
+        </div>
+      </section>
 
       {/* Popular cities */}
       <section className="max-w-6xl mx-auto py-16 px-4 border-t border-gray-100">

@@ -19,7 +19,8 @@
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db seed:*)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx tsx:*)",
       "Bash(gh:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }
