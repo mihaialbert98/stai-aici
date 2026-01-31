@@ -34,6 +34,10 @@
   @apply text-[10px] text-gray-400 mt-1;
 }
 
+.pending {
+  @apply opacity-60;
+}
+
 .inputArea {
   @apply flex gap-2 p-3 border-t border-gray-200;
 }

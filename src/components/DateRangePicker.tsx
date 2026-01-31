@@ -59,14 +59,17 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Prevent body scroll when open on mobile
+  // Prevent body scroll when open — compensate scrollbar width to avoid layout shift
   useEffect(() => {
     if (open) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
       document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => { document.body.style.overflow = ''; document.body.style.paddingRight = ''; };
   }, [open]);
 
   const handleDayClick = useCallback((day: Date) => {

@@ -254,8 +254,13 @@ function PropertyContent() {
                     />
                   </div>
                   <div>
-                    <label className="label">Oaspeți</label>
+                    <label className="label block">Oaspeți</label>
                     <input type="number" className="input" min={1} max={property.maxGuests} value={guestsStr} onChange={(e) => setGuestsStr(e.target.value)} />
+                    <div className="h-5 mt-1">
+                      {guestsExceedMax && (
+                        <p className="text-red-600 text-xs">Maxim {property.maxGuests} oaspeți.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -270,10 +275,6 @@ function PropertyContent() {
                       <span className="text-primary-600">{formatRON(totalPrice)}</span>
                     </div>
                   </div>
-                )}
-
-                {guestsExceedMax && (
-                  <p className="text-red-600 text-sm mt-2">Proprietatea acceptă maxim {property.maxGuests} oaspeți.</p>
                 )}
 
                 {unavailableOverlap && (
