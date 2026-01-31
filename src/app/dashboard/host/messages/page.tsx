@@ -1,44 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { StatusBadge } from '@/components/StatusBadge';
+import { MessagesList } from '@/components/MessagesList';
 
 export default function HostMessagesPage() {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/bookings?role=host').then(r => r.json()).then(d => {
-      setBookings(d.bookings || []);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
-
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Mesaje</h1>
-      {bookings.length === 0 ? (
-        <p className="text-gray-500">Nu ai conversații active.</p>
-      ) : (
-        <div className="space-y-3">
-          {bookings.map(b => (
-            <Link key={b.id} href={`/dashboard/host/bookings/${b.id}`} className="block">
-              <div className="card hover:shadow-md transition">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="font-medium truncate">{b.property.title}</h3>
-                    <p className="text-sm text-gray-500 truncate">Oaspete: {b.guest.name}</p>
-                  </div>
-                  <StatusBadge status={b.status} />
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <MessagesList role="host" />
     </div>
   );
 }

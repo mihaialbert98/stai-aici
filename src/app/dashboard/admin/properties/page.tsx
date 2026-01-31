@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { formatRON } from '@/lib/utils';
+import { ActiveBadge } from '@/components/ActiveBadge';
 
 export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<any[]>([]);
@@ -52,9 +53,7 @@ export default function AdminPropertiesPage() {
                 <td className="py-3">{formatRON(p.pricePerNight)}</td>
                 <td className="py-3">{p._count.bookings}</td>
                 <td className="py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {p.isActive ? 'Activă' : 'Inactivă'}
-                  </span>
+                  <ActiveBadge isActive={p.isActive} />
                 </td>
                 <td className="py-3">
                   <button onClick={() => toggleActive(p.id, p.isActive)} className="text-sm text-primary-600 hover:underline">

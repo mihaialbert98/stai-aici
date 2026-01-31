@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatRON } from '@/lib/utils';
+import { ActiveBadge } from '@/components/ActiveBadge';
 import { Plus, Edit, Users } from 'lucide-react';
 
 export default function HostPropertiesPage() {
@@ -51,9 +52,7 @@ export default function HostPropertiesPage() {
                 <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
                   <span className="text-primary-600 font-medium">{formatRON(p.pricePerNight)} / noapte</span>
                   <span className="flex items-center gap-1 text-gray-500"><Users size={14} /> {p.maxGuests}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {p.isActive ? 'Activă' : 'Inactivă'}
-                  </span>
+                  <ActiveBadge isActive={p.isActive} />
                 </div>
               </div>
               <Link href={`/dashboard/host/properties/${p.id}/edit`} className="btn-secondary self-start sm:self-center flex items-center gap-1 w-fit">

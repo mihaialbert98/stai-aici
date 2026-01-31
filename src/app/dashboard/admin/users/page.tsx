@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ActiveBadge } from '@/components/ActiveBadge';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -51,9 +52,7 @@ export default function AdminUsersPage() {
                 <td className="py-3">{u._count.properties}</td>
                 <td className="py-3">{u._count.bookingsAsGuest}</td>
                 <td className="py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {u.isActive ? 'Activ' : 'Inactiv'}
-                  </span>
+                  <ActiveBadge isActive={u.isActive} activeLabel="Activ" inactiveLabel="Inactiv" />
                 </td>
                 <td className="py-3">
                   {u.role !== 'ADMIN' && (

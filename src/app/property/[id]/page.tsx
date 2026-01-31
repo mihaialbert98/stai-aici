@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
-import { MapPin, Users, CheckCircle, Info, BookOpen, Compass, Star } from 'lucide-react';
+import { MapPin, Users, CheckCircle, Star } from 'lucide-react';
+import { PropertyGuide } from '@/components/PropertyGuide';
 import { DateRangePicker } from '@/components/DateRangePicker';
 
 export default function PropertyPage() {
@@ -202,29 +203,7 @@ function PropertyContent() {
           </div>
 
           {/* Guest Guide */}
-          {(property.checkInInfo || property.houseRules || property.localTips) && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Ghidul oaspetelui</h2>
-              {property.checkInInfo && (
-                <div className="card">
-                  <h3 className="font-medium flex items-center gap-2 mb-2"><Info size={16} className="text-primary-500" /> Instrucțiuni check-in</h3>
-                  <p className="text-gray-700 text-sm whitespace-pre-line">{property.checkInInfo}</p>
-                </div>
-              )}
-              {property.houseRules && (
-                <div className="card">
-                  <h3 className="font-medium flex items-center gap-2 mb-2"><BookOpen size={16} className="text-primary-500" /> Regulile casei</h3>
-                  <p className="text-gray-700 text-sm whitespace-pre-line">{property.houseRules}</p>
-                </div>
-              )}
-              {property.localTips && (
-                <div className="card">
-                  <h3 className="font-medium flex items-center gap-2 mb-2"><Compass size={16} className="text-primary-500" /> Recomandări locale</h3>
-                  <p className="text-gray-700 text-sm whitespace-pre-line">{property.localTips}</p>
-                </div>
-              )}
-            </div>
-          )}
+          <PropertyGuide checkInInfo={property.checkInInfo} houseRules={property.houseRules} localTips={property.localTips} />
 
           {/* Availability note */}
           {unavailableDates.length > 0 && (
