@@ -84,6 +84,20 @@ async function main() {
       images: ['https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800', 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800'],
       amenityIdxs: [0, 1, 2, 4, 8, 12, 13],
     },
+    {
+      hostId: host1.id, title: 'Garsonieră elegantă în Timișoara', description: 'Garsonieră modernă în centrul Timișoarei, aproape de Piața Victoriei. Ideală pentru călătorii de afaceri.', city: 'Timișoara', address: 'Str. Alba Iulia 10',
+      pricePerNight: 200, maxGuests: 2,
+      checkInInfo: 'Self check-in cu smart lock. Codul se trimite pe email.', houseRules: 'Fără fumat. Fără animale.', localTips: 'Parcul Rozelor la 5 min. Bastionul Theresia la 10 min.',
+      images: ['https://images.unsplash.com/photo-1630699144867-37acec97df5a?w=800', 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'],
+      amenityIdxs: [0, 2, 3, 5],
+    },
+    {
+      hostId: host1.id, title: 'Casă de vacanță la Lacul Vidraru', description: 'Casă izolată cu vedere spectaculoasă la lac. Perfect pentru drumeții și relaxare în natură.', city: 'Curtea de Argeș', address: 'Zona Vidraru, nr. 5',
+      pricePerNight: 600, maxGuests: 8,
+      checkInInfo: 'Check-in de la 14:00. Vă așteptăm pe terasă.', houseRules: 'Grătarul este disponibil. Fără muzică tare.', localTips: 'Barajul Vidraru la 2 min. Transfăgărășan accesibil vara.',
+      images: ['https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800', 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800'],
+      amenityIdxs: [0, 1, 2, 4, 8, 11],
+    },
   ];
 
   const createdProps = [];
@@ -102,6 +116,11 @@ async function main() {
     { propertyId: createdProps[1].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, 10), endDate: addDays(now, 14), status: BookingStatus.PENDING, totalPrice: 2000, guests: 4 },
     { propertyId: createdProps[2].id, guestId: guest1.id, hostId: host2.id, startDate: addDays(now, 2), endDate: addDays(now, 5), status: BookingStatus.PENDING, totalPrice: 840, guests: 2 },
     { propertyId: createdProps[3].id, guestId: guest2.id, hostId: host2.id, startDate: addDays(now, -5), endDate: addDays(now, -2), status: BookingStatus.ACCEPTED, totalPrice: 2400, guests: 6 },
+    // Extra bookings for Maria (host1) - overlapping dates to test calendar overflow
+    { propertyId: createdProps[4].id, guestId: guest1.id, hostId: host1.id, startDate: addDays(now, 5), endDate: addDays(now, 9), status: BookingStatus.ACCEPTED, totalPrice: 1680, guests: 2 },
+    { propertyId: createdProps[6].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, 4), endDate: addDays(now, 7), status: BookingStatus.ACCEPTED, totalPrice: 600, guests: 2 },
+    { propertyId: createdProps[7].id, guestId: guest1.id, hostId: host1.id, startDate: addDays(now, 6), endDate: addDays(now, 10), status: BookingStatus.ACCEPTED, totalPrice: 2400, guests: 5 },
+    { propertyId: createdProps[7].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, 15), endDate: addDays(now, 18), status: BookingStatus.PENDING, totalPrice: 1800, guests: 4 },
   ];
 
   const createdBookings = [];

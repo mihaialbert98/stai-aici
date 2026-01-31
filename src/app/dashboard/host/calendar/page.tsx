@@ -53,6 +53,7 @@ export default function HostCalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState<{ booking: BookingData; x: number; y: number } | null>(null);
+  const [overflow, setOverflow] = useState<{ row: number; col: number; bookings: BookingData[]; x: number; y: number } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -100,6 +101,9 @@ export default function HostCalendarPage() {
       const target = e.target as HTMLElement;
       if (!target.closest('[data-tooltip]') && !target.closest('[data-pill]')) {
         setTooltip(null);
+      }
+      if (!target.closest('[data-overflow]') && !target.closest('[data-more]')) {
+        setOverflow(null);
       }
       if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setDropdownOpen(false);
@@ -322,48 +326,144 @@ export default function HostCalendarPage() {
                 })}
               </div>
 
-              {/* Reservation pill overlays */}
-              {visibleBookings.map((booking, bookingIdx) => {
-                const color = getPropertyColor(booking.property.id);
-                const pillRows = getPillInfo(booking);
+              {/* Reservation pill overlays with overflow handling */}
+              {(() => {
                 const pillH = isMobile ? 18 : 22;
                 const pillGap = 2;
+                const cellH = isMobile ? 80 : 112;
+                const pillOffset = isMobile ? 26 : 30;
+                const maxSlots = Math.floor((cellH - pillOffset) / (pillH + pillGap));
 
-                return pillRows.map((pr, ri) => {
-                  const cellH = isMobile ? 80 : 112;
-                  const pillOffset = isMobile ? 26 : 30;
-                  // Count how many earlier bookings overlap this row+cols to compute stacking index
-                  let stackIndex = 0;
-                  for (let i = 0; i < bookingIdx; i++) {
-                    const otherRows = getPillInfo(visibleBookings[i]);
-                    const overlaps = otherRows.some(or => or.row === pr.row &&
-                      !(or.colEnd < pr.colStart || or.colStart > pr.colEnd));
-                    if (overlaps) stackIndex++;
-                  }
-                  const top = (pr.row * cellH) + pillOffset + stackIndex * (pillH + pillGap);
-                  const left = `${(pr.colStart / 7) * 100}%`;
-                  const width = `${((pr.colEnd - pr.colStart + 1) / 7) * 100}%`;
+                // Build per-row slot assignments: for each booking segment, assign a stackIndex
+                // and track which bookings are in each (row, col) cell
+                const cellBookings: Map<string, { booking: BookingData; stackIndex: number }[]> = new Map();
+                const pillSegments: { booking: BookingData; bookingIdx: number; pr: { row: number; colStart: number; colEnd: number }; ri: number; stackIndex: number }[] = [];
 
-                  return (
-                    <div
-                      key={`${booking.id}-${ri}`}
-                      data-pill
-                      onClick={(e) => handlePillClick(e, booking)}
-                      className={`absolute ${color.pill} border rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity`}
-                      style={{
-                        top: `${top}px`,
-                        left,
-                        width,
-                        height: `${pillH}px`,
-                        zIndex: 10 + stackIndex,
-                      }}
-                      title={`${booking.guest.name} - ${booking.property.title}`}
-                    >
-                      {isMobile ? booking.guest.name.split(' ')[0] : booking.guest.name} {!isMobile && selectedProps.size > 1 && `· ${booking.property.title}`}
-                    </div>
-                  );
+                visibleBookings.forEach((booking, bookingIdx) => {
+                  const pillRows = getPillInfo(booking);
+                  pillRows.forEach((pr, ri) => {
+                    let stackIndex = 0;
+                    for (let i = 0; i < bookingIdx; i++) {
+                      const otherRows = getPillInfo(visibleBookings[i]);
+                      const overlaps = otherRows.some(or => or.row === pr.row &&
+                        !(or.colEnd < pr.colStart || or.colStart > pr.colEnd));
+                      if (overlaps) stackIndex++;
+                    }
+                    pillSegments.push({ booking, bookingIdx, pr, ri, stackIndex });
+                    // Register in each cell this segment spans
+                    for (let c = pr.colStart; c <= pr.colEnd; c++) {
+                      const key = `${pr.row}-${c}`;
+                      if (!cellBookings.has(key)) cellBookings.set(key, []);
+                      cellBookings.get(key)!.push({ booking, stackIndex });
+                    }
+                  });
                 });
-              })}
+
+                // For each cell, determine how many bookings overflow
+                const overflowCells: Map<string, BookingData[]> = new Map();
+                cellBookings.forEach((entries, key) => {
+                  if (entries.length > maxSlots) {
+                    overflowCells.set(key, entries.map(e => e.booking));
+                  }
+                });
+
+                // Determine which bookings to fully hide:
+                // If a booking overflows in ANY cell of ANY row, hide ALL its segments across all rows.
+                const globallyHiddenBookings = new Set<string>();
+                pillSegments.forEach(seg => {
+                  for (let c = seg.pr.colStart; c <= seg.pr.colEnd; c++) {
+                    const key = `${seg.pr.row}-${c}`;
+                    if (overflowCells.has(key) && seg.stackIndex >= maxSlots - 1) {
+                      globallyHiddenBookings.add(seg.booking.id);
+                      break;
+                    }
+                  }
+                });
+                const hiddenPills = new Set<string>();
+                pillSegments.forEach(seg => {
+                  if (globallyHiddenBookings.has(seg.booking.id)) {
+                    hiddenPills.add(`${seg.booking.id}-${seg.ri}`);
+                  }
+                });
+
+                // Find which cells need a "+N" badge — any cell that contains a globally hidden booking
+                const badgeCells: Map<string, { row: number; col: number; count: number; bookings: BookingData[] }> = new Map();
+                cellBookings.forEach((entries, key) => {
+                  const hiddenInCell = entries
+                    .filter(e => globallyHiddenBookings.has(e.booking.id))
+                    .map(e => e.booking);
+                  const unique = [...new Map(hiddenInCell.map(b => [b.id, b])).values()];
+                  if (unique.length > 0) {
+                    const [row, col] = key.split('-').map(Number);
+                    badgeCells.set(key, { row, col, count: unique.length, bookings: unique });
+                  }
+                });
+
+                return (
+                  <>
+                    {pillSegments.filter(seg => !hiddenPills.has(`${seg.booking.id}-${seg.ri}`)).map(seg => {
+                      const color = getPropertyColor(seg.booking.property.id);
+                      const top = (seg.pr.row * cellH) + pillOffset + seg.stackIndex * (pillH + pillGap);
+                      const left = `${(seg.pr.colStart / 7) * 100}%`;
+                      const width = `${((seg.pr.colEnd - seg.pr.colStart + 1) / 7) * 100}%`;
+                      return (
+                        <div
+                          key={`${seg.booking.id}-${seg.ri}`}
+                          data-pill
+                          onClick={(e) => handlePillClick(e, seg.booking)}
+                          className={`absolute ${color.pill} border rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                          style={{
+                            top: `${top}px`,
+                            left,
+                            width,
+                            height: `${pillH}px`,
+                            zIndex: 10 + seg.stackIndex,
+                          }}
+                          title={`${seg.booking.guest.name} - ${seg.booking.property.title}`}
+                        >
+                          {isMobile ? seg.booking.guest.name.split(' ')[0] : seg.booking.guest.name} {!isMobile && selectedProps.size > 1 && `· ${seg.booking.property.title}`}
+                        </div>
+                      );
+                    })}
+
+                    {/* "+N more" badges */}
+                    {Array.from(badgeCells.values()).map(({ row, col, count, bookings: cellBk }) => {
+                      const top = (row * cellH) + pillOffset + (maxSlots - 1) * (pillH + pillGap);
+                      const left = `${(col / 7) * 100}%`;
+                      const width = `${(1 / 7) * 100}%`;
+                      return (
+                        <div
+                          key={`more-${row}-${col}`}
+                          data-more
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = gridRef.current?.getBoundingClientRect();
+                            const btnRect = e.currentTarget.getBoundingClientRect();
+                            if (!rect) return;
+                            setOverflow({
+                              row, col,
+                              bookings: cellBk,
+                              x: btnRect.left - rect.left,
+                              y: btnRect.bottom - rect.top + 4,
+                            });
+                          }}
+                          className="absolute px-1 text-[10px] md:text-xs font-semibold text-gray-600 cursor-pointer hover:text-gray-900 truncate"
+                          style={{
+                            top: `${top}px`,
+                            left,
+                            width,
+                            height: `${pillH}px`,
+                            lineHeight: `${pillH}px`,
+                            zIndex: 20,
+                          }}
+                        >
+                          +{count} mai mult
+                        </div>
+                      );
+                    })}
+                  </>
+                );
+              })()}
 
               {/* Tooltip */}
               {tooltip && (
@@ -406,6 +506,40 @@ export default function HostCalendarPage() {
                     >
                       <MessageSquare size={14} /> Mesaje
                     </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Overflow popover */}
+              {overflow && (
+                <div
+                  data-overflow
+                  className="absolute bg-white rounded-xl shadow-xl border border-gray-200 p-3 z-50 w-64"
+                  style={{
+                    top: Math.min(overflow.y, (totalRows * (isMobile ? 80 : 112)) - 150),
+                    left: Math.min(overflow.x, gridRef.current ? gridRef.current.clientWidth - 270 : 0),
+                  }}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold text-xs text-gray-500">Toate rezervările</h4>
+                    <button onClick={() => setOverflow(null)} className="text-gray-400 hover:text-gray-600">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {overflow.bookings.map(b => {
+                      const color = getPropertyColor(b.property.id);
+                      return (
+                        <div
+                          key={b.id}
+                          data-pill
+                          onClick={(e) => { setOverflow(null); handlePillClick(e, b); }}
+                          className={`${color.pill} border rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 truncate`}
+                        >
+                          {b.guest.name} {selectedProps.size > 1 && `· ${b.property.title}`}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
