@@ -56,6 +56,7 @@ export default function HostCalendarPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load properties and bookings
@@ -180,12 +181,13 @@ export default function HostCalendarPage() {
     return rows;
   };
 
-  const handlePillClick = (e: React.MouseEvent, booking: BookingData) => {
+  const handlePillClick = (e: React.MouseEvent<HTMLDivElement>, booking: BookingData) => {
     e.stopPropagation();
-    const rect = calendarRef.current?.getBoundingClientRect();
+    const rect = gridRef.current?.getBoundingClientRect();
+    const pillRect = e.currentTarget.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = pillRect.left - rect.left;
+    const y = pillRect.bottom - rect.top + 4;
     setTooltip({ booking, x, y });
   };
 
@@ -295,10 +297,10 @@ export default function HostCalendarPage() {
             </div>
 
             {/* Calendar grid with pills */}
-            <div className="relative">
+            <div className="relative" ref={gridRef}>
               <div className="grid grid-cols-7 gap-0">
                 {Array.from({ length: startPad }).map((_, i) => (
-                  <div key={`pad-${i}`} className="h-14 md:h-24 border-b border-r border-gray-100" />
+                  <div key={`pad-${i}`} className="h-20 md:h-28 border-b border-r border-gray-100" />
                 ))}
                 {days.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
@@ -306,7 +308,7 @@ export default function HostCalendarPage() {
                   return (
                     <div
                       key={dateStr}
-                      className={`h-14 md:h-24 border-b border-r border-gray-100 p-0.5 md:p-1 text-right ${
+                      className={`h-20 md:h-28 border-b border-r border-gray-100 p-0.5 md:p-1 text-right ${
                         isToday(day) ? 'bg-primary-50' : ''
                       } ${isBlockedForAny ? 'bg-red-50' : ''}`}
                     >
@@ -321,24 +323,26 @@ export default function HostCalendarPage() {
               </div>
 
               {/* Reservation pill overlays */}
-              {visibleBookings.map(booking => {
+              {visibleBookings.map((booking, bookingIdx) => {
                 const color = getPropertyColor(booking.property.id);
                 const pillRows = getPillInfo(booking);
+                const pillH = isMobile ? 18 : 22;
+                const pillGap = 2;
 
                 return pillRows.map((pr, ri) => {
-                  const cellH = isMobile ? 56 : 96;
+                  const cellH = isMobile ? 80 : 112;
                   const pillOffset = isMobile ? 26 : 30;
-                  const top = (pr.row * cellH) + pillOffset;
+                  // Count how many earlier bookings overlap this row+cols to compute stacking index
+                  let stackIndex = 0;
+                  for (let i = 0; i < bookingIdx; i++) {
+                    const otherRows = getPillInfo(visibleBookings[i]);
+                    const overlaps = otherRows.some(or => or.row === pr.row &&
+                      !(or.colEnd < pr.colStart || or.colStart > pr.colEnd));
+                    if (overlaps) stackIndex++;
+                  }
+                  const top = (pr.row * cellH) + pillOffset + stackIndex * (pillH + pillGap);
                   const left = `${(pr.colStart / 7) * 100}%`;
                   const width = `${((pr.colEnd - pr.colStart + 1) / 7) * 100}%`;
-                  // Stack pills if multiple bookings on same row
-                  const pillIndex = visibleBookings
-                    .filter(vb => vb.property.id !== booking.property.id || vb.id !== booking.id)
-                    .filter(vb => {
-                      const otherRows = getPillInfo(vb);
-                      return otherRows.some(or => or.row === pr.row &&
-                        !(or.colEnd < pr.colStart || or.colStart > pr.colEnd));
-                    }).length;
 
                   return (
                     <div
@@ -350,8 +354,8 @@ export default function HostCalendarPage() {
                         top: `${top}px`,
                         left,
                         width,
-                        height: isMobile ? '18px' : '22px',
-                        zIndex: 10,
+                        height: `${pillH}px`,
+                        zIndex: 10 + stackIndex,
                       }}
                       title={`${booking.guest.name} - ${booking.property.title}`}
                     >
@@ -367,8 +371,8 @@ export default function HostCalendarPage() {
                   data-tooltip
                   className="absolute bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50 w-72"
                   style={{
-                    top: Math.min(tooltip.y, (totalRows * 96) - 200),
-                    left: Math.min(tooltip.x, calendarRef.current ? calendarRef.current.clientWidth - 300 : 0),
+                    top: Math.min(tooltip.y, (totalRows * 112) - 200),
+                    left: Math.min(tooltip.x, gridRef.current ? gridRef.current.clientWidth - 300 : 0),
                   }}
                 >
                   <div className="flex justify-between items-start mb-3">
