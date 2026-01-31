@@ -392,7 +392,7 @@ export default function HostCalendarPage() {
                   const hiddenInCell = entries
                     .filter(e => globallyHiddenBookings.has(e.booking.id))
                     .map(e => e.booking);
-                  const unique = [...new Map(hiddenInCell.map(b => [b.id, b])).values()];
+                  const unique = Array.from(new Map(hiddenInCell.map(b => [b.id, b])).values());
                   if (unique.length > 0) {
                     const [row, col] = key.split('-').map(Number);
                     badgeCells.set(key, { row, col, count: unique.length, bookings: unique });

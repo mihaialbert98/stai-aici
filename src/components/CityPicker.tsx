@@ -36,9 +36,11 @@ export function CityPicker({ value, onChange, placeholder = 'ex. Brașov' }: Pro
     return () => document.removeEventListener('mousedown', handler);
   }, [query, value]);
 
+  const POPULAR_CITIES = ['București', 'Brașov', 'Cluj-Napoca', 'Sibiu', 'Constanța', 'Timișoara', 'Baia Mare', 'Iași'];
+
   const filtered = query
     ? ROMANIAN_CITIES.filter(c => c.toLowerCase().includes(query.toLowerCase()))
-    : ROMANIAN_CITIES;
+    : [...POPULAR_CITIES, ...ROMANIAN_CITIES.filter(c => !POPULAR_CITIES.includes(c))];
 
   const select = (city: string) => {
     setQuery(city);
