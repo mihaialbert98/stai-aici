@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import styles from './PropertyCard.module.scss';
 import { formatRON } from '@/lib/utils';
-import { Users } from 'lucide-react';
+import { Users, Star } from 'lucide-react';
 
 interface Props {
   property: {
@@ -11,6 +11,8 @@ interface Props {
     pricePerNight: number;
     maxGuests: number;
     images: { url: string }[];
+    avgRating?: number | null;
+    reviewCount?: number;
   };
   searchParams?: { checkIn?: string; checkOut?: string; guests?: string };
 }
@@ -37,6 +39,14 @@ export function PropertyCard({ property, searchParams }: Props) {
           <div className={styles.details}>
             <Users size={14} />
             <span>{property.maxGuests} oaspeți</span>
+            {property.avgRating != null ? (
+              <>
+                <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                <span>{property.avgRating} ({property.reviewCount})</span>
+              </>
+            ) : (
+              <span className="text-xs bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded-full font-medium">Nou</span>
+            )}
           </div>
           <p className={styles.price}>
             {formatRON(property.pricePerNight)} <span className={styles.priceUnit}>/ noapte</span>

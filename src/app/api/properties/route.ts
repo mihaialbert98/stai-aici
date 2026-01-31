@@ -29,7 +29,11 @@ export async function GET(req: NextRequest) {
   const [properties, total] = await Promise.all([
     prisma.property.findMany({
       where,
-      include: { images: { orderBy: { order: 'asc' }, take: 1 }, amenities: { include: { amenity: true } } },
+      include: {
+        images: { orderBy: { order: 'asc' }, take: 1 },
+        amenities: { include: { amenity: true } },
+        reviews: { select: { rating: true } },
+      },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -37,7 +41,13 @@ export async function GET(req: NextRequest) {
     prisma.property.count({ where }),
   ]);
 
-  return NextResponse.json({ properties, total, pages: Math.ceil(total / limit) });
+  const propertiesWithRating = properties.map(({ reviews, ...p }) => ({
+    ...p,
+    avgRating: reviews.length > 0 ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10 : null,
+    reviewCount: reviews.length,
+  }));
+
+  return NextResponse.json({ properties: propertiesWithRating, total, pages: Math.ceil(total / limit) });
 }
 
 // POST /api/properties – host creates property

@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Clear existing data
+  await prisma.review.deleteMany();
   await prisma.message.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.blockedDate.deleteMany();
@@ -116,6 +117,12 @@ async function main() {
     { propertyId: createdProps[1].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, 10), endDate: addDays(now, 14), status: BookingStatus.PENDING, totalPrice: 2000, guests: 4 },
     { propertyId: createdProps[2].id, guestId: guest1.id, hostId: host2.id, startDate: addDays(now, 2), endDate: addDays(now, 5), status: BookingStatus.PENDING, totalPrice: 840, guests: 2 },
     { propertyId: createdProps[3].id, guestId: guest2.id, hostId: host2.id, startDate: addDays(now, -5), endDate: addDays(now, -2), status: BookingStatus.ACCEPTED, totalPrice: 2400, guests: 6 },
+    // Past bookings for reviews
+    { propertyId: createdProps[0].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, -20), endDate: addDays(now, -17), status: BookingStatus.ACCEPTED, totalPrice: 1050, guests: 2 },
+    { propertyId: createdProps[1].id, guestId: guest1.id, hostId: host1.id, startDate: addDays(now, -15), endDate: addDays(now, -12), status: BookingStatus.ACCEPTED, totalPrice: 1500, guests: 3 },
+    { propertyId: createdProps[0].id, guestId: guest1.id, hostId: host1.id, startDate: addDays(now, -30), endDate: addDays(now, -27), status: BookingStatus.ACCEPTED, totalPrice: 1050, guests: 2 },
+    { propertyId: createdProps[4].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, -10), endDate: addDays(now, -7), status: BookingStatus.ACCEPTED, totalPrice: 1260, guests: 2 },
+    { propertyId: createdProps[2].id, guestId: guest2.id, hostId: host2.id, startDate: addDays(now, -25), endDate: addDays(now, -22), status: BookingStatus.ACCEPTED, totalPrice: 840, guests: 2 },
     // Extra bookings for Maria (host1) - overlapping dates to test calendar overflow
     { propertyId: createdProps[4].id, guestId: guest1.id, hostId: host1.id, startDate: addDays(now, 5), endDate: addDays(now, 9), status: BookingStatus.ACCEPTED, totalPrice: 1680, guests: 2 },
     { propertyId: createdProps[6].id, guestId: guest2.id, hostId: host1.id, startDate: addDays(now, 4), endDate: addDays(now, 7), status: BookingStatus.ACCEPTED, totalPrice: 600, guests: 2 },
@@ -136,6 +143,19 @@ async function main() {
       { bookingId: createdBookings[1].id, senderId: guest2.id, role: MessageRole.GUEST, content: 'Se poate face check-in mai devreme, la ora 12?' },
     ],
   });
+
+  // Reviews for past bookings
+  const reviews = [
+    { bookingId: createdBookings[3].id, guestId: guest2.id, propertyId: createdProps[3].id, rating: 5, comment: 'Vilă superbă! Piscina a fost incredibilă, copiii au adorat-o. Vom reveni cu siguranță.' },
+    { bookingId: createdBookings[4].id, guestId: guest2.id, propertyId: createdProps[0].id, rating: 4, comment: 'Apartament curat și bine poziționat. Singura problemă a fost zgomotul de pe stradă noaptea.' },
+    { bookingId: createdBookings[5].id, guestId: guest1.id, propertyId: createdProps[1].id, rating: 5, comment: 'Cabana este exact cum arată în poze. Locul e magic, aerul proaspăt de munte, liniște totală. Recomand!' },
+    { bookingId: createdBookings[6].id, guestId: guest1.id, propertyId: createdProps[0].id, rating: 3, comment: 'Locația e bună, dar apartamentul avea nevoie de câteva reparații minore. OK per total.' },
+    { bookingId: createdBookings[7].id, guestId: guest2.id, propertyId: createdProps[4].id, rating: 4, comment: 'Priveliștea din apartament este fantastică! Zona pietonală e perfectă pentru plimbări seara.' },
+    { bookingId: createdBookings[8].id, guestId: guest2.id, propertyId: createdProps[2].id, rating: 5, comment: 'Studio perfect pentru o vacanță la mare. Aproape de plajă, curat, modern. Nota 10!' },
+  ];
+  for (const r of reviews) {
+    await prisma.review.create({ data: r });
+  }
 
   // Blocked dates on property 0
   for (let i = 20; i < 25; i++) {
