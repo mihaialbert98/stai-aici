@@ -41,6 +41,7 @@ model User {
   bookingsAsGuest Booking[]  @relation("GuestBookings")
   bookingsAsHost  Booking[]  @relation("HostBookings")
   messages        Message[]
+  reviews         Review[]
 }
 
 model Property {
@@ -64,6 +65,7 @@ model Property {
   amenities      PropertyAmenity[]
   bookings       Booking[]
   blockedDates   BlockedDate[]
+  reviews        Review[]
 
   @@index([city])
   @@index([hostId])
@@ -115,6 +117,7 @@ model Booking {
   guest      User      @relation("GuestBookings", fields: [guestId], references: [id])
   host       User      @relation("HostBookings", fields: [hostId], references: [id])
   messages   Message[]
+  review     Review?
 
   @@index([propertyId])
   @@index([guestId])
@@ -130,6 +133,23 @@ model BlockedDate {
 
   @@unique([propertyId, date])
   @@index([propertyId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  guestId   String
+  propertyId String
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  guest     User     @relation(fields: [guestId], references: [id])
+  property  Property @relation(fields: [propertyId], references: [id])
+
+  @@index([propertyId])
+  @@index([guestId])
 }
 
 model Message {

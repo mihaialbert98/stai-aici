@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { format } from 'date-fns';
+import { sendBookingAcceptedEmail, sendBookingRejectedEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       },
       guest: { select: { id: true, name: true, email: true, phone: true } },
       host: { select: { id: true, name: true, email: true, phone: true } },
+      review: true,
     },
   });
 
@@ -58,7 +61,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updated = await prisma.booking.update({
     where: { id: params.id },
     data: { status },
+    include: {
+      guest: { select: { email: true, name: true } },
+      property: { select: { title: true } },
+    },
   });
+
+  // Email notifications for accept/reject
+  if (status === 'ACCEPTED') {
+    sendBookingAcceptedEmail(
+      updated.guest.email,
+      updated.guest.name,
+      updated.property.title,
+      format(updated.startDate, 'dd.MM.yyyy'),
+      format(updated.endDate, 'dd.MM.yyyy'),
+    );
+  } else if (status === 'REJECTED') {
+    sendBookingRejectedEmail(
+      updated.guest.email,
+      updated.guest.name,
+      updated.property.title,
+      format(updated.startDate, 'dd.MM.yyyy'),
+      format(updated.endDate, 'dd.MM.yyyy'),
+    );
+  }
 
   return NextResponse.json({ booking: updated });
 }

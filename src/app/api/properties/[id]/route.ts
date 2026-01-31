@@ -18,6 +18,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
         where: { status: 'ACCEPTED' },
         select: { startDate: true, endDate: true },
       },
+      reviews: {
+        include: { guest: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'desc' },
+      },
     },
   });
 

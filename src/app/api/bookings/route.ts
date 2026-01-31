@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { bookingSchema } from '@/lib/validations';
-import { differenceInDays, eachDayOfInterval, parseISO } from 'date-fns';
+import { differenceInDays, eachDayOfInterval, parseISO, format } from 'date-fns';
+import { sendBookingRequestEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,8 +88,18 @@ export async function POST(req: NextRequest) {
         guests: data.guests,
         totalPrice: nights * property.pricePerNight,
       },
-      include: { property: true },
+      include: { property: true, host: { select: { email: true, name: true } }, guest: { select: { name: true } } },
     });
+
+    // Email notification to host
+    sendBookingRequestEmail(
+      booking.host.email,
+      booking.host.name,
+      booking.guest.name,
+      property.title,
+      format(startDate, 'dd.MM.yyyy'),
+      format(endDate, 'dd.MM.yyyy'),
+    );
 
     return NextResponse.json({ booking }, { status: 201 });
   } catch (err: any) {

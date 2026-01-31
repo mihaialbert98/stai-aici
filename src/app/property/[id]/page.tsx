@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
-import { MapPin, Users, CheckCircle, Info, BookOpen, Compass } from 'lucide-react';
+import { MapPin, Users, CheckCircle, Info, BookOpen, Compass, Star } from 'lucide-react';
 import { DateRangePicker } from '@/components/DateRangePicker';
 
 export default function PropertyPage() {
@@ -135,6 +135,10 @@ function PropertyContent() {
   if (loading) return <div className="max-w-6xl mx-auto p-8 text-gray-500">Se încarcă...</div>;
   if (!property) return <div className="max-w-6xl mx-auto p-8 text-red-500">Proprietatea nu a fost găsită.</div>;
 
+  const reviewAvg = property.reviews?.length > 0
+    ? property.reviews.reduce((s: number, r: any) => s + r.rating, 0) / property.reviews.length
+    : 0;
+
   // Gather blocked/booked dates for display
   const unavailableDates = [
     ...property.blockedDates.map((d: any) => new Date(d.date).toISOString().split('T')[0]),
@@ -171,6 +175,12 @@ function PropertyContent() {
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span className="flex items-center gap-1"><Users size={14} /> Max {property.maxGuests} oaspeți</span>
               <span className="flex items-center gap-1 font-semibold text-primary-600">{formatRON(property.pricePerNight)} / noapte</span>
+              {property.reviews?.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                  {(Math.round(reviewAvg * 10) / 10).toFixed(1)} ({property.reviews.length})
+                </span>
+              )}
             </div>
           </div>
 
@@ -223,6 +233,32 @@ function PropertyContent() {
               <p className="text-sm text-gray-500">
                 {unavailableDates.length} zile indisponibile. Verifică datele dorite în formularul de rezervare.
               </p>
+            </div>
+          )}
+
+          {/* Reviews */}
+          {property.reviews?.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <Star size={20} className="fill-yellow-400 text-yellow-400" />
+                {(Math.round(reviewAvg * 10) / 10).toFixed(1)} · {property.reviews.length} {property.reviews.length === 1 ? 'recenzie' : 'recenzii'}
+              </h2>
+              <div className="space-y-4">
+                {property.reviews.map((r: any) => (
+                  <div key={r.id} className="card">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">{r.guest.name}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1,2,3,4,5].map(s => (
+                          <Star key={s} size={14} className={s <= r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+                        ))}
+                      </div>
+                    </div>
+                    {r.comment && <p className="text-sm text-gray-700">{r.comment}</p>}
+                    <p className="text-xs text-gray-400 mt-1">{formatDate(r.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

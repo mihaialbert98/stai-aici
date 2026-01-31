@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ChatBox } from '@/components/ChatBox';
 import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
-import { Info, BookOpen, Compass } from 'lucide-react';
+import { Info, BookOpen, Compass, Star } from 'lucide-react';
 
 export default function GuestBookingDetailPage() {
   const { id } = useParams();
@@ -22,10 +22,33 @@ export default function GuestBookingDetailPage() {
     });
   }, [id]);
 
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewDone, setReviewDone] = useState(false);
+
   if (!booking || !user) return <p className="text-gray-500">Se încarcă...</p>;
 
   const nights = nightsBetween(booking.startDate, booking.endDate);
   const prop = booking.property;
+  const canReview = booking.status === 'ACCEPTED' && new Date(booking.endDate) <= new Date() && !booking.review && !reviewDone;
+
+  const handleReview = async () => {
+    if (reviewRating < 1) { setReviewError('Selectează un rating'); return; }
+    setReviewSubmitting(true);
+    setReviewError('');
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: booking.id, rating: reviewRating, comment: reviewComment || undefined }),
+    });
+    const data = await res.json();
+    setReviewSubmitting(false);
+    if (!res.ok) { setReviewError(data.error); return; }
+    setReviewDone(true);
+  };
 
   const handleCancel = async () => {
     if (!confirm('Sigur vrei să anulezi rezervarea?')) return;
@@ -74,6 +97,44 @@ export default function GuestBookingDetailPage() {
           {prop.localTips && (
             <div className="card"><h3 className="font-medium flex items-center gap-2 mb-1"><Compass size={16} className="text-primary-500" /> Recomandări</h3><p className="text-sm text-gray-700 whitespace-pre-line">{prop.localTips}</p></div>
           )}
+        </div>
+      )}
+
+      {/* Review section */}
+      {booking.review && (
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-2">Recenzia ta</h2>
+          <div className="flex items-center gap-1 mb-2">
+            {[1,2,3,4,5].map(s => (
+              <Star key={s} size={18} className={s <= booking.review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+            ))}
+          </div>
+          {booking.review.comment && <p className="text-sm text-gray-700">{booking.review.comment}</p>}
+        </div>
+      )}
+
+      {reviewDone && (
+        <div className="card text-center py-4">
+          <Star size={32} className="fill-yellow-400 text-yellow-400 mx-auto mb-2" />
+          <p className="font-medium text-green-700">Mulțumim pentru recenzie!</p>
+        </div>
+      )}
+
+      {canReview && (
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-3">Lasă o recenzie</h2>
+          <div className="flex items-center gap-1 mb-3">
+            {[1,2,3,4,5].map(s => (
+              <button key={s} type="button" onClick={() => setReviewRating(s)} onMouseEnter={() => setReviewHover(s)} onMouseLeave={() => setReviewHover(0)}>
+                <Star size={28} className={s <= (reviewHover || reviewRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+              </button>
+            ))}
+          </div>
+          <textarea className="input w-full" rows={3} placeholder="Scrie câteva cuvinte despre experiența ta (opțional)" value={reviewComment} onChange={e => setReviewComment(e.target.value)} />
+          {reviewError && <p className="text-red-600 text-sm mt-1">{reviewError}</p>}
+          <button onClick={handleReview} disabled={reviewSubmitting || reviewRating < 1} className="btn-primary mt-3 disabled:opacity-50">
+            {reviewSubmitting ? 'Se trimite...' : 'Trimite recenzia'}
+          </button>
         </div>
       )}
 
