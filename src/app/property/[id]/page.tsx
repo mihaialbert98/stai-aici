@@ -254,8 +254,8 @@ function PropertyContent() {
                     />
                   </div>
                   <div>
-                    <label className="label block">Oaspeți</label>
-                    <input type="number" className="input" min={1} max={property.maxGuests} value={guestsStr} onChange={(e) => setGuestsStr(e.target.value)} />
+                    <label className="label block mb-1">Oaspeți</label>
+                    <input type="number" className="input h-[42px]" min={1} max={property.maxGuests} value={guestsStr} onChange={(e) => setGuestsStr(e.target.value)} placeholder="1" />
                     <div className="h-5 mt-1">
                       {guestsExceedMax && (
                         <p className="text-red-600 text-xs">Maxim {property.maxGuests} oaspeți.</p>
