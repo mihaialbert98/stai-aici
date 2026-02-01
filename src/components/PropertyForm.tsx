@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Upload, X, GripVertical, ImageIcon, Loader2 } from 'lucide-react';
 
 interface Props {
   initialData?: any;
@@ -10,9 +11,12 @@ interface Props {
 
 export function PropertyForm({ initialData, propertyId }: Props) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [amenities, setAmenities] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   const [form, setForm] = useState({
     title: initialData?.title || '',
@@ -25,7 +29,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     houseRules: initialData?.houseRules || '',
     localTips: initialData?.localTips || '',
     amenityIds: initialData?.amenities?.map((a: any) => a.amenityId || a.amenity?.id) || [] as string[],
-    imageUrls: initialData?.images?.map((i: any) => i.url) || [''] as string[],
+    imageUrls: initialData?.images?.map((i: any) => i.url) || [] as string[],
   });
 
   useEffect(() => {
@@ -40,14 +44,67 @@ export function PropertyForm({ initialData, propertyId }: Props) {
       : [...form.amenityIds, id]);
   };
 
-  const updateImage = (idx: number, url: string) => {
+  const uploadFiles = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (!fileArray.length) return;
+
+    setUploading(true);
+    setError('');
+
+    const formData = new FormData();
+    fileArray.forEach(f => formData.append('files', f));
+
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error);
+        setUploading(false);
+        return;
+      }
+
+      const newUrls = data.images.map((img: { url: string }) => img.url);
+      update('imageUrls', [...form.imageUrls, ...newUrls]);
+    } catch {
+      setError('Eroare la încărcarea imaginilor');
+    }
+    setUploading(false);
+  }, [form.imageUrls]);
+
+  const removeImage = async (idx: number) => {
+    const url = form.imageUrls[idx];
+    // Delete from blob storage (fire and forget for URLs that are blob URLs)
+    if (url.includes('vercel-storage.com') || url.includes('blob.vercel-storage.com')) {
+      fetch('/api/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+    }
+    update('imageUrls', form.imageUrls.filter((_: string, i: number) => i !== idx));
+  };
+
+  const moveImage = (idx: number, direction: -1 | 1) => {
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= form.imageUrls.length) return;
     const imgs = [...form.imageUrls];
-    imgs[idx] = url;
+    [imgs[idx], imgs[newIdx]] = [imgs[newIdx], imgs[idx]];
     update('imageUrls', imgs);
   };
 
-  const addImage = () => update('imageUrls', [...form.imageUrls, '']);
-  const removeImage = (idx: number) => update('imageUrls', form.imageUrls.filter((_: any, i: number) => i !== idx));
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length) {
+      uploadFiles(e.dataTransfer.files);
+    }
+  }, [uploadFiles]);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,22 +197,91 @@ export function PropertyForm({ initialData, propertyId }: Props) {
         </div>
       </div>
 
+      {/* Image Upload Section */}
       <div>
-        <label className="label">Imagini (URL-uri)</label>
-        <div className="space-y-2">
-          {form.imageUrls.map((url: string, i: number) => (
-            <div key={i} className="flex gap-2">
-              <input className="input" placeholder="https://..." value={url} onChange={e => updateImage(i, e.target.value)} />
-              {form.imageUrls.length > 1 && (
-                <button type="button" onClick={() => removeImage(i)} className="text-red-500 text-sm hover:underline">Șterge</button>
-              )}
+        <label className="label">Imagini</label>
+
+        {/* Image previews grid */}
+        {form.imageUrls.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+            {form.imageUrls.map((url: string, i: number) => (
+              <div key={`${url}-${i}`} className="relative group rounded-lg overflow-hidden border border-gray-200 bg-gray-100 aspect-[4/3]">
+                <img src={url} alt={`Imagine ${i + 1}`} className="w-full h-full object-cover" />
+
+                {/* Overlay controls */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-start justify-between p-1.5 opacity-0 group-hover:opacity-100">
+                  <div className="flex flex-col gap-1">
+                    {i > 0 && (
+                      <button type="button" onClick={() => moveImage(i, -1)}
+                        className="w-7 h-7 bg-white/90 rounded-md flex items-center justify-center text-gray-700 hover:bg-white text-xs font-bold">
+                        ←
+                      </button>
+                    )}
+                    {i < form.imageUrls.length - 1 && (
+                      <button type="button" onClick={() => moveImage(i, 1)}
+                        className="w-7 h-7 bg-white/90 rounded-md flex items-center justify-center text-gray-700 hover:bg-white text-xs font-bold">
+                        →
+                      </button>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => removeImage(i)}
+                    className="w-7 h-7 bg-red-500/90 rounded-md flex items-center justify-center text-white hover:bg-red-600">
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* First image badge */}
+                {i === 0 && (
+                  <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded">
+                    Copertă
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Drop zone */}
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={() => setDragOver(false)}
+          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition
+            ${dragOver ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}`}
+        >
+          {uploading ? (
+            <div className="flex flex-col items-center gap-2 text-gray-500">
+              <Loader2 size={28} className="animate-spin text-primary-500" />
+              <p className="text-sm">Se încarcă imaginile...</p>
             </div>
-          ))}
-          <button type="button" onClick={addImage} className="text-primary-600 text-sm hover:underline">+ Adaugă imagine</button>
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-gray-500">
+              <Upload size={28} className="text-gray-400" />
+              <p className="text-sm">
+                <span className="text-primary-600 font-medium">Click pentru a selecta</span> sau trage imaginile aici
+              </p>
+              <p className="text-xs text-gray-400">JPEG, PNG, WebP — max. 5MB per imagine</p>
+            </div>
+          )}
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          onChange={e => {
+            if (e.target.files?.length) {
+              uploadFiles(e.target.files);
+              e.target.value = '';
+            }
+          }}
+        />
       </div>
 
-      <button type="submit" className="btn-primary" disabled={saving}>
+      <button type="submit" className="btn-primary" disabled={saving || uploading}>
         {saving ? 'Se salvează...' : propertyId ? 'Salvează modificările' : 'Creează proprietate'}
       </button>
     </form>

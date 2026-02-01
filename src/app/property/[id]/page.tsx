@@ -6,6 +6,7 @@ import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
 import { MapPin, Users, CheckCircle, Star } from 'lucide-react';
 import { PropertyGuide } from '@/components/PropertyGuide';
 import { DateRangePicker } from '@/components/DateRangePicker';
+import { ImageLightbox } from '@/components/ImageLightbox';
 
 export default function PropertyPage() {
   return (
@@ -30,6 +31,7 @@ function PropertyContent() {
   const [bookingError, setBookingError] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -157,13 +159,44 @@ function PropertyContent() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Image gallery */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-2xl overflow-hidden mb-8">
-        {property.images.map((img: any, i: number) => (
-          <div key={img.id} className={`${i === 0 ? 'md:row-span-2' : ''} aspect-[4/3] bg-gray-200`}>
-            <img src={img.url} alt={property.title} className="w-full h-full object-cover" />
+      {property.images.length === 1 ? (
+        <div className="rounded-2xl overflow-hidden mb-8">
+          <div className="aspect-[16/9] bg-gray-200 cursor-pointer" onClick={() => setLightboxIndex(0)}>
+            <img src={property.images[0].url} alt={property.title} className="w-full h-full object-cover" />
           </div>
-        ))}
-      </div>
+        </div>
+      ) : property.images.length <= 3 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-2xl overflow-hidden mb-8">
+          {property.images.map((img: any, i: number) => (
+            <div key={img.id} className={`${i === 0 ? 'md:row-span-2' : ''} aspect-[4/3] bg-gray-200 cursor-pointer`} onClick={() => setLightboxIndex(i)}>
+              <img src={img.url} alt={property.title} className="w-full h-full object-cover" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-2xl overflow-hidden mb-8">
+          {property.images.slice(0, 5).map((img: any, i: number) => (
+            <div key={img.id} className={`${i === 0 ? 'col-span-2 row-span-2' : ''} aspect-[4/3] bg-gray-200 relative cursor-pointer`} onClick={() => setLightboxIndex(i)}>
+              <img src={img.url} alt={property.title} className="w-full h-full object-cover" />
+              {i === 4 && property.images.length > 5 && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span className="text-white text-lg font-semibold">+{property.images.length - 5}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={property.images}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content */}
