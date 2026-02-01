@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PropertyCard } from '@/components/PropertyCard';
 import { CityPicker } from '@/components/CityPicker';
+import { Pagination } from '@/components/Pagination';
 import { SlidersHorizontal } from 'lucide-react';
 
 interface Amenity { id: string; name: string }
@@ -22,6 +23,7 @@ function SearchContent() {
 
   const [properties, setProperties] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [amenities, setAmenities] = useState<Amenity[]>([]);
 
@@ -48,6 +50,7 @@ function SearchContent() {
     const data = await res.json();
     setProperties(data.properties || []);
     setTotal(data.total || 0);
+    setTotalPages(data.pages || 1);
     setLoading(false);
   };
 
@@ -58,11 +61,21 @@ function SearchContent() {
     if (maxPrice) params.set('maxPrice', maxPrice);
     if (guests) params.set('guests', guests);
     if (selectedAmenities.length) params.set('amenities', selectedAmenities.join(','));
+    // Reset to page 1 when filters change
     router.push(`/search?${params.toString()}`);
   };
 
   const toggleAmenity = (id: string) => {
     setSelectedAmenities(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  };
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newPage > 1) params.set('page', String(newPage));
+    else params.delete('page');
+    router.push(`/search?${params.toString()}`);
   };
 
   return (
@@ -133,6 +146,8 @@ function SearchContent() {
           ))}
         </div>
       )}
+
+      <Pagination page={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
     </div>
   );
 }

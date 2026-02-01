@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put, del } from '@vercel/blob';
 import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -44,6 +45,15 @@ export async function DELETE(req: NextRequest) {
 
   const { url } = await req.json();
   if (!url) return NextResponse.json({ error: 'URL necesar' }, { status: 400 });
+
+  // Check if this image belongs to another user's property
+  const image = await prisma.propertyImage.findFirst({
+    where: { url },
+    include: { property: { select: { hostId: true } } },
+  });
+  if (image && image.property.hostId !== session.userId && session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Nu ai permisiunea să ștergi această imagine' }, { status: 403 });
+  }
 
   try {
     await del(url);

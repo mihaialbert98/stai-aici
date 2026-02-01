@@ -56,6 +56,21 @@ export async function sendBookingAcceptedEmail(guestEmail: string, guestName: st
   });
 }
 
+export async function sendReviewReminderEmail(guestEmail: string, guestName: string, propertyTitle: string, appUrl: string, bookingId: string) {
+  await sendEmail({
+    to: guestEmail,
+    subject: `Cum a fost sejurul la ${propertyTitle}? Lasă o recenzie!`,
+    html: `
+      <h2>Salut ${guestName},</h2>
+      <p>Sperăm că ai avut un sejur plăcut la <strong>${propertyTitle}</strong>!</p>
+      <p>Ne-ar ajuta foarte mult dacă ai lăsa o recenzie despre experiența ta. Feedback-ul tău îi ajută pe alți călători să aleagă cazarea potrivită.</p>
+      <p><a href="${appUrl}/dashboard/guest/bookings/${bookingId}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Lasă o recenzie</a></p>
+      <br/>
+      <p>— Echipa StaiAici</p>
+    `,
+  });
+}
+
 export async function sendBookingRejectedEmail(guestEmail: string, guestName: string, propertyTitle: string, startDate: string, endDate: string) {
   await sendEmail({
     to: guestEmail,

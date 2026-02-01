@@ -4,19 +4,24 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatRON, formatDate } from '@/lib/utils';
+import { Pagination } from '@/components/Pagination';
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetch('/api/admin/bookings').then(r => r.json()).then(d => {
+    setLoading(true);
+    fetch(`/api/admin/bookings?page=${page}`).then(r => r.json()).then(d => {
       setBookings(d.bookings || []);
+      setTotalPages(d.pages || 1);
       setLoading(false);
     });
-  }, []);
+  }, [page]);
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading && bookings.length === 0) return <p className="text-gray-500">Se încarcă...</p>;
 
   return (
     <div>
@@ -53,6 +58,7 @@ export default function AdminBookingsPage() {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

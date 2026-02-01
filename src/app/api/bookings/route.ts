@@ -15,22 +15,29 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = req.nextUrl;
   const role = searchParams.get('role') || 'guest'; // guest | host
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = 10;
 
   const where = role === 'host'
     ? { hostId: session.userId }
     : { guestId: session.userId };
 
-  const bookings = await prisma.booking.findMany({
-    where,
-    include: {
-      property: { include: { images: { take: 1, orderBy: { order: 'asc' } } } },
-      guest: { select: { id: true, name: true, email: true } },
-      host: { select: { id: true, name: true, email: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      include: {
+        property: { include: { images: { take: 1, orderBy: { order: 'asc' } } } },
+        guest: { select: { id: true, name: true, email: true } },
+        host: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.booking.count({ where }),
+  ]);
 
-  return NextResponse.json({ bookings });
+  return NextResponse.json({ bookings, total, pages: Math.ceil(total / limit) });
 }
 
 // POST /api/bookings – guest creates booking request

@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { ActiveBadge } from '@/components/ActiveBadge';
+import { Pagination } from '@/components/Pagination';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchUsers = () => {
-    fetch('/api/admin/users').then(r => r.json()).then(d => {
+  const fetchUsers = (p = page) => {
+    setLoading(true);
+    fetch(`/api/admin/users?page=${p}`).then(r => r.json()).then(d => {
       setUsers(d.users || []);
+      setTotalPages(d.pages || 1);
       setLoading(false);
     });
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); }, [page]);
 
   const toggleActive = async (id: string, isActive: boolean) => {
     await fetch(`/api/admin/users/${id}`, {
@@ -25,7 +30,7 @@ export default function AdminUsersPage() {
     fetchUsers();
   };
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading && users.length === 0) return <p className="text-gray-500">Se încarcă...</p>;
 
   return (
     <div>
@@ -66,6 +71,7 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { BookingCard } from '@/components/BookingCard';
 import { EmptyState } from '@/components/EmptyState';
+import { Pagination } from '@/components/Pagination';
 import { formatRON, formatDate } from '@/lib/utils';
 import { MessageCircle } from 'lucide-react';
 
@@ -13,15 +14,19 @@ interface Props {
 export function BookingList({ role }: Props) {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchBookings = () => {
-    fetch(`/api/bookings?role=${role}`).then(r => r.json()).then(d => {
+  const fetchBookings = (p = page) => {
+    setLoading(true);
+    fetch(`/api/bookings?role=${role}&page=${p}`).then(r => r.json()).then(d => {
       setBookings(d.bookings || []);
+      setTotalPages(d.pages || 1);
       setLoading(false);
     });
   };
 
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(() => { fetchBookings(); }, [page]);
 
   const updateStatus = async (id: string, status: string) => {
     await fetch(`/api/bookings/${id}`, {
@@ -32,7 +37,7 @@ export function BookingList({ role }: Props) {
     fetchBookings();
   };
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading && bookings.length === 0) return <p className="text-gray-500">Se încarcă...</p>;
 
   const basePath = role === 'host' ? '/dashboard/host/bookings' : '/dashboard/guest/bookings';
   const pending = bookings.filter(b => b.status === 'PENDING');
@@ -86,6 +91,8 @@ export function BookingList({ role }: Props) {
           />
         ))}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

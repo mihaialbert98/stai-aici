@@ -32,6 +32,7 @@ const typeIcon: Record<string, typeof Bell> = {
   BOOKING_CANCELLED: XCircle,
   MESSAGE_NEW: MessageSquare,
   REVIEW_NEW: Star,
+  REVIEW_REMINDER: Star,
 };
 
 function timeAgo(dateStr: string) {

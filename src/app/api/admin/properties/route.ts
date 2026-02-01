@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session || session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Neautorizat' }, { status: 403 });
+  }
+
   const page = parseInt(req.nextUrl.searchParams.get('page') || '1');
   const limit = 20;
   const [properties, total] = await Promise.all([

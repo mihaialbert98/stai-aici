@@ -3,19 +3,24 @@
 import { useEffect, useState } from 'react';
 import { formatRON } from '@/lib/utils';
 import { ActiveBadge } from '@/components/ActiveBadge';
+import { Pagination } from '@/components/Pagination';
 
 export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchProps = () => {
-    fetch('/api/admin/properties').then(r => r.json()).then(d => {
+  const fetchProps = (p = page) => {
+    setLoading(true);
+    fetch(`/api/admin/properties?page=${p}`).then(r => r.json()).then(d => {
       setProperties(d.properties || []);
+      setTotalPages(d.pages || 1);
       setLoading(false);
     });
   };
 
-  useEffect(() => { fetchProps(); }, []);
+  useEffect(() => { fetchProps(); }, [page]);
 
   const toggleActive = async (id: string, isActive: boolean) => {
     await fetch(`/api/admin/properties/${id}`, {
@@ -26,7 +31,7 @@ export default function AdminPropertiesPage() {
     fetchProps();
   };
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading && properties.length === 0) return <p className="text-gray-500">Se încarcă...</p>;
 
   return (
     <div>
@@ -65,6 +70,7 @@ export default function AdminPropertiesPage() {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

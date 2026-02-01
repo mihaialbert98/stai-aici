@@ -33,6 +33,7 @@ enum NotificationType {
   BOOKING_CANCELLED
   MESSAGE_NEW
   REVIEW_NEW
+  REVIEW_REMINDER
 }
 
 model User {
