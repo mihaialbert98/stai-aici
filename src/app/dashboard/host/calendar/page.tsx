@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
-  getDay, isToday, parseISO, isSameDay, isBefore, isAfter, isWithinInterval
+  getDay, isToday, parseISO, isSameDay, isBefore, isAfter,
 } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock } from 'lucide-react';
 import { formatRON } from '@/lib/utils';
 
 interface BookingData {
@@ -34,47 +34,47 @@ const PROPERTY_COLORS = [
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'În așteptare',
   ACCEPTED: 'Acceptată',
-  REJECTED: 'Respinsă',
-  CANCELLED: 'Anulată',
 };
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   ACCEPTED: 'bg-green-100 text-green-800',
-  REJECTED: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-gray-100 text-gray-800',
 };
 
 export default function HostCalendarPage() {
   const [properties, setProperties] = useState<any[]>([]);
-  const [selectedProps, setSelectedProps] = useState<Set<string>>(new Set());
+  const [activePropId, setActivePropId] = useState<string>('all');
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState<{ booking: BookingData; x: number; y: number } | null>(null);
-  const [overflow, setOverflow] = useState<{ row: number; col: number; bookings: BookingData[]; x: number; y: number } | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load properties and bookings
+  // Range selection state
+  const [rangeStart, setRangeStart] = useState<string | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+  const [hoverDate, setHoverDate] = useState<string | null>(null);
+  const [blocking, setBlocking] = useState(false);
+  const [conflictMsg, setConflictMsg] = useState<string | null>(null);
+
+  const gridRef = useRef<HTMLDivElement>(null);
+  const propDropdownRef = useRef<HTMLDivElement>(null);
+  const [propDropdownOpen, setPropDropdownOpen] = useState(false);
+
+  const isAllView = activePropId === 'all';
+  const activeProp = properties.find(p => p.id === activePropId);
+
   useEffect(() => {
     (async () => {
       const me = await fetch('/api/auth/me').then(r => r.json());
       const data = await fetch('/api/properties?limit=100').then(r => r.json());
       const myProps = (data.properties || []).filter((p: any) => p.hostId === me.user?.userId);
       setProperties(myProps);
-      // Select all by default
-      setSelectedProps(new Set(myProps.map((p: any) => p.id)));
 
-      // Fetch host bookings
-      const bookingData = await fetch('/api/bookings?role=host').then(r => r.json());
+      const bookingData = await fetch('/api/bookings?role=host&limit=200').then(r => r.json());
       setBookings(bookingData.bookings || []);
 
-      // Fetch blocked dates for all properties
       const blocked: Record<string, string[]> = {};
       for (const p of myProps) {
         const pd = await fetch(`/api/properties/${p.id}`).then(r => r.json());
@@ -82,11 +82,11 @@ export default function HostCalendarPage() {
       }
       setBlockedDates(blocked);
 
+      if (myProps.length === 1) setActivePropId(myProps[0].id);
       setLoading(false);
     })();
   }, []);
 
-  // Track mobile breakpoint
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
     const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(!e.matches);
@@ -95,85 +95,159 @@ export default function HostCalendarPage() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Close tooltip and dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest('[data-tooltip]') && !target.closest('[data-pill]')) {
         setTooltip(null);
       }
-      if (!target.closest('[data-overflow]') && !target.closest('[data-more]')) {
-        setOverflow(null);
-      }
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        setDropdownOpen(false);
+      if (propDropdownRef.current && !propDropdownRef.current.contains(target)) {
+        setPropDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const toggleProperty = (id: string) => {
-    setSelectedProps(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selectedProps.size === properties.length) {
-      setSelectedProps(new Set());
-    } else {
-      setSelectedProps(new Set(properties.map(p => p.id)));
-    }
-  };
-
   const getPropertyColor = (propertyId: string) => {
     const idx = properties.findIndex(p => p.id === propertyId);
     return PROPERTY_COLORS[idx % PROPERTY_COLORS.length];
   };
 
-  const toggleDate = async (propertyId: string, dateStr: string) => {
-    const propBlocked = blockedDates[propertyId] || [];
-    const isBlocked = propBlocked.includes(dateStr);
-    await fetch(`/api/properties/${propertyId}/blocked-dates`, {
+  const getBookingForDate = useCallback((dateStr: string, propId: string) => {
+    return bookings.find(b => {
+      if (b.property.id !== propId) return false;
+      if (b.status !== 'ACCEPTED' && b.status !== 'PENDING') return false;
+      const start = b.startDate.split('T')[0];
+      const end = b.endDate.split('T')[0];
+      return dateStr >= start && dateStr <= end;
+    });
+  }, [bookings]);
+
+  const getRangeDates = useCallback((start: string, end: string): string[] => {
+    const s = parseISO(start);
+    const e = parseISO(end);
+    const [from, to] = isBefore(s, e) ? [s, e] : [e, s];
+    return eachDayOfInterval({ start: from, end: to }).map(d => format(d, 'yyyy-MM-dd'));
+  }, []);
+
+  const handleDateClick = useCallback((dateStr: string) => {
+    if (isAllView) return;
+    setConflictMsg(null);
+
+    const booking = getBookingForDate(dateStr, activePropId);
+    if (booking) {
+      const guestName = booking.guest.name;
+      const start = format(parseISO(booking.startDate), 'd MMM', { locale: ro });
+      const end = format(parseISO(booking.endDate), 'd MMM', { locale: ro });
+      const statusLabel = booking.status === 'ACCEPTED' ? 'acceptată' : 'în așteptare';
+      setConflictMsg(`Nu poți bloca ${format(parseISO(dateStr), 'd MMMM', { locale: ro })} — există o rezervare ${statusLabel} de la ${guestName} (${start} – ${end}). Anulează rezervarea pentru a putea bloca această perioadă.`);
+      return;
+    }
+
+    if (!rangeStart || rangeEnd) {
+      setRangeStart(dateStr);
+      setRangeEnd(null);
+    } else {
+      // Check if range contains any booked dates
+      const rangeDates = getRangeDates(rangeStart, dateStr);
+      const conflicting = rangeDates
+        .map(d => getBookingForDate(d, activePropId))
+        .find(b => !!b);
+      if (conflicting) {
+        const guestName = conflicting.guest.name;
+        const start = format(parseISO(conflicting.startDate), 'd MMM', { locale: ro });
+        const end = format(parseISO(conflicting.endDate), 'd MMM', { locale: ro });
+        setConflictMsg(`Perioada selectată include o rezervare de la ${guestName} (${start} – ${end}). Anulează rezervarea pentru a putea bloca toată perioada.`);
+        clearSelection();
+        return;
+      }
+      setRangeEnd(dateStr);
+    }
+  }, [isAllView, activePropId, rangeStart, rangeEnd, getBookingForDate, getRangeDates]);
+
+  const clearSelection = () => {
+    setRangeStart(null);
+    setRangeEnd(null);
+    setHoverDate(null);
+    setConflictMsg(null);
+  };
+
+  const confirmBlock = async (block: boolean) => {
+    if (isAllView || !rangeStart) return;
+    const end = rangeEnd || rangeStart;
+    const dates = getRangeDates(rangeStart, end);
+    // Double-check: reject if any date has a booking
+    const conflicting = dates.find(d => !!getBookingForDate(d, activePropId));
+    if (conflicting) {
+      setConflictMsg('Nu poți bloca o perioadă care include rezervări. Anulează rezervările mai întâi.');
+      clearSelection();
+      return;
+    }
+
+    setBlocking(true);
+    await fetch(`/api/properties/${activePropId}/blocked-dates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dates: [dateStr], block: !isBlocked }),
+      body: JSON.stringify({ dates: validDates, block }),
     });
-    setBlockedDates(prev => ({
-      ...prev,
-      [propertyId]: isBlocked ? propBlocked.filter(d => d !== dateStr) : [...propBlocked, dateStr],
-    }));
+
+    setBlockedDates(prev => {
+      const propBlocked = prev[activePropId] || [];
+      const updated = block
+        ? [...new Set([...propBlocked, ...validDates])]
+        : propBlocked.filter(d => !validDates.includes(d));
+      return { ...prev, [activePropId]: updated };
+    });
+    clearSelection();
+    setBlocking(false);
   };
+
+  const getPreviewDates = useCallback((): Set<string> => {
+    if (!rangeStart) return new Set();
+    const end = rangeEnd || hoverDate || rangeStart;
+    if (!end) return new Set([rangeStart]);
+    return new Set(getRangeDates(rangeStart, end));
+  }, [rangeStart, rangeEnd, hoverDate, getRangeDates]);
+
+  const isRangeAllBlocked = useCallback((): boolean => {
+    if (isAllView || !rangeStart) return false;
+    const end = rangeEnd || rangeStart;
+    const dates = getRangeDates(rangeStart, end);
+    const propBlocked = blockedDates[activePropId] || [];
+    return dates.every(d => propBlocked.includes(d));
+  }, [isAllView, activePropId, rangeStart, rangeEnd, getRangeDates, blockedDates]);
+
+  const hasAnyBlocked = useCallback((): boolean => {
+    if (isAllView || !rangeStart) return false;
+    const end = rangeEnd || rangeStart;
+    const dates = getRangeDates(rangeStart, end);
+    const propBlocked = blockedDates[activePropId] || [];
+    return dates.some(d => propBlocked.includes(d));
+  }, [isAllView, activePropId, rangeStart, rangeEnd, getRangeDates, blockedDates]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startPad = getDay(monthStart) === 0 ? 6 : getDay(monthStart) - 1;
 
-  // Get bookings visible in the current month for selected properties
   const visibleBookings = bookings.filter(b => {
-    if (!selectedProps.has(b.property.id)) return false;
+    if (isAllView ? false : b.property.id !== activePropId) {
+      if (!isAllView) return false;
+    }
     if (b.status === 'REJECTED' || b.status === 'CANCELLED') return false;
     const start = parseISO(b.startDate);
     const end = parseISO(b.endDate);
     return !(isAfter(start, monthEnd) || isBefore(end, monthStart));
   });
 
-  // Build pill rows: for each booking, compute which days in the grid it occupies
   const getPillInfo = (booking: BookingData) => {
     const start = parseISO(booking.startDate);
     const end = parseISO(booking.endDate);
     const clampedStart = isBefore(start, monthStart) ? monthStart : start;
     const clampedEnd = isAfter(end, monthEnd) ? monthEnd : end;
-
     const startIdx = startPad + days.findIndex(d => isSameDay(d, clampedStart));
     const endIdx = startPad + days.findIndex(d => isSameDay(d, clampedEnd));
-
-    // Split into week rows
     const rows: { row: number; colStart: number; colEnd: number }[] = [];
     let currentCol = startIdx;
     while (currentCol <= endIdx) {
@@ -190,94 +264,121 @@ export default function HostCalendarPage() {
     const rect = gridRef.current?.getBoundingClientRect();
     const pillRect = e.currentTarget.getBoundingClientRect();
     if (!rect) return;
-    const x = pillRect.left - rect.left;
-    const y = pillRect.bottom - rect.top + 4;
-    setTooltip({ booking, x, y });
+    setTooltip({ booking, x: pillRect.left - rect.left, y: pillRect.bottom - rect.top + 4 });
   };
 
   if (loading) return <p className="text-gray-500">Se încarcă...</p>;
 
   const totalRows = Math.ceil((startPad + days.length) / 7);
+  const previewDates = getPreviewDates();
+  const propBlocked = !isAllView ? (blockedDates[activePropId] || []) : [];
+  const blockedCount = propBlocked.length;
+  const rangeCount = rangeStart ? getRangeDates(rangeStart, rangeEnd || rangeStart).length : 0;
+  const allBlocked = isRangeAllBlocked();
 
   return (
-    <div>
+    <div className="pb-24">
       <h1 className="text-2xl font-bold mb-6">Calendar disponibilitate</h1>
 
       {properties.length === 0 ? (
         <p className="text-gray-500">Nu ai proprietăți.</p>
       ) : (
         <>
-          {/* Property dropdown multi-select */}
-          <div className="mb-6 relative" ref={dropdownRef}>
-            <label className="label mb-2 block">Proprietăți</label>
+          {/* Property selector */}
+          <div className="relative mb-6" ref={propDropdownRef}>
             <button
               type="button"
-              onClick={() => setDropdownOpen(o => !o)}
-              className="input text-left flex items-center justify-between w-full md:max-w-md"
+              onClick={() => setPropDropdownOpen(o => !o)}
+              className={`w-full text-left px-4 py-3 rounded-lg border text-sm font-medium transition flex items-center justify-between ${
+                isAllView
+                  ? 'bg-white border-gray-300 text-gray-700'
+                  : (() => { const c = getPropertyColor(activePropId); return `${c.bg} ${c.border} ${c.text}`; })()
+              }`}
             >
-              <span className="truncate">
-                {selectedProps.size === properties.length
-                  ? 'Toate proprietățile'
-                  : selectedProps.size === 0
-                    ? 'Selectează proprietăți'
-                    : `${selectedProps.size} ${selectedProps.size === 1 ? 'proprietate selectată' : 'proprietăți selectate'}`}
-              </span>
-              <ChevronRight size={16} className={`text-gray-400 transition-transform ${dropdownOpen ? 'rotate-90' : ''}`} />
+              <div className="flex items-center gap-2 min-w-0">
+                {!isAllView && (
+                  <span className={`w-3 h-3 rounded-full flex-shrink-0 ${getPropertyColor(activePropId).text.replace('text-', 'bg-')}`} />
+                )}
+                <span className="truncate">
+                  {isAllView ? 'Toate proprietățile' : activeProp?.title}
+                </span>
+                {!isAllView && blockedCount > 0 && (
+                  <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                    {blockedCount} blocate
+                  </span>
+                )}
+              </div>
+              <ChevronRight size={16} className={`text-gray-400 transition-transform flex-shrink-0 ${propDropdownOpen ? 'rotate-90' : ''}`} />
             </button>
-            {dropdownOpen && (
-              <div className="absolute z-30 mt-1 w-full md:max-w-md bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-                <label className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100">
-                  <input
-                    type="checkbox"
-                    checked={selectedProps.size === properties.length}
-                    onChange={toggleAll}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="font-medium">Toate proprietățile</span>
-                </label>
+            {propDropdownOpen && (
+              <div className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+                {properties.length > 1 && (
+                  <button
+                    onClick={() => { setActivePropId('all'); clearSelection(); setPropDropdownOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${isAllView ? 'font-semibold bg-gray-50' : ''}`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
+                    Toate proprietățile
+                    <span className="text-xs text-gray-400 ml-auto">vizualizare</span>
+                  </button>
+                )}
+                {properties.length > 1 && <div className="border-t border-gray-100 my-1" />}
                 {properties.map((p, idx) => {
                   const color = PROPERTY_COLORS[idx % PROPERTY_COLORS.length];
+                  const isActive = activePropId === p.id;
+                  const propBlockedCount = (blockedDates[p.id] || []).length;
                   return (
-                    <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedProps.has(p.id)}
-                        onChange={() => toggleProperty(p.id)}
-                        className="rounded border-gray-300"
-                      />
-                      <span className={`inline-block w-3 h-3 rounded-sm ${color.bg} ${color.border} border flex-shrink-0`} />
+                    <button
+                      key={p.id}
+                      onClick={() => { setActivePropId(p.id); clearSelection(); setPropDropdownOpen(false); }}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${isActive ? 'font-semibold bg-gray-50' : ''}`}
+                    >
+                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${color.bg} ${color.border} border`} />
                       <span className="truncate">{p.title}</span>
-                    </label>
+                      {propBlockedCount > 0 && (
+                        <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium ml-auto flex-shrink-0">
+                          {propBlockedCount} blocate
+                        </span>
+                      )}
+                    </button>
                   );
                 })}
-                <div className="flex gap-2 px-3 py-2 border-t border-gray-100 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setDropdownOpen(false)}
-                    className="btn-primary text-xs px-3 py-1.5 flex-1"
-                  >
-                    Aplică
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDropdownOpen(false)}
-                    className="btn-outline text-xs px-3 py-1.5 flex-1"
-                  >
-                    Închide
-                  </button>
-                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Instructions */}
+          <div className="min-h-[2.5rem] mb-4 flex items-start flex-col gap-2">
+            {!isAllView ? (
+              <p className="text-sm text-gray-500">
+                <Lock size={13} className="inline mr-1 -mt-0.5" />
+                Click pe o dată sau selectează o perioadă pentru a bloca/debloca zile.
+                {blockedCount > 0 && <span className="text-red-500 ml-1">({blockedCount} zile blocate)</span>}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Vizualizare generală. Selectează o proprietate pentru a gestiona disponibilitatea.
+              </p>
+            )}
+            {conflictMsg && (
+              <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 w-full">
+                <span className="flex-shrink-0 mt-0.5">⚠</span>
+                <span>{conflictMsg}</span>
+                <button onClick={() => setConflictMsg(null)} className="ml-auto flex-shrink-0 text-amber-500 hover:text-amber-700">
+                  <X size={14} />
+                </button>
               </div>
             )}
           </div>
 
           {/* Calendar */}
-          <div className="card" ref={calendarRef}>
+          <div className="card">
             <div className="flex items-center justify-between mb-6">
-              <button onClick={() => setCurrentMonth(m => addMonths(m, -1))} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => { setCurrentMonth(m => addMonths(m, -1)); clearSelection(); }} className="p-2 hover:bg-gray-100 rounded-lg">
                 <ChevronLeft size={22} />
               </button>
               <h3 className="text-lg font-semibold capitalize">{format(currentMonth, 'LLLL yyyy', { locale: ro })}</h3>
-              <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => { setCurrentMonth(m => addMonths(m, 1)); clearSelection(); }} className="p-2 hover:bg-gray-100 rounded-lg">
                 <ChevronRight size={22} />
               </button>
             </div>
@@ -300,7 +401,7 @@ export default function HostCalendarPage() {
               ))}
             </div>
 
-            {/* Calendar grid with pills */}
+            {/* Calendar grid */}
             <div className="relative" ref={gridRef}>
               <div className="grid grid-cols-7 gap-0">
                 {Array.from({ length: startPad }).map((_, i) => (
@@ -308,25 +409,62 @@ export default function HostCalendarPage() {
                 ))}
                 {days.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
-                  const isBlockedForAny = Array.from(selectedProps).some(pid => (blockedDates[pid] || []).includes(dateStr));
+                  const isBlockedHere = propBlocked.includes(dateStr);
+                  // In "all" view, show blocked if any property has it blocked
+                  const isBlockedAny = isAllView && properties.some(p => (blockedDates[p.id] || []).includes(dateStr));
+                  const isInPreview = !isAllView && previewDates.has(dateStr);
+                  const isRangeEdge = dateStr === rangeStart || dateStr === rangeEnd;
+                  const hasAcceptedBooking = !isAllView && !!getBookingForDate(dateStr, activePropId);
+                  const canClick = !isAllView && (!hasAcceptedBooking || getBookingForDate(dateStr, activePropId)?.status !== 'ACCEPTED');
+
                   return (
                     <div
                       key={dateStr}
-                      className={`h-20 md:h-28 border-b border-r border-gray-100 p-0.5 md:p-1 text-right ${
-                        isToday(day) ? 'bg-primary-50' : ''
-                      } ${isBlockedForAny ? 'bg-red-50' : ''}`}
+                      onClick={() => canClick && handleDateClick(dateStr)}
+                      onMouseEnter={() => {
+                        if (!isAllView && rangeStart && !rangeEnd && !isMobile) setHoverDate(dateStr);
+                      }}
+                      onMouseLeave={() => { if (!isMobile) setHoverDate(null); }}
+                      className={`h-20 md:h-28 border-b border-r border-gray-100 p-0.5 md:p-1 text-right relative transition-colors
+                        ${!isAllView && canClick ? 'cursor-pointer hover:bg-gray-50' : ''}
+                        ${isToday(day) && !isInPreview && !isBlockedHere ? 'bg-primary-50' : ''}
+                        ${(isBlockedHere || isBlockedAny) && !isInPreview ? 'bg-red-50' : ''}
+                        ${isInPreview && !isBlockedHere ? 'bg-indigo-50' : ''}
+                        ${isInPreview && isBlockedHere ? 'bg-red-100' : ''}
+                        ${hasAcceptedBooking && !isAllView ? 'cursor-not-allowed' : ''}
+                      `}
                     >
-                      <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 text-xs md:text-sm rounded-full ${
-                        isToday(day) ? 'bg-primary-600 text-white font-bold' : 'text-gray-700'
+                      <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 text-xs md:text-sm rounded-full z-[1] relative ${
+                        isRangeEdge && !isAllView
+                          ? 'bg-indigo-600 text-white font-bold'
+                          : isToday(day) ? 'bg-primary-600 text-white font-bold'
+                          : 'text-gray-700'
                       }`}>
                         {format(day, 'd')}
                       </span>
+                      {/* Blocked indicator */}
+                      {isBlockedHere && (
+                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] text-red-400 font-medium">blocat</span>
+                      )}
+                      {/* In "all" view, show which properties have this date blocked */}
+                      {isAllView && (() => {
+                        const blockedProps = properties.filter(p => (blockedDates[p.id] || []).includes(dateStr));
+                        if (!blockedProps.length) return null;
+                        return (
+                          <div className="absolute bottom-0.5 left-0.5 flex gap-0.5">
+                            {blockedProps.map((p, idx) => {
+                              const color = getPropertyColor(p.id);
+                              return <span key={p.id} className={`w-2 h-2 rounded-full ${color.bg} ${color.border} border`} title={`${p.title} — blocat`} />;
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Reservation pill overlays with overflow handling */}
+              {/* Reservation pill overlays */}
               {(() => {
                 const pillH = isMobile ? 18 : 22;
                 const pillGap = 2;
@@ -334,8 +472,6 @@ export default function HostCalendarPage() {
                 const pillOffset = isMobile ? 26 : 30;
                 const maxSlots = Math.floor((cellH - pillOffset) / (pillH + pillGap));
 
-                // Build per-row slot assignments: for each booking segment, assign a stackIndex
-                // and track which bookings are in each (row, col) cell
                 const cellBookings: Map<string, { booking: BookingData; stackIndex: number }[]> = new Map();
                 const pillSegments: { booking: BookingData; bookingIdx: number; pr: { row: number; colStart: number; colEnd: number }; ri: number; stackIndex: number }[] = [];
 
@@ -350,7 +486,6 @@ export default function HostCalendarPage() {
                       if (overlaps) stackIndex++;
                     }
                     pillSegments.push({ booking, bookingIdx, pr, ri, stackIndex });
-                    // Register in each cell this segment spans
                     for (let c = pr.colStart; c <= pr.colEnd; c++) {
                       const key = `${pr.row}-${c}`;
                       if (!cellBookings.has(key)) cellBookings.set(key, []);
@@ -359,7 +494,6 @@ export default function HostCalendarPage() {
                   });
                 });
 
-                // For each cell, determine how many bookings overflow
                 const overflowCells: Map<string, BookingData[]> = new Map();
                 cellBookings.forEach((entries, key) => {
                   if (entries.length > maxSlots) {
@@ -367,8 +501,6 @@ export default function HostCalendarPage() {
                   }
                 });
 
-                // Determine which bookings to fully hide:
-                // If a booking overflows in ANY cell of ANY row, hide ALL its segments across all rows.
                 const globallyHiddenBookings = new Set<string>();
                 pillSegments.forEach(seg => {
                   for (let c = seg.pr.colStart; c <= seg.pr.colEnd; c++) {
@@ -386,12 +518,9 @@ export default function HostCalendarPage() {
                   }
                 });
 
-                // Find which cells need a "+N" badge — any cell that contains a globally hidden booking
                 const badgeCells: Map<string, { row: number; col: number; count: number; bookings: BookingData[] }> = new Map();
                 cellBookings.forEach((entries, key) => {
-                  const hiddenInCell = entries
-                    .filter(e => globallyHiddenBookings.has(e.booking.id))
-                    .map(e => e.booking);
+                  const hiddenInCell = entries.filter(e => globallyHiddenBookings.has(e.booking.id)).map(e => e.booking);
                   const unique = Array.from(new Map(hiddenInCell.map(b => [b.id, b])).values());
                   if (unique.length > 0) {
                     const [row, col] = key.split('-').map(Number);
@@ -402,7 +531,7 @@ export default function HostCalendarPage() {
                 return (
                   <>
                     {pillSegments.filter(seg => !hiddenPills.has(`${seg.booking.id}-${seg.ri}`)).map(seg => {
-                      const color = getPropertyColor(seg.booking.property.id);
+                      const color = isAllView ? getPropertyColor(seg.booking.property.id) : PROPERTY_COLORS[0];
                       const top = (seg.pr.row * cellH) + pillOffset + seg.stackIndex * (pillH + pillGap);
                       const left = `${(seg.pr.colStart / 7) * 100}%`;
                       const width = `${((seg.pr.colEnd - seg.pr.colStart + 1) / 7) * 100}%`;
@@ -412,21 +541,15 @@ export default function HostCalendarPage() {
                           data-pill
                           onClick={(e) => handlePillClick(e, seg.booking)}
                           className={`absolute ${color.pill} border rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity`}
-                          style={{
-                            top: `${top}px`,
-                            left,
-                            width,
-                            height: `${pillH}px`,
-                            zIndex: 10 + seg.stackIndex,
-                          }}
+                          style={{ top: `${top}px`, left, width, height: `${pillH}px`, zIndex: 10 + seg.stackIndex }}
                           title={`${seg.booking.guest.name} - ${seg.booking.property.title}`}
                         >
-                          {isMobile ? seg.booking.guest.name.split(' ')[0] : seg.booking.guest.name} {!isMobile && selectedProps.size > 1 && `· ${seg.booking.property.title}`}
+                          {isMobile ? seg.booking.guest.name.split(' ')[0] : seg.booking.guest.name}
+                          {!isMobile && isAllView && ` · ${seg.booking.property.title}`}
                         </div>
                       );
                     })}
 
-                    {/* "+N more" badges */}
                     {Array.from(badgeCells.values()).map(({ row, col, count, bookings: cellBk }) => {
                       const top = (row * cellH) + pillOffset + (maxSlots - 1) * (pillH + pillGap);
                       const left = `${(col / 7) * 100}%`;
@@ -434,30 +557,10 @@ export default function HostCalendarPage() {
                       return (
                         <div
                           key={`more-${row}-${col}`}
-                          data-more
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = gridRef.current?.getBoundingClientRect();
-                            const btnRect = e.currentTarget.getBoundingClientRect();
-                            if (!rect) return;
-                            setOverflow({
-                              row, col,
-                              bookings: cellBk,
-                              x: btnRect.left - rect.left,
-                              y: btnRect.bottom - rect.top + 4,
-                            });
-                          }}
-                          className="absolute px-1 text-[10px] md:text-xs font-semibold text-gray-600 cursor-pointer hover:text-gray-900 truncate"
-                          style={{
-                            top: `${top}px`,
-                            left,
-                            width,
-                            height: `${pillH}px`,
-                            lineHeight: `${pillH}px`,
-                            zIndex: 20,
-                          }}
+                          className="absolute px-1 text-[10px] md:text-xs font-semibold text-gray-600 truncate"
+                          style={{ top: `${top}px`, left, width, height: `${pillH}px`, lineHeight: `${pillH}px`, zIndex: 20 }}
                         >
-                          +{count} mai mult
+                          +{count}
                         </div>
                       );
                     })}
@@ -471,8 +574,8 @@ export default function HostCalendarPage() {
                   data-tooltip
                   className="absolute bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50 w-72"
                   style={{
-                    top: Math.min(tooltip.y, (totalRows * 112) - 200),
-                    left: Math.min(tooltip.x, gridRef.current ? gridRef.current.clientWidth - 300 : 0),
+                    top: Math.min(tooltip.y, (totalRows * (isMobile ? 80 : 112)) - 200),
+                    left: Math.min(Math.max(tooltip.x, 0), gridRef.current ? gridRef.current.clientWidth - 300 : 0),
                   }}
                 >
                   <div className="flex justify-between items-start mb-3">
@@ -494,52 +597,12 @@ export default function HostCalendarPage() {
                     </p>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <a
-                      href={`/dashboard/host/bookings/${tooltip.booking.id}`}
-                      className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
-                    >
-                      <ExternalLink size={14} /> Detalii rezervare
+                    <a href={`/dashboard/host/bookings/${tooltip.booking.id}`} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+                      <ExternalLink size={14} /> Detalii
                     </a>
-                    <a
-                      href={`/dashboard/host/bookings/${tooltip.booking.id}#messages`}
-                      className="btn-outline text-xs px-3 py-1.5 flex items-center gap-1"
-                    >
+                    <a href={`/dashboard/host/bookings/${tooltip.booking.id}#messages`} className="btn-outline text-xs px-3 py-1.5 flex items-center gap-1">
                       <MessageSquare size={14} /> Mesaje
                     </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Overflow popover */}
-              {overflow && (
-                <div
-                  data-overflow
-                  className="absolute bg-white rounded-xl shadow-xl border border-gray-200 p-3 z-50 w-64"
-                  style={{
-                    top: Math.min(overflow.y, (totalRows * (isMobile ? 80 : 112)) - 150),
-                    left: Math.min(overflow.x, gridRef.current ? gridRef.current.clientWidth - 270 : 0),
-                  }}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-xs text-gray-500">Toate rezervările</h4>
-                    <button onClick={() => setOverflow(null)} className="text-gray-400 hover:text-gray-600">
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                    {overflow.bookings.map(b => {
-                      const color = getPropertyColor(b.property.id);
-                      return (
-                        <div
-                          key={b.id}
-                          data-pill
-                          onClick={(e) => { setOverflow(null); handlePillClick(e, b); }}
-                          className={`${color.pill} border rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 truncate`}
-                        >
-                          {b.guest.name} {selectedProps.size > 1 && `· ${b.property.title}`}
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
               )}
@@ -547,9 +610,12 @@ export default function HostCalendarPage() {
 
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Dată blocată</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Blocat</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> Azi</span>
-              {properties.filter(p => selectedProps.has(p.id)).map((p, idx) => {
+              {!isAllView && rangeStart && (
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200" /> Selecție</span>
+              )}
+              {isAllView && properties.map((p, idx) => {
                 const color = PROPERTY_COLORS[idx % PROPERTY_COLORS.length];
                 return (
                   <span key={p.id} className="flex items-center gap-1">
@@ -559,8 +625,40 @@ export default function HostCalendarPage() {
                 );
               })}
             </div>
-            <p className="text-xs text-gray-400 mt-2">Click pe o rezervare pentru detalii.</p>
           </div>
+
+          {/* Action bar for range confirmation — fixed at bottom */}
+          {rangeStart && !isAllView && (
+            <div className="fixed bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:max-w-md bg-white border-t md:border md:rounded-xl shadow-xl p-4 z-50">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm min-w-0">
+                  <p className="font-medium truncate">{activeProp?.title}</p>
+                  <p className="text-gray-500 text-xs">
+                    {rangeCount} {rangeCount === 1 ? 'zi selectată' : 'zile selectate'}
+                    {!rangeEnd && rangeStart && ' — click altă dată pentru perioadă'}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  {!allBlocked && (
+                    <button onClick={() => confirmBlock(true)} disabled={blocking}
+                      className="btn-primary text-xs px-3 py-2 flex items-center gap-1.5">
+                      <Lock size={13} /> Blochează
+                    </button>
+                  )}
+                  {hasAnyBlocked() && (
+                    <button onClick={() => confirmBlock(false)} disabled={blocking}
+                      className="px-3 py-2 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-100 transition flex items-center gap-1.5">
+                      <Unlock size={13} /> Deblochează
+                    </button>
+                  )}
+                  <button onClick={clearSelection}
+                    className="px-3 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    <X size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
