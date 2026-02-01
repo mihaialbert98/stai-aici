@@ -7,47 +7,52 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/properties – public search
 export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  const city = searchParams.get('city');
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
-  const guests = searchParams.get('guests');
-  const amenities = searchParams.get('amenities'); // comma-separated ids
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = Math.min(parseInt(searchParams.get('limit') || '12'), 50);
+  try {
+    const { searchParams } = req.nextUrl;
+    const city = searchParams.get('city');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const guests = searchParams.get('guests');
+    const amenities = searchParams.get('amenities'); // comma-separated ids
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '12'), 50);
 
-  const where: any = { isActive: true };
-  if (city) where.city = { contains: city, mode: 'insensitive' };
-  if (minPrice) where.pricePerNight = { ...where.pricePerNight, gte: parseFloat(minPrice) };
-  if (maxPrice) where.pricePerNight = { ...where.pricePerNight, lte: parseFloat(maxPrice) };
-  if (guests) where.maxGuests = { gte: parseInt(guests) };
-  if (amenities) {
-    const ids = amenities.split(',');
-    where.amenities = { some: { amenityId: { in: ids } } };
+    const where: any = { isActive: true };
+    if (city) where.city = { contains: city, mode: 'insensitive' };
+    if (minPrice) where.pricePerNight = { ...where.pricePerNight, gte: parseFloat(minPrice) };
+    if (maxPrice) where.pricePerNight = { ...where.pricePerNight, lte: parseFloat(maxPrice) };
+    if (guests) where.maxGuests = { gte: parseInt(guests) };
+    if (amenities) {
+      const ids = amenities.split(',');
+      where.amenities = { some: { amenityId: { in: ids } } };
+    }
+
+    const [properties, total] = await Promise.all([
+      prisma.property.findMany({
+        where,
+        include: {
+          images: { orderBy: { order: 'asc' }, take: 1 },
+          amenities: { include: { amenity: true } },
+          reviews: { select: { rating: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.property.count({ where }),
+    ]);
+
+    const propertiesWithRating = properties.map(({ reviews, ...p }) => ({
+      ...p,
+      avgRating: reviews.length > 0 ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10 : null,
+      reviewCount: reviews.length,
+    }));
+
+    return NextResponse.json({ properties: propertiesWithRating, total, pages: Math.ceil(total / limit) });
+  } catch (err: any) {
+    console.error('GET /api/properties error:', err);
+    return NextResponse.json({ error: err.message, properties: [], total: 0, pages: 0 }, { status: 500 });
   }
-
-  const [properties, total] = await Promise.all([
-    prisma.property.findMany({
-      where,
-      include: {
-        images: { orderBy: { order: 'asc' }, take: 1 },
-        amenities: { include: { amenity: true } },
-        reviews: { select: { rating: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.property.count({ where }),
-  ]);
-
-  const propertiesWithRating = properties.map(({ reviews, ...p }) => ({
-    ...p,
-    avgRating: reviews.length > 0 ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10 : null,
-    reviewCount: reviews.length,
-  }));
-
-  return NextResponse.json({ properties: propertiesWithRating, total, pages: Math.ceil(total / limit) });
 }
 
 // POST /api/properties – host creates property
