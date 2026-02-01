@@ -195,8 +195,8 @@ export default function HostCalendarPage() {
     setBlockedDates(prev => {
       const propBlocked = prev[activePropId] || [];
       const updated = block
-        ? [...new Set([...propBlocked, ...validDates])]
-        : propBlocked.filter(d => !validDates.includes(d));
+        ? Array.from(new Set([...propBlocked, ...dates]))
+        : propBlocked.filter(d => !dates.includes(d));
       return { ...prev, [activePropId]: updated };
     });
     clearSelection();
