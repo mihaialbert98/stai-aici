@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { ArrowLeftRight, Menu, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeftRight, Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import styles from './Navbar.module.scss';
 
@@ -17,6 +17,8 @@ interface User {
 export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -24,15 +26,24 @@ export function Navbar() {
     fetch('/api/auth/me').then(r => r.json()).then(d => setUser(d.user || null));
   }, [pathname]);
 
-  // Close mobile menu on route change
+  useEffect(() => { setMenuOpen(false); setProfileOpen(false); }, [pathname]);
+
+  // Close profile dropdown on outside click
   useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    if (profileOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [profileOpen]);
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
     setMenuOpen(false);
+    setProfileOpen(false);
     router.push('/');
     router.refresh();
   };
@@ -43,45 +54,85 @@ export function Navbar() {
       ? '/dashboard/host'
       : '/dashboard/guest/bookings';
 
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : '';
+
+  const isHostMode = pathname.startsWith('/dashboard/host');
+
   return (
     <nav className={styles.nav}>
       <div className={styles.container}>
-        <Link href="/" className={styles.logo}>StaiAici</Link>
-
-        {/* Desktop links */}
-        <div className={styles.desktopLinks}>
-          {user ? (
-            <div className={styles.userMenu}>
-              {user.role === 'HOST' && (
-                pathname.startsWith('/dashboard/host')
-                  ? <button onClick={() => router.push('/')} className={styles.modeToggle}>
-                      <ArrowLeftRight size={14} /> Explorează
-                    </button>
-                  : <button onClick={() => router.push('/dashboard/host')} className={styles.modeToggle}>
-                      <ArrowLeftRight size={14} /> Mod gazdă
-                    </button>
-              )}
-              <Link href={dashboardLink} className={styles.link}>Dashboard</Link>
-              <NotificationBell />
-              <span className={styles.userName}>{user.name}</span>
-              <button onClick={logout} className="btn-secondary text-sm !py-1 !px-3">Ieși</button>
-            </div>
-          ) : (
-            <>
-              <Link href="/auth/login" className="btn-secondary text-sm !py-1 !px-3">Intră în cont</Link>
-              <Link href="/auth/register" className="btn-primary text-sm !py-1 !px-3">Înregistrare</Link>
-            </>
+        {/* Left: logo + mode toggle */}
+        <div className={styles.leftSection}>
+          <Link href="/" className={styles.logo}>StaiAici</Link>
+          {user?.role === 'HOST' && (
+            <button
+              onClick={() => router.push(isHostMode ? '/' : '/dashboard/host')}
+              className={styles.modeToggle}
+            >
+              <ArrowLeftRight size={14} />
+              <span>{isHostMode ? 'Explorează' : 'Mod gazdă'}</span>
+            </button>
           )}
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className={styles.hamburger}
-          onClick={() => setMenuOpen(o => !o)}
-          aria-label="Meniu"
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Right desktop: bell + profile dropdown */}
+        <div className={styles.desktopRight}>
+          {user ? (
+            <>
+              <NotificationBell />
+              <div className={styles.profileDropdown} ref={profileRef}>
+                <button
+                  onClick={() => setProfileOpen(o => !o)}
+                  className={styles.profileButton}
+                >
+                  <span className={styles.avatar}>{initials}</span>
+                  <ChevronDown size={14} className={`${styles.chevron} ${profileOpen ? styles.chevronOpen : ''}`} />
+                </button>
+
+                {profileOpen && (
+                  <div className={styles.dropdownMenu}>
+                    <div className={styles.dropdownHeader}>
+                      <p className={styles.dropdownName}>{user.name}</p>
+                      <p className={styles.dropdownEmail}>{user.email}</p>
+                    </div>
+                    <div className={styles.dropdownDivider} />
+                    <Link
+                      href={dashboardLink}
+                      className={styles.dropdownItem}
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <LayoutDashboard size={16} />
+                      Dashboard
+                    </Link>
+                    <button onClick={logout} className={styles.dropdownItem}>
+                      <LogOut size={16} />
+                      Ieși din cont
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className={styles.authButtons}>
+              <Link href="/auth/login" className={styles.loginBtn}>Intră în cont</Link>
+              <Link href="/auth/register" className={styles.registerBtn}>Înregistrare</Link>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile: bell + hamburger */}
+        <div className={styles.mobileActions}>
+          {user && <NotificationBell />}
+          <button
+            className={styles.hamburger}
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label="Meniu"
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
@@ -89,24 +140,42 @@ export function Navbar() {
         <div className={styles.mobileMenu}>
           {user ? (
             <>
-              <p className={styles.mobileUserName}>{user.name}</p>
+              <div className={styles.mobileHeader}>
+                <span className={styles.mobileAvatar}>{initials}</span>
+                <div>
+                  <p className={styles.mobileUserName}>{user.name}</p>
+                  <p className={styles.mobileUserEmail}>{user.email}</p>
+                </div>
+              </div>
+              <div className={styles.mobileDivider} />
               {user.role === 'HOST' && (
-                pathname.startsWith('/dashboard/host')
-                  ? <button onClick={() => { router.push('/'); setMenuOpen(false); }} className={styles.mobileLink}>
-                      <ArrowLeftRight size={16} /> Explorează
-                    </button>
-                  : <button onClick={() => { router.push('/dashboard/host'); setMenuOpen(false); }} className={styles.mobileLink}>
-                      <ArrowLeftRight size={16} /> Mod gazdă
-                    </button>
+                <button
+                  onClick={() => { router.push(isHostMode ? '/' : '/dashboard/host'); setMenuOpen(false); }}
+                  className={styles.mobileLink}
+                >
+                  <ArrowLeftRight size={16} />
+                  {isHostMode ? 'Explorează' : 'Mod gazdă'}
+                </button>
               )}
-              <Link href={dashboardLink} className={styles.mobileLink} onClick={() => setMenuOpen(false)}>Dashboard</Link>
-              <button onClick={logout} className={styles.mobileLink}>Ieși din cont</button>
+              <Link href={dashboardLink} className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
+                <LayoutDashboard size={16} />
+                Dashboard
+              </Link>
+              <div className={styles.mobileDivider} />
+              <button onClick={logout} className={`${styles.mobileLink} ${styles.mobileLinkDanger}`}>
+                <LogOut size={16} />
+                Ieși din cont
+              </button>
             </>
           ) : (
-            <>
-              <Link href="/auth/login" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>Intră în cont</Link>
-              <Link href="/auth/register" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>Înregistrare</Link>
-            </>
+            <div className={styles.mobileAuthButtons}>
+              <Link href="/auth/login" className={styles.mobileLoginBtn} onClick={() => setMenuOpen(false)}>
+                Intră în cont
+              </Link>
+              <Link href="/auth/register" className={styles.mobileRegisterBtn} onClick={() => setMenuOpen(false)}>
+                Înregistrare
+              </Link>
+            </div>
           )}
         </div>
       )}

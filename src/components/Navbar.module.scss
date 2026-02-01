@@ -1,49 +1,141 @@
 .nav {
-  @apply bg-white border-b border-gray-200 sticky top-0 z-50;
+  @apply bg-white/80 backdrop-blur-md border-b border-gray-200/60 sticky top-0 z-50;
 }
 
 .container {
   @apply max-w-7xl mx-auto px-4 h-16 flex items-center justify-between;
 }
 
-.logo {
-  @apply text-xl font-bold text-primary-600;
-}
-
-.desktopLinks {
-  @apply hidden md:flex items-center gap-4;
-}
-
-.link {
-  @apply text-sm text-gray-600 hover:text-primary-600 transition;
-}
-
-.userMenu {
+/* Left section: logo + mode toggle */
+.leftSection {
   @apply flex items-center gap-3;
 }
 
-.userName {
-  @apply text-sm font-medium text-gray-700;
+.logo {
+  @apply text-xl font-bold text-primary-600 tracking-tight;
 }
 
 .modeToggle {
-  @apply flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-300 text-gray-600
-    hover:border-primary-500 hover:text-primary-600 transition cursor-pointer;
+  @apply hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full
+    bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-600 transition-all cursor-pointer;
+}
+
+/* Desktop right section */
+.desktopRight {
+  @apply hidden md:flex items-center gap-2;
+}
+
+.authButtons {
+  @apply flex items-center gap-2;
+}
+
+.loginBtn {
+  @apply text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-50 transition;
+}
+
+.registerBtn {
+  @apply text-sm font-medium text-white bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700 transition;
+}
+
+/* Profile dropdown */
+.profileDropdown {
+  @apply relative;
+}
+
+.profileButton {
+  @apply flex items-center gap-1.5 p-1 pr-2 rounded-full hover:bg-gray-100 transition cursor-pointer;
+}
+
+.avatar {
+  @apply w-8 h-8 rounded-full bg-primary-600 text-white text-xs font-semibold
+    inline-flex items-center justify-center select-none flex-shrink-0 leading-none tracking-wider;
+}
+
+.chevron {
+  @apply text-gray-400 transition-transform duration-200;
+}
+
+.chevronOpen {
+  @apply rotate-180;
+}
+
+.dropdownMenu {
+  @apply absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg
+    border border-gray-200/80 z-50 overflow-hidden py-1;
+}
+
+.dropdownHeader {
+  @apply px-4 py-3;
+}
+
+.dropdownName {
+  @apply text-sm font-semibold text-gray-900;
+}
+
+.dropdownEmail {
+  @apply text-xs text-gray-500 mt-0.5 truncate;
+}
+
+.dropdownDivider {
+  @apply border-t border-gray-100 my-1;
+}
+
+.dropdownItem {
+  @apply flex items-center gap-2.5 w-full text-left text-sm text-gray-700
+    px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer;
 }
 
 /* Mobile */
+.mobileActions {
+  @apply flex md:hidden items-center gap-1;
+}
+
 .hamburger {
-  @apply md:hidden p-2 text-gray-600 hover:text-gray-900;
+  @apply p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition;
 }
 
 .mobileMenu {
-  @apply md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1;
+  @apply md:hidden border-t border-gray-100 bg-white px-4 py-3;
+}
+
+.mobileHeader {
+  @apply flex items-center gap-3 px-2 py-2;
+}
+
+.mobileAvatar {
+  @apply w-10 h-10 rounded-full bg-primary-600 text-white text-sm font-semibold
+    flex items-center justify-center flex-shrink-0;
 }
 
 .mobileUserName {
-  @apply text-sm font-semibold text-gray-800 px-3 py-2 border-b border-gray-100 mb-1;
+  @apply text-sm font-semibold text-gray-900;
+}
+
+.mobileUserEmail {
+  @apply text-xs text-gray-500 truncate;
+}
+
+.mobileDivider {
+  @apply border-t border-gray-100 my-2;
 }
 
 .mobileLink {
-  @apply flex items-center gap-2 w-full text-left text-sm text-gray-700 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition;
+  @apply flex items-center gap-3 w-full text-left text-sm text-gray-700
+    px-3 py-2.5 rounded-lg hover:bg-gray-50 transition;
+}
+
+.mobileLinkDanger {
+  @apply text-red-600 hover:bg-red-50;
+}
+
+.mobileAuthButtons {
+  @apply flex flex-col gap-2 py-1;
+}
+
+.mobileLoginBtn {
+  @apply text-center text-sm font-medium text-gray-700 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition;
+}
+
+.mobileRegisterBtn {
+  @apply text-center text-sm font-medium text-white bg-primary-600 py-2.5 rounded-lg hover:bg-primary-700 transition;
 }
