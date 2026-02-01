@@ -189,7 +189,7 @@ export default function HostCalendarPage() {
     await fetch(`/api/properties/${activePropId}/blocked-dates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dates: validDates, block }),
+      body: JSON.stringify({ dates, block }),
     });
 
     setBlockedDates(prev => {
