@@ -26,6 +26,15 @@ enum MessageRole {
   ADMIN
 }
 
+enum NotificationType {
+  BOOKING_NEW
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  MESSAGE_NEW
+  REVIEW_NEW
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -42,6 +51,7 @@ model User {
   bookingsAsHost  Booking[]  @relation("HostBookings")
   messages        Message[]
   reviews         Review[]
+  notifications   Notification[]
 }
 
 model Property {
@@ -116,8 +126,9 @@ model Booking {
   property   Property  @relation(fields: [propertyId], references: [id])
   guest      User      @relation("GuestBookings", fields: [guestId], references: [id])
   host       User      @relation("HostBookings", fields: [hostId], references: [id])
-  messages   Message[]
-  review     Review?
+  messages      Message[]
+  review        Review?
+  notifications Notification[]
 
   @@index([propertyId])
   @@index([guestId])
@@ -164,4 +175,21 @@ model Message {
   sender    User    @relation(fields: [senderId], references: [id])
 
   @@index([bookingId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  bookingId String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id])
+  booking   Booking?         @relation(fields: [bookingId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([createdAt])
 }

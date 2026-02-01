@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeftRight, Menu, X } from 'lucide-react';
+import { NotificationBell } from '@/components/NotificationBell';
 import styles from './Navbar.module.scss';
 
 interface User {
@@ -61,6 +62,7 @@ export function Navbar() {
                     </button>
               )}
               <Link href={dashboardLink} className={styles.link}>Dashboard</Link>
+              <NotificationBell />
               <span className={styles.userName}>{user.name}</span>
               <button onClick={logout} className="btn-secondary text-sm !py-1 !px-3">Ieși</button>
             </div>

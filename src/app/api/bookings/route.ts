@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { bookingSchema } from '@/lib/validations';
 import { differenceInDays, eachDayOfInterval, parseISO, format } from 'date-fns';
 import { sendBookingRequestEmail } from '@/lib/email';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +90,15 @@ export async function POST(req: NextRequest) {
         totalPrice: nights * property.pricePerNight,
       },
       include: { property: true, host: { select: { email: true, name: true } }, guest: { select: { name: true } } },
+    });
+
+    // Notify host about new booking request
+    createNotification({
+      userId: property.hostId,
+      type: 'BOOKING_NEW',
+      title: 'Cerere nouă de rezervare',
+      message: `${booking.guest.name} a solicitat o rezervare la ${property.title} (${format(startDate, 'dd.MM.yyyy')} – ${format(endDate, 'dd.MM.yyyy')})`,
+      bookingId: booking.id,
     });
 
     // Email notification to host

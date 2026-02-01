@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { z } from 'zod';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,15 @@ export async function POST(req: NextRequest) {
         rating: data.rating,
         comment: data.comment || null,
       },
+    });
+
+    // Notify host about new review
+    createNotification({
+      userId: booking.hostId,
+      type: 'REVIEW_NEW',
+      title: 'Recenzie nouă',
+      message: `Ai primit o recenzie de ${data.rating} stele${data.comment ? `: "${data.comment.slice(0, 80)}${data.comment.length > 80 ? '...' : ''}"` : ''}`,
+      bookingId: booking.id,
     });
 
     return NextResponse.json({ review }, { status: 201 });

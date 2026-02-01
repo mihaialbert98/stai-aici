@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { messageSchema } from '@/lib/validations';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,18 @@ export async function POST(req: NextRequest) {
       },
       include: { sender: { select: { id: true, name: true } } },
     });
+
+    // Notify other participants about new message
+    const recipients = [booking.guestId, booking.hostId].filter(uid => uid !== session.userId);
+    for (const recipientId of recipients) {
+      createNotification({
+        userId: recipientId,
+        type: 'MESSAGE_NEW',
+        title: 'Mesaj nou',
+        message: `${message.sender.name}: ${data.content.slice(0, 100)}${data.content.length > 100 ? '...' : ''}`,
+        bookingId: data.bookingId,
+      });
+    }
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (err: any) {

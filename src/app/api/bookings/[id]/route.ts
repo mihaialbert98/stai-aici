@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { format } from 'date-fns';
 import { sendBookingAcceptedEmail, sendBookingRejectedEmail } from '@/lib/email';
+import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,33 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       property: { select: { title: true } },
     },
   });
+
+  // In-app notifications
+  if (status === 'ACCEPTED') {
+    createNotification({
+      userId: booking.guestId,
+      type: 'BOOKING_ACCEPTED',
+      title: 'Rezervare acceptată',
+      message: `Rezervarea ta la ${updated.property.title} a fost acceptată!`,
+      bookingId: booking.id,
+    });
+  } else if (status === 'REJECTED') {
+    createNotification({
+      userId: booking.guestId,
+      type: 'BOOKING_REJECTED',
+      title: 'Rezervare refuzată',
+      message: `Rezervarea ta la ${updated.property.title} a fost refuzată.`,
+      bookingId: booking.id,
+    });
+  } else if (status === 'CANCELLED') {
+    createNotification({
+      userId: booking.hostId,
+      type: 'BOOKING_CANCELLED',
+      title: 'Rezervare anulată',
+      message: `O rezervare la ${updated.property.title} a fost anulată de oaspete.`,
+      bookingId: booking.id,
+    });
+  }
 
   // Email notifications for accept/reject
   if (status === 'ACCEPTED') {

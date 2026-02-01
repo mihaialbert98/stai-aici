@@ -22,7 +22,11 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(npx tsx:*)",
-      "Bash(set \"DATABASE_URL=postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\")"
+      "Bash(set \"DATABASE_URL=postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash(cmd /c \"taskkill /f /im node.exe 2>nul\")",
+      "Bash(cmd /c \"rmdir /s /q C:\\\\Projects\\\\stai-aici\\\\node_modules\\\\.prisma\")",
+      "Bash(cmd /c \"powershell -Command \"\"Add-MpExclusion -Path ''C:\\\\Projects\\\\stai-aici\\\\node_modules\\\\.prisma''\"\" 2>nul & npx prisma generate\")",
+      "Bash(cmd /c \"if exist C:\\\\Projects\\\\stai-aici\\\\node_modules\\\\.prisma\\\\client\\\\index.js echo SUCCESS else echo FAILED\")"
     ]
   }
 }
