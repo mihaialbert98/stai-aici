@@ -16,11 +16,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Nu poți modifica un administrator' }, { status: 400 });
   }
 
-  const { isActive } = await req.json();
+  const body = await req.json();
+  const data: any = {};
+  if (typeof body.isActive === 'boolean') data.isActive = body.isActive;
+  if (body.role && ['GUEST', 'HOST'].includes(body.role)) data.role = body.role;
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: 'Nimic de actualizat' }, { status: 400 });
+  }
+
   const updated = await prisma.user.update({
     where: { id: params.id },
-    data: { isActive },
-    select: { id: true, isActive: true },
+    data,
+    select: { id: true, isActive: true, role: true },
   });
 
   return NextResponse.json({ user: updated });

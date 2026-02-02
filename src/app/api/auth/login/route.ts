@@ -3,10 +3,14 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createToken, setSessionCookie } from '@/lib/auth';
 import { loginSchema } from '@/lib/validations';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const blocked = rateLimit(req, { limit: 10, windowMs: 15 * 60 * 1000, prefix: 'login' });
+  if (blocked) return blocked;
+
   try {
     const body = await req.json();
     const data = loginSchema.parse(body);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { format } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 import { sendBookingAcceptedEmail, sendBookingRejectedEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 
@@ -64,6 +64,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   // Guest can cancel own bookings
   if (status === 'CANCELLED' && booking.guestId !== session.userId && session.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Doar oaspetele poate anula' }, { status: 403 });
+  }
+
+  // Enforce cancellation policy for guest cancellations of accepted bookings
+  if (status === 'CANCELLED' && booking.guestId === session.userId && booking.status === 'ACCEPTED') {
+    const property = await prisma.property.findUnique({ where: { id: booking.propertyId }, select: { cancellationPolicy: true } });
+    const hoursUntilCheckin = differenceInHours(booking.startDate, new Date());
+    const policy = property?.cancellationPolicy || 'FLEXIBLE';
+
+    if (policy === 'FLEXIBLE' && hoursUntilCheckin < 24) {
+      return NextResponse.json({ error: 'Anularea gratuită este posibilă doar cu cel puțin 24 de ore înainte de check-in' }, { status: 400 });
+    }
+    if (policy === 'MODERATE' && hoursUntilCheckin < 5 * 24) {
+      return NextResponse.json({ error: 'Anularea gratuită este posibilă doar cu cel puțin 5 zile înainte de check-in' }, { status: 400 });
+    }
+    if (policy === 'STRICT' && hoursUntilCheckin < 7 * 24) {
+      return NextResponse.json({ error: 'Conform politicii stricte, anularea nu mai este posibilă cu mai puțin de 7 zile înainte de check-in' }, { status: 400 });
+    }
   }
 
   const updated = await prisma.booking.update({

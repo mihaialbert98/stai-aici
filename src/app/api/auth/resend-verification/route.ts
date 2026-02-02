@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createVerificationToken } from '@/lib/auth';
 import { sendVerificationEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const blocked = rateLimit(req, { limit: 3, windowMs: 15 * 60 * 1000, prefix: 'resend' });
+  if (blocked) return blocked;
+
   try {
     const { email } = await req.json();
     if (!email) {

@@ -22,6 +22,7 @@ export const propertySchema = z.object({
   checkInInfo: z.string().optional(),
   houseRules: z.string().optional(),
   localTips: z.string().optional(),
+  cancellationPolicy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT']).optional(),
   amenityIds: z.array(z.string()).optional(),
   imageUrls: z.array(z.string()).optional(),
 });

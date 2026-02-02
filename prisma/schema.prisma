@@ -26,6 +26,12 @@ enum MessageRole {
   ADMIN
 }
 
+enum CancellationPolicy {
+  FLEXIBLE    // free cancel up to 24h before check-in
+  MODERATE    // free cancel up to 5 days before check-in
+  STRICT      // 50% refund up to 7 days before, no refund after
+}
+
 enum NotificationType {
   BOOKING_NEW
   BOOKING_ACCEPTED
@@ -71,6 +77,7 @@ model Property {
   checkInInfo    String?  // check-in instructions
   houseRules     String?
   localTips      String?  // local recommendations
+  cancellationPolicy CancellationPolicy @default(FLEXIBLE)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

@@ -28,6 +28,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     checkInInfo: initialData?.checkInInfo || '',
     houseRules: initialData?.houseRules || '',
     localTips: initialData?.localTips || '',
+    cancellationPolicy: initialData?.cancellationPolicy || 'FLEXIBLE',
     amenityIds: initialData?.amenities?.map((a: any) => a.amenityId || a.amenity?.id) || [] as string[],
     imageUrls: initialData?.images?.map((i: any) => i.url) || [] as string[],
   });
@@ -183,6 +184,15 @@ export function PropertyForm({ initialData, propertyId }: Props) {
       <div>
         <label className="label">Recomandări locale</label>
         <textarea className="input" placeholder="ex. Restaurant recomandat: Caru' cu Bere (5 min)" value={form.localTips} onChange={e => update('localTips', e.target.value)} />
+      </div>
+
+      <div>
+        <label className="label">Politica de anulare</label>
+        <select className="input" value={form.cancellationPolicy} onChange={e => update('cancellationPolicy', e.target.value)}>
+          <option value="FLEXIBLE">Flexibilă — anulare gratuită cu 24h înainte</option>
+          <option value="MODERATE">Moderată — anulare gratuită cu 5 zile înainte</option>
+          <option value="STRICT">Strictă — anulare cu 7 zile înainte, fără rambursare după</option>
+        </select>
       </div>
 
       <div>

@@ -254,6 +254,18 @@ function PropertyContent() {
           {/* Guest Guide */}
           <PropertyGuide checkInInfo={property.checkInInfo} houseRules={property.houseRules} localTips={property.localTips} />
 
+          {/* Cancellation policy */}
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Politica de anulare</h2>
+            <p className="text-sm text-gray-600">
+              {property.cancellationPolicy === 'STRICT'
+                ? 'Strictă — anulare gratuită cu cel puțin 7 zile înainte de check-in. Fără rambursare după.'
+                : property.cancellationPolicy === 'MODERATE'
+                  ? 'Moderată — anulare gratuită cu cel puțin 5 zile înainte de check-in.'
+                  : 'Flexibilă — anulare gratuită cu cel puțin 24 de ore înainte de check-in.'}
+            </p>
+          </div>
+
           {/* Availability note */}
           {unavailableDates.length > 0 && (
             <div>

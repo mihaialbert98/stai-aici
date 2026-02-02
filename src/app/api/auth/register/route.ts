@@ -4,10 +4,14 @@ import { prisma } from '@/lib/prisma';
 import { createVerificationToken } from '@/lib/auth';
 import { sendVerificationEmail } from '@/lib/email';
 import { registerSchema } from '@/lib/validations';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const blocked = rateLimit(req, { limit: 5, windowMs: 15 * 60 * 1000, prefix: 'register' });
+  if (blocked) return blocked;
+
   try {
     const body = await req.json();
     const data = registerSchema.parse(body);

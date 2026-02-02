@@ -180,9 +180,16 @@ export function BookingDetail({ role }: Props) {
           <div><span className="text-gray-500">Total</span><p className="font-medium text-primary-600">{formatRON(booking.totalPrice)}</p></div>
         </div>
 
-        {/* Guest: cancel pending */}
-        {role === 'guest' && booking.status === 'PENDING' && (
-          <button onClick={handleCancel} className="btn-danger mt-4">Anulează rezervarea</button>
+        {/* Guest: cancel pending or accepted */}
+        {role === 'guest' && (booking.status === 'PENDING' || (booking.status === 'ACCEPTED' && !isAfterCheckout)) && (
+          <div className="mt-4">
+            {booking.status === 'ACCEPTED' && prop.cancellationPolicy && (
+              <p className="text-xs text-gray-500 mb-2">
+                Politica de anulare: {prop.cancellationPolicy === 'STRICT' ? 'Strictă (7 zile înainte)' : prop.cancellationPolicy === 'MODERATE' ? 'Moderată (5 zile înainte)' : 'Flexibilă (24h înainte)'}
+              </p>
+            )}
+            <button onClick={handleCancel} className="btn-danger">Anulează rezervarea</button>
+          </div>
         )}
 
         {/* Host: accept/reject pending */}

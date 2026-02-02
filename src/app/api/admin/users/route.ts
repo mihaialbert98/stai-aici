@@ -11,15 +11,30 @@ export async function GET(req: NextRequest) {
   }
 
   const page = parseInt(req.nextUrl.searchParams.get('page') || '1');
+  const search = req.nextUrl.searchParams.get('search') || '';
+  const roleFilter = req.nextUrl.searchParams.get('role') || '';
   const limit = 20;
+
+  const where: any = {};
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+  if (roleFilter && ['GUEST', 'HOST', 'ADMIN'].includes(roleFilter)) {
+    where.role = roleFilter;
+  }
+
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where,
       select: { id: true, email: true, name: true, role: true, isActive: true, createdAt: true, _count: { select: { properties: true, bookingsAsGuest: true } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.user.count(),
+    prisma.user.count({ where }),
   ]);
   return NextResponse.json({ users, total, pages: Math.ceil(total / limit) });
 }
