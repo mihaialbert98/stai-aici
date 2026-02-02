@@ -50,6 +50,8 @@ export default function HostCalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState<{ booking: BookingData; x: number; y: number } | null>(null);
+  const [overflowTooltip, setOverflowTooltip] = useState<{ bookings: BookingData[]; x: number; y: number } | null>(null);
+  const [blockedTooltip, setBlockedTooltip] = useState<{ properties: string[]; x: number; y: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // Range selection state
@@ -77,20 +79,16 @@ export default function HostCalendarPage() {
 
   useEffect(() => {
     (async () => {
-      const me = await fetch('/api/auth/me').then(r => r.json());
-      const data = await fetch('/api/properties?limit=100').then(r => r.json());
-      const myProps = (data.properties || []).filter((p: any) => p.hostId === me.user?.userId);
+      const data = await fetch('/api/host/calendar').then(r => r.json());
+      const myProps = data.properties || [];
       setProperties(myProps);
-
-      const bookingData = await fetch('/api/bookings?role=host&limit=200').then(r => r.json());
-      setBookings(bookingData.bookings || []);
+      setBookings(data.bookings || []);
 
       const blocked: Record<string, string[]> = {};
       const synced: Record<string, Record<string, string>> = {};
       const syncsMap: Record<string, any[]> = {};
       for (const p of myProps) {
-        const pd = await fetch(`/api/properties/${p.id}`).then(r => r.json());
-        const dates = pd.property?.blockedDates || [];
+        const dates = p.blockedDates || [];
         blocked[p.id] = dates.map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd'));
         synced[p.id] = {};
         dates.forEach((bd: any) => {
@@ -98,8 +96,7 @@ export default function HostCalendarPage() {
             synced[p.id][format(new Date(bd.date), 'yyyy-MM-dd')] = bd.source;
           }
         });
-        const syncRes = await fetch(`/api/properties/${p.id}/calendar-sync`).then(r => r.json());
-        syncsMap[p.id] = syncRes.syncs || [];
+        syncsMap[p.id] = p.calendarSyncs || [];
       }
       setBlockedDates(blocked);
       setSyncedDates(synced);
@@ -121,8 +118,10 @@ export default function HostCalendarPage() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('[data-tooltip]') && !target.closest('[data-pill]')) {
+      if (!target.closest('[data-tooltip]') && !target.closest('[data-pill]') && !target.closest('[data-overflow]')) {
         setTooltip(null);
+        setOverflowTooltip(null);
+        setBlockedTooltip(null);
       }
       if (propDropdownRef.current && !propDropdownRef.current.contains(target)) {
         setPropDropdownOpen(false);
@@ -486,10 +485,31 @@ export default function HostCalendarPage() {
                         const blockedProps = properties.filter(p => (blockedDates[p.id] || []).includes(dateStr));
                         if (!blockedProps.length) return null;
                         return (
-                          <div className="absolute bottom-0.5 left-0.5 flex gap-0.5">
-                            {blockedProps.map((p, idx) => {
+                          <div
+                            data-blocked-dots
+                            className="absolute bottom-0.5 left-0.5 flex gap-0.5 flex-wrap cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = gridRef.current?.getBoundingClientRect();
+                              const targetRect = e.currentTarget.getBoundingClientRect();
+                              if (!rect) return;
+                              setTooltip(null);
+                              setOverflowTooltip(null);
+                              setBlockedTooltip({
+                                properties: blockedProps.map(bp => bp.title),
+                                x: targetRect.left - rect.left,
+                                y: targetRect.top - rect.top - 8,
+                              });
+                            }}
+                          >
+                            {blockedProps.map((p) => {
                               const color = getPropertyColor(p.id);
-                              return <span key={p.id} className={`w-2 h-2 rounded-full ${color.bg} ${color.border} border`} title={`${p.title} — blocat`} />;
+                              return (
+                                <span
+                                  key={p.id}
+                                  className={`w-3 h-3 md:w-4 md:h-4 rounded-full ${color.bg} ${color.border} border`}
+                                />
+                              );
                             })}
                           </div>
                         );
@@ -592,7 +612,20 @@ export default function HostCalendarPage() {
                       return (
                         <div
                           key={`more-${row}-${col}`}
-                          className="absolute px-1 text-[10px] md:text-xs font-semibold text-gray-600 truncate"
+                          data-overflow
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = gridRef.current?.getBoundingClientRect();
+                            const badgeRect = e.currentTarget.getBoundingClientRect();
+                            if (!rect) return;
+                            setTooltip(null);
+                            setOverflowTooltip({
+                              bookings: cellBk,
+                              x: badgeRect.left - rect.left,
+                              y: badgeRect.bottom - rect.top + 4,
+                            });
+                          }}
+                          className="absolute px-1 text-[10px] md:text-xs font-semibold text-gray-600 truncate cursor-pointer hover:text-primary-600"
                           style={{ top: `${top}px`, left, width, height: `${pillH}px`, lineHeight: `${pillH}px`, zIndex: 20 }}
                         >
                           +{count}
@@ -638,6 +671,66 @@ export default function HostCalendarPage() {
                     <a href={`/dashboard/host/bookings/${tooltip.booking.id}#messages`} className="btn-outline text-xs px-3 py-1.5 flex items-center gap-1">
                       <MessageSquare size={14} /> Mesaje
                     </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Blocked properties tooltip */}
+              {blockedTooltip && (
+                <div
+                  data-tooltip
+                  className="absolute bg-white rounded-lg shadow-lg border border-gray-200 px-3 py-2 z-50"
+                  style={{
+                    bottom: gridRef.current ? gridRef.current.clientHeight - blockedTooltip.y : 0,
+                    left: Math.min(Math.max(blockedTooltip.x, 0), gridRef.current ? gridRef.current.clientWidth - 200 : 0),
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="text-xs font-medium text-gray-500">Blocat pentru:</p>
+                    <button onClick={() => setBlockedTooltip(null)} className="text-gray-400 hover:text-gray-600 -mt-0.5 -mr-1">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  {blockedTooltip.properties.map((name, i) => (
+                    <p key={i} className="text-sm font-medium">{name}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* Overflow tooltip — shows hidden bookings */}
+              {overflowTooltip && (
+                <div
+                  data-tooltip
+                  className="absolute bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50 w-72"
+                  style={{
+                    top: Math.min(overflowTooltip.y, (totalRows * (isMobile ? 80 : 112)) - 200),
+                    left: Math.min(Math.max(overflowTooltip.x, 0), gridRef.current ? gridRef.current.clientWidth - 300 : 0),
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-semibold text-sm">Alte rezervări</h4>
+                    <button onClick={() => setOverflowTooltip(null)} className="text-gray-400 hover:text-gray-600">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {overflowTooltip.bookings.map(b => (
+                      <a
+                        key={b.id}
+                        href={`/dashboard/host/bookings/${b.id}`}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{b.guest.name}</p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {format(parseISO(b.startDate), 'd MMM', { locale: ro })} – {format(parseISO(b.endDate), 'd MMM', { locale: ro })} · {b.property.title}
+                          </p>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ml-2 ${STATUS_STYLES[b.status] || ''}`}>
+                          {STATUS_LABELS[b.status] || b.status}
+                        </span>
+                      </a>
+                    ))}
                   </div>
                 </div>
               )}
