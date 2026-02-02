@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { CheckCircle, Mail } from 'lucide-react';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -11,7 +11,8 @@ export default function RegisterPage() {
   const [role, setRole] = useState<'GUEST' | 'HOST'>('GUEST');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [registered, setRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +32,30 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push('/');
-    router.refresh();
+    setRegisteredEmail(data.email || email);
+    setRegistered(true);
   };
+
+  if (registered) {
+    return (
+      <div className="flex items-center justify-center min-h-[80vh] px-4">
+        <div className="card w-full max-w-md text-center">
+          <CheckCircle size={48} className="mx-auto mb-4 text-green-500" />
+          <h1 className="text-xl font-bold mb-2">Cont creat cu succes!</h1>
+          <p className="text-gray-600 text-sm mb-2">
+            Am trimis un email de verificare la <strong>{registeredEmail}</strong>.
+          </p>
+          <p className="text-gray-500 text-xs mb-6">
+            <Mail size={12} className="inline mr-1" />
+            Verifică și folderul spam dacă nu găsești emailul.
+          </p>
+          <Link href="/auth/login" className="btn-primary inline-block px-6 py-2.5">
+            Intră în cont
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] px-4">

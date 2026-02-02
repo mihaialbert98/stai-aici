@@ -48,6 +48,30 @@ export function setSessionCookie(token: string) {
   };
 }
 
+// Email verification tokens
+interface VerificationPayload {
+  userId: string;
+  email: string;
+  purpose: 'verify';
+}
+
+export async function createVerificationToken(userId: string, email: string): Promise<string> {
+  return new SignJWT({ userId, email, purpose: 'verify' } as unknown as Record<string, unknown>)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('24h')
+    .sign(secret);
+}
+
+export async function verifyVerificationToken(token: string): Promise<VerificationPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if ((payload as any).purpose !== 'verify') return null;
+    return payload as unknown as VerificationPayload;
+  } catch {
+    return null;
+  }
+}
+
 export function clearSessionCookie() {
   return {
     name: COOKIE_NAME,

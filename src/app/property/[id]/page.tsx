@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
+import Link from 'next/link';
 import { MapPin, Users, CheckCircle, Star } from 'lucide-react';
 import { PropertyGuide } from '@/components/PropertyGuide';
 import { DateRangePicker } from '@/components/DateRangePicker';
@@ -215,6 +216,21 @@ function PropertyContent() {
                   {(Math.round(reviewAvg * 10) / 10).toFixed(1)} ({property.reviews.length})
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Host info */}
+          <div className="flex items-center gap-3 py-4 border-y border-gray-200">
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-lg font-bold text-primary-600">
+                {property.host.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Găzduit de</p>
+              <Link href={`/host/${property.host.id}`} className="font-medium text-primary-600 hover:underline">
+                {property.host.name}
+              </Link>
             </div>
           </div>
 

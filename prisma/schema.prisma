@@ -42,8 +42,9 @@ model User {
   passwordHash String
   name         String
   phone        String?
-  role         Role      @default(GUEST)
-  isActive     Boolean   @default(true)
+  role           Role      @default(GUEST)
+  emailVerified  Boolean   @default(false)
+  isActive       Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

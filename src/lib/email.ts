@@ -26,6 +26,22 @@ async function sendEmail({ to, subject, html }: SendEmailOptions) {
   }
 }
 
+export async function sendVerificationEmail(email: string, name: string, token: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  await sendEmail({
+    to: email,
+    subject: 'Verifică-ți adresa de email – StaiAici',
+    html: `
+      <h2>Bun venit la StaiAici, ${name}!</h2>
+      <p>Mulțumim pentru înregistrare. Apasă pe butonul de mai jos pentru a-ți verifica adresa de email și a-ți activa contul.</p>
+      <p><a href="${appUrl}/auth/verify?token=${token}" style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Verifică emailul</a></p>
+      <p style="color:#666;font-size:14px;">Linkul este valabil 24 de ore. Dacă nu ai creat un cont pe StaiAici, ignoră acest email.</p>
+      <br/>
+      <p>— Echipa StaiAici</p>
+    `,
+  });
+}
+
 export async function sendBookingRequestEmail(hostEmail: string, hostName: string, guestName: string, propertyTitle: string, startDate: string, endDate: string) {
   await sendEmail({
     to: hostEmail,
