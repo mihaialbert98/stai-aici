@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { PropertyCard } from '@/components/PropertyCard';
 import { CityPicker } from '@/components/CityPicker';
 import { Pagination } from '@/components/Pagination';
-import { SlidersHorizontal } from 'lucide-react';
+import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
+import { SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 
 interface Amenity { id: string; name: string }
 
@@ -33,10 +34,13 @@ function SearchContent() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
   const [guests, setGuests] = useState(searchParams.get('guests') || '');
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetch('/api/amenities').then(r => r.json()).then(d => setAmenities(d.amenities || []));
+    fetch('/api/favorites').then(r => r.json()).then(d => setFavoriteIds(d.favoriteIds || []));
   }, []);
 
   useEffect(() => {
@@ -84,9 +88,27 @@ function SearchContent() {
         <h1 className="text-2xl font-bold">
           {city ? `Cazări în ${city}` : 'Toate cazările'} <span className="text-gray-400 text-lg font-normal">({total})</span>
         </h1>
-        <button onClick={() => setShowFilters(!showFilters)} className="btn-secondary flex items-center gap-2">
-          <SlidersHorizontal size={16} /> Filtre
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              const params = new URLSearchParams(searchParams.toString());
+              params.set('sortBy', e.target.value);
+              params.delete('page');
+              router.push(`/search?${params.toString()}`);
+            }}
+            className="input py-2 text-sm pr-8"
+          >
+            <option value="newest">Cele mai noi</option>
+            <option value="price_asc">Preț crescător</option>
+            <option value="price_desc">Preț descrescător</option>
+            <option value="rating">Rating</option>
+          </select>
+          <button onClick={() => setShowFilters(!showFilters)} className="btn-secondary flex items-center gap-2">
+            <SlidersHorizontal size={16} /> Filtre
+          </button>
+        </div>
       </div>
 
       {showFilters && (
@@ -128,7 +150,7 @@ function SearchContent() {
       )}
 
       {loading ? (
-        <p className="text-gray-500">Se încarcă...</p>
+        <PropertyGridSkeleton count={8} />
       ) : properties.length === 0 ? (
         <p className="text-gray-500">Nu am găsit cazări pentru criteriile selectate.</p>
       ) : (
@@ -142,6 +164,8 @@ function SearchContent() {
                 checkOut: searchParams.get('checkOut') || undefined,
                 guests: searchParams.get('guests') || undefined,
               }}
+              isFavorited={favoriteIds.includes(p.id)}
+              onToggleFavorite={(id, fav) => setFavoriteIds(prev => fav ? [...prev, id] : prev.filter(x => x !== id))}
             />
           ))}
         </div>

@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Pagination } from '@/components/Pagination';
 import { formatRON, formatDate } from '@/lib/utils';
 import { MessageCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   role: 'guest' | 'host';
@@ -29,11 +30,17 @@ export function BookingList({ role }: Props) {
   useEffect(() => { fetchBookings(); }, [page]);
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch(`/api/bookings/${id}`, {
+    const res = await fetch(`/api/bookings/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
+    if (res.ok) {
+      const label = status === 'ACCEPTED' ? 'acceptată' : status === 'REJECTED' ? 'refuzată' : 'anulată';
+      toast.success(`Rezervarea a fost ${label}.`);
+    } else {
+      toast.error('Eroare la actualizarea rezervării.');
+    }
     fetchBookings();
   };
 

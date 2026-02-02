@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const maxPrice = searchParams.get('maxPrice');
     const guests = searchParams.get('guests');
     const amenities = searchParams.get('amenities'); // comma-separated ids
+    const sortBy = searchParams.get('sortBy') || 'newest';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = Math.min(parseInt(searchParams.get('limit') || '12'), 50);
 
@@ -35,18 +36,24 @@ export async function GET(req: NextRequest) {
           amenities: { include: { amenity: true } },
           reviews: { select: { rating: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: sortBy === 'price_asc' ? { pricePerNight: 'asc' as const }
+              : sortBy === 'price_desc' ? { pricePerNight: 'desc' as const }
+              : { createdAt: 'desc' as const },
         skip: (page - 1) * limit,
         take: limit,
       }),
       prisma.property.count({ where }),
     ]);
 
-    const propertiesWithRating = properties.map(({ reviews, ...p }) => ({
+    let propertiesWithRating = properties.map(({ reviews, ...p }) => ({
       ...p,
       avgRating: reviews.length > 0 ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10 : null,
       reviewCount: reviews.length,
     }));
+
+    if (sortBy === 'rating') {
+      propertiesWithRating.sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
+    }
 
     return NextResponse.json({ properties: propertiesWithRating, total, pages: Math.ceil(total / limit) });
   } catch (err: any) {

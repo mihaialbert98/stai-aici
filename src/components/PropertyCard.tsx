@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import styles from './PropertyCard.module.scss';
 import { formatRON } from '@/lib/utils';
-import { Users, Star } from 'lucide-react';
+import { Users, Star, Heart } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   property: {
@@ -15,9 +18,11 @@ interface Props {
     reviewCount?: number;
   };
   searchParams?: { checkIn?: string; checkOut?: string; guests?: string };
+  isFavorited?: boolean;
+  onToggleFavorite?: (propertyId: string, favorited: boolean) => void;
 }
 
-export function PropertyCard({ property, searchParams }: Props) {
+export function PropertyCard({ property, searchParams, isFavorited, onToggleFavorite }: Props) {
   const image = property.images[0]?.url || '/placeholder.jpg';
 
   const params = new URLSearchParams();
@@ -27,11 +32,40 @@ export function PropertyCard({ property, searchParams }: Props) {
   const qs = params.toString();
   const href = `/property/${property.id}${qs ? `?${qs}` : ''}`;
 
+  const handleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const res = await fetch('/api/favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ propertyId: property.id }),
+    });
+    if (res.status === 401) {
+      toast.error('Trebuie să fii autentificat pentru a salva favorite.');
+      return;
+    }
+    const data = await res.json();
+    onToggleFavorite?.(property.id, data.favorited);
+    toast.success(data.favorited ? 'Adăugat la favorite' : 'Eliminat din favorite');
+  };
+
   return (
     <Link href={href}>
       <div className={styles.card}>
         <div className={styles.imageWrapper}>
           <img src={image} alt={property.title} className={styles.image} />
+          {onToggleFavorite && (
+            <button
+              onClick={handleFavorite}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition shadow-sm z-10"
+              aria-label={isFavorited ? 'Elimină din favorite' : 'Adaugă la favorite'}
+            >
+              <Heart
+                size={18}
+                className={isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'}
+              />
+            </button>
+          )}
         </div>
         <div className={styles.body}>
           <p className={styles.city}>{property.city}</p>

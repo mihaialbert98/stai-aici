@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
+import { ArrowLeftRight, Menu, X, LayoutDashboard, LogOut, ChevronDown, Heart } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import styles from './Navbar.module.scss';
 
@@ -106,6 +106,14 @@ export function Navbar() {
                       <LayoutDashboard size={16} />
                       Dashboard
                     </Link>
+                    <Link
+                      href="/dashboard/guest/favorites"
+                      className={styles.dropdownItem}
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <Heart size={16} />
+                      Favorite
+                    </Link>
                     <button onClick={logout} className={styles.dropdownItem}>
                       <LogOut size={16} />
                       Ieși din cont
@@ -160,6 +168,10 @@ export function Navbar() {
               <Link href={dashboardLink} className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
                 <LayoutDashboard size={16} />
                 Dashboard
+              </Link>
+              <Link href="/dashboard/guest/favorites" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
+                <Heart size={16} />
+                Favorite
               </Link>
               <div className={styles.mobileDivider} />
               <button onClick={logout} className={`${styles.mobileLink} ${styles.mobileLinkDanger}`}>

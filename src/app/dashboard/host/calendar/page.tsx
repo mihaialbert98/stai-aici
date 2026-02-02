@@ -8,6 +8,7 @@ import {
 import { ro } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock } from 'lucide-react';
 import { formatRON } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface BookingData {
   id: string;
@@ -199,6 +200,7 @@ export default function HostCalendarPage() {
         : propBlocked.filter(d => !dates.includes(d));
       return { ...prev, [activePropId]: updated };
     });
+    toast.success(block ? `${dates.length} zile blocate.` : `${dates.length} zile deblocate.`);
     clearSelection();
     setBlocking(false);
   };
