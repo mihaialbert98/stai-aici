@@ -6,7 +6,9 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { ChatBox } from '@/components/ChatBox';
 import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
 import { PropertyGuide } from '@/components/PropertyGuide';
-import { Star } from 'lucide-react';
+import { Star, User } from 'lucide-react';
+import { format } from 'date-fns';
+import { ro } from 'date-fns/locale';
 
 interface Props {
   role: 'guest' | 'host';
@@ -17,12 +19,25 @@ export function BookingDetail({ role }: Props) {
   const [booking, setBooking] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
 
+  // Guest review state
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewHover, setReviewHover] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [reviewDone, setReviewDone] = useState(false);
+
+  // Host review state
+  const [hostReviewRating, setHostReviewRating] = useState(0);
+  const [hostReviewHover, setHostReviewHover] = useState(0);
+  const [hostReviewComment, setHostReviewComment] = useState('');
+  const [hostReviewSubmitting, setHostReviewSubmitting] = useState(false);
+  const [hostReviewError, setHostReviewError] = useState('');
+  const [hostReviewDone, setHostReviewDone] = useState(false);
+
+  // Guest reputation (past host reviews) — only loaded for host view
+  const [guestReviews, setGuestReviews] = useState<any[]>([]);
+  const [guestAvgRating, setGuestAvgRating] = useState<number | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -34,11 +49,26 @@ export function BookingDetail({ role }: Props) {
     });
   }, [id]);
 
+  // Fetch guest's past host reviews when host views booking
+  useEffect(() => {
+    if (role !== 'host' || !booking) return;
+    fetch(`/api/host-reviews?guestId=${booking.guestId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.reviews) {
+          setGuestReviews(data.reviews);
+          setGuestAvgRating(data.average || null);
+        }
+      });
+  }, [role, booking]);
+
   if (!booking || !user) return <p className="text-gray-500">Se încarcă...</p>;
 
   const nights = nightsBetween(booking.startDate, booking.endDate);
   const prop = booking.property;
-  const canReview = role === 'guest' && booking.status === 'ACCEPTED' && new Date(booking.endDate) <= new Date() && !booking.review && !reviewDone;
+  const isAfterCheckout = new Date(booking.endDate) <= new Date();
+  const canReview = role === 'guest' && booking.status === 'ACCEPTED' && isAfterCheckout && !booking.review && !reviewDone;
+  const canHostReview = role === 'host' && booking.status === 'ACCEPTED' && isAfterCheckout && !booking.hostReview && !hostReviewDone;
 
   const refreshBooking = async () => {
     const res = await fetch(`/api/bookings/${id}`);
@@ -73,6 +103,59 @@ export function BookingDetail({ role }: Props) {
     if (!res.ok) { setReviewError(data.error); return; }
     setReviewDone(true);
   };
+
+  const handleHostReview = async () => {
+    if (hostReviewRating < 1) { setHostReviewError('Selectează un rating'); return; }
+    setHostReviewSubmitting(true);
+    setHostReviewError('');
+    const res = await fetch('/api/host-reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: booking.id, rating: hostReviewRating, comment: hostReviewComment || undefined }),
+    });
+    const data = await res.json();
+    setHostReviewSubmitting(false);
+    if (!res.ok) { setHostReviewError(data.error); return; }
+    setHostReviewDone(true);
+  };
+
+  const renderStars = (rating: number, size = 18) => (
+    <div className="flex items-center gap-1">
+      {[1,2,3,4,5].map(s => (
+        <Star key={s} size={size} className={s <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+      ))}
+    </div>
+  );
+
+  const renderReviewForm = (
+    label: string,
+    placeholder: string,
+    rating: number,
+    setRating: (n: number) => void,
+    hover: number,
+    setHover: (n: number) => void,
+    comment: string,
+    setComment: (s: string) => void,
+    error: string,
+    submitting: boolean,
+    onSubmit: () => void,
+  ) => (
+    <div className="card">
+      <h2 className="text-lg font-semibold mb-3">{label}</h2>
+      <div className="flex items-center gap-1 mb-3">
+        {[1,2,3,4,5].map(s => (
+          <button key={s} type="button" onClick={() => setRating(s)} onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}>
+            <Star size={28} className={s <= (hover || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+          </button>
+        ))}
+      </div>
+      <textarea className="input w-full" rows={3} placeholder={placeholder} value={comment} onChange={e => setComment(e.target.value)} />
+      {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+      <button onClick={onSubmit} disabled={submitting || rating < 1} className="btn-primary mt-3 disabled:opacity-50">
+        {submitting ? 'Se trimite...' : 'Trimite recenzia'}
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -111,21 +194,52 @@ export function BookingDetail({ role }: Props) {
         )}
       </div>
 
+      {/* Guest reputation — visible only to host */}
+      {role === 'host' && (
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <User size={18} /> Profilul oaspetelui
+          </h2>
+          <p className="font-medium">{booking.guest.name}</p>
+          {guestReviews.length > 0 ? (
+            <>
+              <div className="flex items-center gap-2 mt-2 mb-3">
+                {renderStars(Math.round(guestAvgRating || 0))}
+                <span className="text-sm text-gray-500">
+                  {guestAvgRating?.toFixed(1)} din {guestReviews.length} {guestReviews.length === 1 ? 'recenzie' : 'recenzii'} de la gazde
+                </span>
+              </div>
+              <div className="space-y-3 border-t border-gray-100 pt-3">
+                {guestReviews.map((r: any) => (
+                  <div key={r.id} className="text-sm">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      {renderStars(r.rating, 14)}
+                      <span className="text-gray-400 text-xs">
+                        {r.host?.name} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: ro })}
+                      </span>
+                    </div>
+                    {r.comment && <p className="text-gray-600">{r.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">Acest oaspete nu are încă recenzii de la gazde.</p>
+          )}
+        </div>
+      )}
+
       {/* Guest Guide – shown after acceptance */}
       {booking.status === 'ACCEPTED' && (
         <PropertyGuide checkInInfo={prop.checkInInfo} houseRules={prop.houseRules} localTips={prop.localTips} />
       )}
 
-      {/* Review section – guest only */}
+      {/* Guest review of property — visible to both */}
       {booking.review && (
         <div className="card">
-          <h2 className="text-lg font-semibold mb-2">{role === 'guest' ? 'Recenzia ta' : 'Recenzie oaspete'}</h2>
-          <div className="flex items-center gap-1 mb-2">
-            {[1,2,3,4,5].map(s => (
-              <Star key={s} size={18} className={s <= booking.review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
-            ))}
-          </div>
-          {booking.review.comment && <p className="text-sm text-gray-700">{booking.review.comment}</p>}
+          <h2 className="text-lg font-semibold mb-2">{role === 'guest' ? 'Recenzia ta' : 'Recenzie oaspete despre proprietate'}</h2>
+          {renderStars(booking.review.rating)}
+          {booking.review.comment && <p className="text-sm text-gray-700 mt-2">{booking.review.comment}</p>}
         </div>
       )}
 
@@ -136,22 +250,38 @@ export function BookingDetail({ role }: Props) {
         </div>
       )}
 
-      {canReview && (
+      {canReview && renderReviewForm(
+        'Lasă o recenzie',
+        'Scrie câteva cuvinte despre experiența ta (opțional)',
+        reviewRating, setReviewRating,
+        reviewHover, setReviewHover,
+        reviewComment, setReviewComment,
+        reviewError, reviewSubmitting, handleReview,
+      )}
+
+      {/* Host review of guest — only visible to host */}
+      {role === 'host' && booking.hostReview && (
         <div className="card">
-          <h2 className="text-lg font-semibold mb-3">Lasă o recenzie</h2>
-          <div className="flex items-center gap-1 mb-3">
-            {[1,2,3,4,5].map(s => (
-              <button key={s} type="button" onClick={() => setReviewRating(s)} onMouseEnter={() => setReviewHover(s)} onMouseLeave={() => setReviewHover(0)}>
-                <Star size={28} className={s <= (reviewHover || reviewRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
-              </button>
-            ))}
-          </div>
-          <textarea className="input w-full" rows={3} placeholder="Scrie câteva cuvinte despre experiența ta (opțional)" value={reviewComment} onChange={e => setReviewComment(e.target.value)} />
-          {reviewError && <p className="text-red-600 text-sm mt-1">{reviewError}</p>}
-          <button onClick={handleReview} disabled={reviewSubmitting || reviewRating < 1} className="btn-primary mt-3 disabled:opacity-50">
-            {reviewSubmitting ? 'Se trimite...' : 'Trimite recenzia'}
-          </button>
+          <h2 className="text-lg font-semibold mb-2">Recenzia ta despre oaspete</h2>
+          {renderStars(booking.hostReview.rating)}
+          {booking.hostReview.comment && <p className="text-sm text-gray-700 mt-2">{booking.hostReview.comment}</p>}
         </div>
+      )}
+
+      {hostReviewDone && (
+        <div className="card text-center py-4">
+          <Star size={32} className="fill-yellow-400 text-yellow-400 mx-auto mb-2" />
+          <p className="font-medium text-green-700">Mulțumim pentru recenzie!</p>
+        </div>
+      )}
+
+      {canHostReview && renderReviewForm(
+        'Recenzează oaspetele',
+        'Cum a fost experiența cu acest oaspete? (opțional)',
+        hostReviewRating, setHostReviewRating,
+        hostReviewHover, setHostReviewHover,
+        hostReviewComment, setHostReviewComment,
+        hostReviewError, hostReviewSubmitting, handleHostReview,
       )}
 
       {/* Chat */}

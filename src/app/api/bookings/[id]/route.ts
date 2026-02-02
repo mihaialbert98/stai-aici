@@ -25,6 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       guest: { select: { id: true, name: true, email: true, phone: true } },
       host: { select: { id: true, name: true, email: true, phone: true } },
       review: true,
+      hostReview: true,
     },
   });
 
@@ -34,6 +35,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const isParticipant = booking.guestId === session.userId || booking.hostId === session.userId;
   if (!isParticipant && session.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
+  }
+
+  // Hide host review of guest from the guest — only hosts can see it
+  const isGuest = booking.guestId === session.userId && session.role !== 'ADMIN';
+  if (isGuest) {
+    (booking as any).hostReview = undefined;
   }
 
   return NextResponse.json({ booking });

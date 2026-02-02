@@ -13,7 +13,6 @@ interface HostData {
   name: string;
   memberSince: string;
   totalProperties: number;
-  avgRating: number | null;
   totalReviews: number;
 }
 
@@ -75,16 +74,10 @@ export default function HostProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-800">{host.totalProperties}</p>
             <p className="text-xs text-gray-500">{host.totalProperties === 1 ? 'Proprietate' : 'Proprietăți'}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-800">
-              {host.avgRating !== null ? host.avgRating.toFixed(1) : '—'}
-            </p>
-            <p className="text-xs text-gray-500">Evaluare medie</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-800">{host.totalReviews}</p>

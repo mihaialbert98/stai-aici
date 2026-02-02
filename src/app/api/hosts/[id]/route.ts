@@ -25,10 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Gazda nu a fost găsită' }, { status: 404 });
   }
 
-  const allRatings = host.properties.flatMap(p => p.reviews.map(r => r.rating));
-  const avgRating = allRatings.length > 0
-    ? Math.round((allRatings.reduce((s, r) => s + r, 0) / allRatings.length) * 10) / 10
-    : null;
+  const totalReviews = host.properties.reduce((sum, p) => sum + p.reviews.length, 0);
 
   const properties = host.properties.map(p => {
     const ratings = p.reviews.map(r => r.rating);
@@ -53,8 +50,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       name: host.name,
       memberSince: host.createdAt,
       totalProperties: host.properties.length,
-      avgRating,
-      totalReviews: allRatings.length,
+      totalReviews,
     },
     properties,
   });
