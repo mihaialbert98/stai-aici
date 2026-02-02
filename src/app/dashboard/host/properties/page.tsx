@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatRON } from '@/lib/utils';
 import { ActiveBadge } from '@/components/ActiveBadge';
-import { Plus, Edit, Users } from 'lucide-react';
+import { Plus, Edit, Users, Star, MessageSquare } from 'lucide-react';
 
 export default function HostPropertiesPage() {
   const [properties, setProperties] = useState<any[]>([]);
@@ -53,11 +53,25 @@ export default function HostPropertiesPage() {
                   <span className="text-primary-600 font-medium">{formatRON(p.pricePerNight)} / noapte</span>
                   <span className="flex items-center gap-1 text-gray-500"><Users size={14} /> {p.maxGuests}</span>
                   <ActiveBadge isActive={p.isActive} />
+                  {p.reviewCount > 0 ? (
+                    <Link href={`/dashboard/host/properties/${p.id}/reviews`} className="flex items-center gap-1 text-yellow-600 hover:text-yellow-700">
+                      <Star size={14} className="fill-yellow-500 text-yellow-500" /> {p.avgRating} ({p.reviewCount})
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-1 text-gray-400"><Star size={14} /> Fără recenzii</span>
+                  )}
                 </div>
               </div>
-              <Link href={`/dashboard/host/properties/${p.id}/edit`} className="btn-secondary self-start sm:self-center flex items-center gap-1 w-fit">
-                <Edit size={14} /> Editează
-              </Link>
+              <div className="flex flex-col gap-2 self-start sm:self-center">
+                <Link href={`/dashboard/host/properties/${p.id}/edit`} className="btn-secondary flex items-center gap-1 w-fit">
+                  <Edit size={14} /> Editează
+                </Link>
+                {p.reviewCount > 0 && (
+                  <Link href={`/dashboard/host/properties/${p.id}/reviews`} className="btn-secondary flex items-center gap-1 w-fit text-xs">
+                    <MessageSquare size={14} /> Recenzii
+                  </Link>
+                )}
+              </div>
             </div>
           ))}
         </div>

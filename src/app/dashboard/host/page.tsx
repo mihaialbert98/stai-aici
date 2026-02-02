@@ -128,13 +128,15 @@ export default function HostDashboard() {
       ? properties.find(p => p.id === Array.from(selectedPropertyIds)[0])?.title || '1 proprietate'
       : `${selectedPropertyIds.size} proprietăți`;
 
-  const cards = stats ? [
+  const singlePropertyId = selectedPropertyIds.size === 1 ? Array.from(selectedPropertyIds)[0] : null;
+
+  const cards: { label: string; value: any; icon: any; color: string; bg: string; link?: string }[] = stats ? [
     { label: 'Rezervări', value: stats.totalBookings, icon: CalendarDays, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Nopți rezervate', value: stats.totalNights, icon: Moon, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: 'Venit', value: formatRON(stats.totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
     { label: 'Rata de ocupare', value: `${stats.occupancyRate}%`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Rating mediu', value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-    { label: 'Cereri în așteptare', value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Rating mediu', value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50', link: stats.reviewCount > 0 ? (singlePropertyId ? `/dashboard/host/properties/${singlePropertyId}/reviews` : `/dashboard/host/reviews${selectedPropertyIds.size > 0 ? `?propertyIds=${Array.from(selectedPropertyIds).join(',')}` : ''}`) : undefined },
+    { label: 'Cereri în așteptare', value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50', link: stats.pendingCount > 0 ? '/dashboard/host/bookings' : undefined },
   ] : [];
 
   return (
@@ -258,15 +260,25 @@ export default function HostDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {cards.map(c => (
-            <div key={c.label} className="card min-h-[120px]">
-              <div className={`${c.bg} ${c.color} w-10 h-10 rounded-lg flex items-center justify-center mb-3`}>
-                <c.icon size={20} />
-              </div>
-              <p className="text-2xl font-bold">{c.value}</p>
-              <p className="text-sm text-gray-500">{c.label}</p>
-            </div>
-          ))}
+          {cards.map(c => {
+            const inner = (
+              <>
+                <div className={`${c.bg} ${c.color} w-10 h-10 rounded-lg flex items-center justify-center mb-3`}>
+                  <c.icon size={20} />
+                </div>
+                <p className="text-2xl font-bold">{c.value}</p>
+                <p className="text-sm text-gray-500">{c.label}</p>
+              </>
+            );
+            if (c.link) {
+              return (
+                <Link key={c.label} href={c.link} className="card min-h-[120px] hover:shadow-md transition-shadow">
+                  {inner}
+                </Link>
+              );
+            }
+            return <div key={c.label} className="card min-h-[120px]">{inner}</div>;
+          })}
         </div>
       )}
 

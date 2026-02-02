@@ -48,17 +48,18 @@ export function Navbar() {
     router.refresh();
   };
 
+  const isHostMode = pathname.startsWith('/dashboard/host');
+  const isGuestMode = pathname.startsWith('/dashboard/guest');
+
   const dashboardLink = user?.role === 'ADMIN'
     ? '/dashboard/admin'
     : user?.role === 'HOST'
-      ? '/dashboard/host'
-      : '/dashboard/guest/bookings';
+      ? (isGuestMode ? '/dashboard/guest/profile' : '/dashboard/host')
+      : '/dashboard/guest/profile';
 
   const initials = user?.name
     ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : '';
-
-  const isHostMode = pathname.startsWith('/dashboard/host');
 
   return (
     <nav className={styles.nav}>
@@ -68,11 +69,11 @@ export function Navbar() {
           <Link href="/" className={styles.logo}>StaiAici</Link>
           {user?.role === 'HOST' && (
             <button
-              onClick={() => router.push(isHostMode ? '/' : '/dashboard/host')}
+              onClick={() => router.push(isHostMode ? '/dashboard/guest/profile' : '/dashboard/host')}
               className={styles.modeToggle}
             >
               <ArrowLeftRight size={14} />
-              <span>{isHostMode ? 'Explorează' : 'Mod gazdă'}</span>
+              <span>{isHostMode ? 'Mod oaspete' : 'Mod gazdă'}</span>
             </button>
           )}
         </div>
@@ -158,11 +159,11 @@ export function Navbar() {
               <div className={styles.mobileDivider} />
               {user.role === 'HOST' && (
                 <button
-                  onClick={() => { router.push(isHostMode ? '/' : '/dashboard/host'); setMenuOpen(false); }}
+                  onClick={() => { router.push(isHostMode ? '/dashboard/guest/profile' : '/dashboard/host'); setMenuOpen(false); }}
                   className={styles.mobileLink}
                 >
                   <ArrowLeftRight size={16} />
-                  {isHostMode ? 'Explorează' : 'Mod gazdă'}
+                  {isHostMode ? 'Mod oaspete' : 'Mod gazdă'}
                 </button>
               )}
               <Link href={dashboardLink} className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
