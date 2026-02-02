@@ -6,7 +6,7 @@ import { PropertyCard } from '@/components/PropertyCard';
 import { CityPicker } from '@/components/CityPicker';
 import { Pagination } from '@/components/Pagination';
 import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
-import { SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 
 interface Amenity { id: string; name: string }
 
@@ -65,6 +65,7 @@ function SearchContent() {
     if (maxPrice) params.set('maxPrice', maxPrice);
     if (guests) params.set('guests', guests);
     if (selectedAmenities.length) params.set('amenities', selectedAmenities.join(','));
+    if (sortBy && sortBy !== 'newest') params.set('sortBy', sortBy);
     // Reset to page 1 when filters change
     router.push(`/search?${params.toString()}`);
   };

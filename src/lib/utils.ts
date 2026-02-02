@@ -27,6 +27,11 @@ export function statusLabel(status: string): string {
   return map[status] || status;
 }
 
+/** Strip diacritics so "Brasov" matches "Brașov" etc. */
+export function removeDiacritics(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 export function statusColor(status: string): string {
   const map: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',

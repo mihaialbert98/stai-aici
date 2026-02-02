@@ -14,6 +14,7 @@ export default function HomePage() {
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState('');
   const [featured, setFeatured] = useState<any[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function HomePage() {
       .then(r => r.json())
       .then(d => setFeatured(d.properties || []))
       .finally(() => setLoading(false));
+    fetch('/api/favorites').then(r => r.json()).then(d => setFavoriteIds(d.favoriteIds || []));
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -86,7 +88,14 @@ export default function HomePage() {
                   </div>
                 </div>
               ))
-            : featured.map((p) => <PropertyCard key={p.id} property={p} />)
+            : featured.map((p) => (
+                <PropertyCard
+                  key={p.id}
+                  property={p}
+                  isFavorited={favoriteIds.includes(p.id)}
+                  onToggleFavorite={(id, fav) => setFavoriteIds(prev => fav ? [...prev, id] : prev.filter(x => x !== id))}
+                />
+              ))
           }
         </div>
       </section>

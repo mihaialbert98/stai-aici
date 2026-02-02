@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { propertySchema } from '@/lib/validations';
+import { removeDiacritics } from '@/lib/utils';
+import { ROMANIAN_CITIES } from '@/lib/cities';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +21,13 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '12'), 50);
 
     const where: any = { isActive: true };
-    if (city) where.city = { contains: city, mode: 'insensitive' };
+    if (city) {
+      // Resolve diacritics: "Brasov" → "Brașov"
+      const match = ROMANIAN_CITIES.find(c =>
+        removeDiacritics(c).toLowerCase() === removeDiacritics(city).toLowerCase()
+      );
+      where.city = { contains: match || city, mode: 'insensitive' };
+    }
     if (minPrice) where.pricePerNight = { ...where.pricePerNight, gte: parseFloat(minPrice) };
     if (maxPrice) where.pricePerNight = { ...where.pricePerNight, lte: parseFloat(maxPrice) };
     if (guests) where.maxGuests = { gte: parseInt(guests) };

@@ -54,18 +54,16 @@ export function PropertyCard({ property, searchParams, isFavorited, onToggleFavo
       <div className={styles.card}>
         <div className={styles.imageWrapper}>
           <img src={image} alt={property.title} className={styles.image} />
-          {onToggleFavorite && (
-            <button
-              onClick={handleFavorite}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition shadow-sm z-10"
-              aria-label={isFavorited ? 'Elimină din favorite' : 'Adaugă la favorite'}
-            >
-              <Heart
-                size={18}
-                className={isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'}
-              />
-            </button>
-          )}
+          <button
+            onClick={handleFavorite}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition shadow-sm z-10"
+            aria-label={isFavorited ? 'Elimină din favorite' : 'Adaugă la favorite'}
+          >
+            <Heart
+              size={18}
+              className={isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'}
+            />
+          </button>
         </div>
         <div className={styles.body}>
           <p className={styles.city}>{property.city}</p>

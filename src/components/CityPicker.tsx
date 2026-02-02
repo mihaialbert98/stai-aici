@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import { ROMANIAN_CITIES } from '@/lib/cities';
+import { removeDiacritics } from '@/lib/utils';
 import styles from './CityPicker.module.scss';
 
 interface Props {
@@ -27,7 +28,7 @@ export function CityPicker({ value, onChange, placeholder = 'ex. Brașov' }: Pro
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
         // If the typed query doesn't match a city, revert to last valid value
-        if (!ROMANIAN_CITIES.includes(query)) {
+        if (!ROMANIAN_CITIES.some(c => removeDiacritics(c).toLowerCase() === removeDiacritics(query).toLowerCase())) {
           setQuery(value);
         }
       }
@@ -39,7 +40,7 @@ export function CityPicker({ value, onChange, placeholder = 'ex. Brașov' }: Pro
   const POPULAR_CITIES = ['București', 'Brașov', 'Cluj-Napoca', 'Sibiu', 'Constanța', 'Timișoara', 'Baia Mare', 'Iași'];
 
   const filtered = query
-    ? ROMANIAN_CITIES.filter(c => c.toLowerCase().includes(query.toLowerCase()))
+    ? ROMANIAN_CITIES.filter(c => removeDiacritics(c).toLowerCase().includes(removeDiacritics(query).toLowerCase()))
     : [...POPULAR_CITIES, ...ROMANIAN_CITIES.filter(c => !POPULAR_CITIES.includes(c))];
 
   const select = (city: string) => {
