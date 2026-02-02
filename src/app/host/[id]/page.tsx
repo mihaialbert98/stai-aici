@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Star, Home, Calendar, MapPin } from 'lucide-react';
@@ -97,9 +98,9 @@ export default function HostProfilePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map(p => (
             <Link key={p.id} href={`/property/${p.id}`} className="card hover:shadow-lg transition-shadow overflow-hidden group">
-              <div className="aspect-[4/3] bg-gray-200 -mx-6 -mt-6 mb-4 overflow-hidden">
+              <div className="aspect-[4/3] bg-gray-200 -mx-6 -mt-6 mb-4 overflow-hidden relative">
                 {p.image ? (
-                  <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <Image src={p.image} alt={p.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <Home size={32} />

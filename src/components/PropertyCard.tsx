@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import styles from './PropertyCard.module.scss';
 import { formatRON } from '@/lib/utils';
 import { Users, Star, Heart } from 'lucide-react';
@@ -53,7 +54,7 @@ export function PropertyCard({ property, searchParams, isFavorited, onToggleFavo
     <Link href={href}>
       <div className={styles.card}>
         <div className={styles.imageWrapper}>
-          <img src={image} alt={property.title} className={styles.image} />
+          <Image src={image} alt={`${property.title} – cazare ${property.city}`} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className={styles.image} />
           <button
             onClick={handleFavorite}
             className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition shadow-sm z-10"

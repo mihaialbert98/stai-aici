@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, Calendar, MapPin, Home } from 'lucide-react';
 import { formatRON, formatDate } from '@/lib/utils';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -32,9 +33,9 @@ export default function GuestProfilePage() {
 
   const BookingCard = ({ b }: { b: any }) => (
     <Link href={`/dashboard/guest/bookings/${b.id}`} className="card hover:shadow-md transition-shadow flex gap-4">
-      <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+      <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
         {b.property.images?.[0]?.url ? (
-          <img src={b.property.images[0].url} alt={b.property.title} className="w-full h-full object-cover" />
+          <Image src={b.property.images[0].url} alt={b.property.title} fill sizes="80px" className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400"><Home size={24} /></div>
         )}

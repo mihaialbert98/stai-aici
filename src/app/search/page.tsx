@@ -50,6 +50,11 @@ function SearchContent() {
   const fetchProperties = async () => {
     setLoading(true);
     const params = new URLSearchParams(searchParams.toString());
+    // Map user-facing checkIn/checkOut to API's startDate/endDate
+    const checkIn = params.get('checkIn');
+    const checkOut = params.get('checkOut');
+    if (checkIn) { params.set('startDate', checkIn); params.delete('checkIn'); }
+    if (checkOut) { params.set('endDate', checkOut); params.delete('checkOut'); }
     const res = await fetch(`/api/properties?${params}`);
     const data = await res.json();
     setProperties(data.properties || []);
@@ -66,6 +71,11 @@ function SearchContent() {
     if (guests) params.set('guests', guests);
     if (selectedAmenities.length) params.set('amenities', selectedAmenities.join(','));
     if (sortBy && sortBy !== 'newest') params.set('sortBy', sortBy);
+    // Preserve date params from homepage search
+    const checkIn = searchParams.get('checkIn');
+    const checkOut = searchParams.get('checkOut');
+    if (checkIn) params.set('checkIn', checkIn);
+    if (checkOut) params.set('checkOut', checkOut);
     // Reset to page 1 when filters change
     router.push(`/search?${params.toString()}`);
   };

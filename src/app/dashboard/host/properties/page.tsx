@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatRON } from '@/lib/utils';
 import { ActiveBadge } from '@/components/ActiveBadge';
 import { Plus, Edit, Users, Star, MessageSquare } from 'lucide-react';
@@ -43,8 +44,8 @@ export default function HostPropertiesPage() {
         <div className="space-y-4">
           {properties.map(p => (
             <div key={p.id} className="card flex flex-col sm:flex-row gap-4">
-              <div className="w-full sm:w-32 h-40 sm:h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                {p.images?.[0] && <img src={p.images[0].url} className="w-full h-full object-cover" />}
+              <div className="w-full sm:w-32 h-40 sm:h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 relative">
+                {p.images?.[0] && <Image src={p.images[0].url} alt={p.title} fill sizes="(max-width: 640px) 100vw, 128px" className="object-cover" />}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold">{p.title}</h3>

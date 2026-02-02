@@ -25,10 +25,11 @@ export async function PATCH(req: NextRequest) {
   const data: any = {};
 
   if (body.name && typeof body.name === 'string' && body.name.trim().length >= 2) {
-    data.name = body.name.trim();
+    const { sanitizeText } = await import('@/lib/sanitize');
+    data.name = sanitizeText(body.name);
   }
   if (typeof body.phone === 'string') {
-    data.phone = body.phone.trim() || null;
+    data.phone = body.phone.trim().replace(/[^\d+\-() ]/g, '') || null;
   }
 
   // Password change

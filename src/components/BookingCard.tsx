@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatRON, formatDate } from '@/lib/utils';
 
@@ -12,9 +13,9 @@ export function BookingCard({ booking, href, subtitle }: Props) {
   return (
     <Link href={href} className="block">
       <div className="card hover:shadow-md transition flex gap-4">
-        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+        <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 relative">
           {booking.property.images?.[0] && (
-            <img src={booking.property.images[0].url} className="w-full h-full object-cover" alt="" />
+            <Image src={booking.property.images[0].url} alt={booking.property.title} fill sizes="96px" className="object-cover" />
           )}
         </div>
         <div className="flex-1 min-w-0">

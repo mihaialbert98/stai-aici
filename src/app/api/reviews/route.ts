@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { z } from 'zod';
+import { reviewSchema } from '@/lib/validations';
 import { createNotification } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
-
-const reviewSchema = z.object({
-  bookingId: z.string(),
-  rating: z.number().int().min(1).max(5),
-  comment: z.string().max(1000).optional(),
-});
 
 // POST /api/reviews – guest leaves a review after checkout
 export async function POST(req: NextRequest) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils';
@@ -42,8 +43,8 @@ export function MessagesList({ role }: Props) {
         <Link key={b.id} href={`${basePath}/${b.id}`} className="block">
           <div className="card hover:shadow-md transition">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                {b.property.images?.[0] && <img src={b.property.images[0].url} className="w-full h-full object-cover" alt="" />}
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 relative">
+                {b.property.images?.[0] && <Image src={b.property.images[0].url} alt={b.property.title} fill sizes="80px" className="object-cover" />}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-gray-900 truncate">{b.property.title}</h3>
