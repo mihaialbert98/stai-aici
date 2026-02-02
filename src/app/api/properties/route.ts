@@ -36,6 +36,30 @@ export async function GET(req: NextRequest) {
       where.amenities = { some: { amenityId: { in: ids } } };
     }
 
+    // Date-based availability filtering
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+        // Exclude properties with blocked dates in the range
+        where.blockedDates = {
+          none: {
+            date: { gte: start, lt: end },
+          },
+        };
+        // Exclude properties with overlapping accepted/pending bookings
+        where.bookings = {
+          none: {
+            status: { in: ['PENDING', 'ACCEPTED'] },
+            startDate: { lt: end },
+            endDate: { gt: start },
+          },
+        };
+      }
+    }
+
     const [properties, total] = await Promise.all([
       prisma.property.findMany({
         where,
