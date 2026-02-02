@@ -79,6 +79,7 @@ model Property {
   blockedDates   BlockedDate[]
   reviews        Review[]
   favorites      Favorite[]
+  calendarSyncs  CalendarSync[]
 
   @@index([city])
   @@index([hostId])
@@ -142,6 +143,7 @@ model BlockedDate {
   id         String   @id @default(cuid())
   propertyId String
   date       DateTime
+  source     String?  // null = manual, "booking", "airbnb", etc.
 
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -208,4 +210,17 @@ model Favorite {
 
   @@unique([userId, propertyId])
   @@index([userId])
+}
+
+model CalendarSync {
+  id         String    @id @default(cuid())
+  propertyId String
+  platform   String    // "booking", "airbnb", "other"
+  icalUrl    String
+  lastSynced DateTime?
+  createdAt  DateTime  @default(now())
+
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
 }

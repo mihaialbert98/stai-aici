@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       host: { select: { id: true, name: true, phone: true } },
       images: { orderBy: { order: 'asc' } },
       amenities: { include: { amenity: true } },
-      blockedDates: { select: { date: true } },
+      blockedDates: { select: { date: true, source: true } },
       bookings: {
         where: { status: 'ACCEPTED' },
         select: { startDate: true, endDate: true },

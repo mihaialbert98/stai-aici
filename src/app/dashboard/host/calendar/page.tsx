@@ -6,7 +6,7 @@ import {
   getDay, isToday, parseISO, isSameDay, isBefore, isAfter,
 } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock, RefreshCw, Link2, Trash2, Copy, Plus } from 'lucide-react';
 import { formatRON } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -59,6 +59,15 @@ export default function HostCalendarPage() {
   const [blocking, setBlocking] = useState(false);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
 
+  // Sync state
+  const [syncedDates, setSyncedDates] = useState<Record<string, Record<string, string>>>({});
+  // syncedDates[propertyId][dateStr] = source (e.g. "booking", "airbnb")
+  const [calendarSyncs, setCalendarSyncs] = useState<Record<string, any[]>>({});
+  const [showSyncForm, setShowSyncForm] = useState(false);
+  const [syncPlatform, setSyncPlatform] = useState('booking');
+  const [syncUrl, setSyncUrl] = useState('');
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
   const gridRef = useRef<HTMLDivElement>(null);
   const propDropdownRef = useRef<HTMLDivElement>(null);
   const [propDropdownOpen, setPropDropdownOpen] = useState(false);
@@ -77,11 +86,24 @@ export default function HostCalendarPage() {
       setBookings(bookingData.bookings || []);
 
       const blocked: Record<string, string[]> = {};
+      const synced: Record<string, Record<string, string>> = {};
+      const syncsMap: Record<string, any[]> = {};
       for (const p of myProps) {
         const pd = await fetch(`/api/properties/${p.id}`).then(r => r.json());
-        blocked[p.id] = (pd.property?.blockedDates || []).map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd'));
+        const dates = pd.property?.blockedDates || [];
+        blocked[p.id] = dates.map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd'));
+        synced[p.id] = {};
+        dates.forEach((bd: any) => {
+          if (bd.source) {
+            synced[p.id][format(new Date(bd.date), 'yyyy-MM-dd')] = bd.source;
+          }
+        });
+        const syncRes = await fetch(`/api/properties/${p.id}/calendar-sync`).then(r => r.json());
+        syncsMap[p.id] = syncRes.syncs || [];
       }
       setBlockedDates(blocked);
+      setSyncedDates(synced);
+      setCalendarSyncs(syncsMap);
 
       if (myProps.length === 1) setActivePropId(myProps[0].id);
       setLoading(false);
@@ -135,6 +157,12 @@ export default function HostCalendarPage() {
   const handleDateClick = useCallback((dateStr: string) => {
     if (isAllView) return;
     setConflictMsg(null);
+
+    // Prevent clicking on synced dates
+    if (syncedDates[activePropId]?.[dateStr]) {
+      setConflictMsg(`Această dată este blocată automat de pe ${syncedDates[activePropId][dateStr]}. Nu trebuie să o blochezi și pe StaiAici — sincronizarea se ocupă de asta. Gestionează disponibilitatea de pe platforma externă sau șterge sincronizarea.`);
+      return;
+    }
 
     const booking = getBookingForDate(dateStr, activePropId);
     if (booking) {
@@ -412,12 +440,14 @@ export default function HostCalendarPage() {
                 {days.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   const isBlockedHere = propBlocked.includes(dateStr);
+                  const syncSource = !isAllView ? syncedDates[activePropId]?.[dateStr] : null;
+                  const isSynced = !!syncSource;
                   // In "all" view, show blocked if any property has it blocked
                   const isBlockedAny = isAllView && properties.some(p => (blockedDates[p.id] || []).includes(dateStr));
                   const isInPreview = !isAllView && previewDates.has(dateStr);
                   const isRangeEdge = dateStr === rangeStart || dateStr === rangeEnd;
                   const hasAcceptedBooking = !isAllView && !!getBookingForDate(dateStr, activePropId);
-                  const canClick = !isAllView && (!hasAcceptedBooking || getBookingForDate(dateStr, activePropId)?.status !== 'ACCEPTED');
+                  const canClick = !isAllView && !isSynced && (!hasAcceptedBooking || getBookingForDate(dateStr, activePropId)?.status !== 'ACCEPTED');
 
                   return (
                     <div
@@ -430,10 +460,11 @@ export default function HostCalendarPage() {
                       className={`h-20 md:h-28 border-b border-r border-gray-100 p-0.5 md:p-1 text-right relative transition-colors
                         ${!isAllView && canClick ? 'cursor-pointer hover:bg-gray-50' : ''}
                         ${isToday(day) && !isInPreview && !isBlockedHere ? 'bg-primary-50' : ''}
-                        ${(isBlockedHere || isBlockedAny) && !isInPreview ? 'bg-red-50' : ''}
+                        ${isSynced && !isInPreview ? 'bg-violet-100 border-violet-300' : ''}
+                        ${(isBlockedHere || isBlockedAny) && !isSynced && !isInPreview ? 'bg-red-50' : ''}
                         ${isInPreview && !isBlockedHere ? 'bg-indigo-50' : ''}
                         ${isInPreview && isBlockedHere ? 'bg-red-100' : ''}
-                        ${hasAcceptedBooking && !isAllView ? 'cursor-not-allowed' : ''}
+                        ${(hasAcceptedBooking || isSynced) && !isAllView ? 'cursor-not-allowed' : ''}
                       `}
                     >
                       <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 text-xs md:text-sm rounded-full z-[1] relative ${
@@ -446,7 +477,9 @@ export default function HostCalendarPage() {
                       </span>
                       {/* Blocked indicator */}
                       {isBlockedHere && (
-                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] text-red-400 font-medium">blocat</span>
+                        <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-semibold ${isSynced ? 'text-violet-600' : 'text-red-400'}`}>
+                          {isSynced ? `⬤ ${syncSource}` : 'blocat'}
+                        </span>
                       )}
                       {/* In "all" view, show which properties have this date blocked */}
                       {isAllView && (() => {
@@ -613,6 +646,7 @@ export default function HostCalendarPage() {
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Blocat</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-100 border border-violet-300" /> Sincronizat extern</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> Azi</span>
               {!isAllView && rangeStart && (
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200" /> Selecție</span>
@@ -628,6 +662,191 @@ export default function HostCalendarPage() {
               })}
             </div>
           </div>
+
+          {/* Calendar sync management */}
+          {!isAllView && activePropId && (
+            <div className="card mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  <RefreshCw size={16} /> Sincronizare calendar
+                </h3>
+              </div>
+
+              {/* Export URL */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500 mb-1">Link-ul calendarului tău (copiază-l în Booking.com / Airbnb):</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/properties/${activePropId}/calendar.ics`}
+                    className="input text-xs flex-1 bg-white"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/api/properties/${activePropId}/calendar.ics`);
+                      toast.success('Link copiat!');
+                    }}
+                    className="btn-secondary text-xs px-3 py-2 flex items-center gap-1"
+                  >
+                    <Copy size={13} /> Copiază
+                  </button>
+                </div>
+              </div>
+
+              {/* Existing syncs */}
+              {(calendarSyncs[activePropId] || []).length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs font-medium text-gray-500">Calendare externe conectate:</p>
+                  {(calendarSyncs[activePropId] || []).map((sync: any) => (
+                    <div key={sync.id} className="flex items-center gap-3 p-2.5 bg-violet-50 border border-violet-200 rounded-lg text-sm">
+                      <Link2 size={14} className="text-violet-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium capitalize">{sync.platform}</span>
+                        <p className="text-xs text-gray-500 truncate">{sync.icalUrl}</p>
+                        {sync.lastSynced && (
+                          <p className="text-[10px] text-gray-400">Ultima sincronizare: {format(new Date(sync.lastSynced), 'd MMM HH:mm', { locale: ro })}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setSyncingId(sync.id);
+                          try {
+                            const res = await fetch(`/api/properties/${activePropId}/calendar-sync`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ syncId: sync.id }),
+                            });
+                            const data = await res.json();
+                            if (res.ok) {
+                              // Update lastSynced in local state
+                              setCalendarSyncs(prev => ({
+                                ...prev,
+                                [activePropId]: (prev[activePropId] || []).map((s: any) =>
+                                  s.id === sync.id ? { ...s, lastSynced: data.lastSynced } : s
+                                ),
+                              }));
+                              // Refresh blocked dates from server
+                              const pd = await fetch(`/api/properties/${activePropId}`).then(r => r.json());
+                              const dates = pd.property?.blockedDates || [];
+                              setBlockedDates(prev => ({
+                                ...prev,
+                                [activePropId]: dates.map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd')),
+                              }));
+                              const newSynced: Record<string, string> = {};
+                              dates.forEach((bd: any) => {
+                                if (bd.source) newSynced[format(new Date(bd.date), 'yyyy-MM-dd')] = bd.source;
+                              });
+                              setSyncedDates(prev => ({ ...prev, [activePropId]: newSynced }));
+                              toast.success(`${sync.platform} sincronizat — ${data.dates} zile blocate.`);
+                            } else {
+                              toast.error(data.error || 'Eroare la sincronizare');
+                            }
+                          } catch {
+                            toast.error('Eroare la sincronizare');
+                          }
+                          setSyncingId(null);
+                        }}
+                        disabled={syncingId === sync.id}
+                        className="text-violet-500 hover:text-violet-700 flex-shrink-0 p-1"
+                        title="Sincronizează acum"
+                      >
+                        <RefreshCw size={14} className={syncingId === sync.id ? 'animate-spin' : ''} />
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await fetch(`/api/properties/${activePropId}/calendar-sync`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ syncId: sync.id }),
+                          });
+                          setCalendarSyncs(prev => ({
+                            ...prev,
+                            [activePropId]: (prev[activePropId] || []).filter((s: any) => s.id !== sync.id),
+                          }));
+                          // Remove synced blocked dates for this platform from local state
+                          setSyncedDates(prev => {
+                            const propDates = { ...prev[activePropId] };
+                            Object.keys(propDates).forEach(d => {
+                              if (propDates[d] === sync.platform) delete propDates[d];
+                            });
+                            return { ...prev, [activePropId]: propDates };
+                          });
+                          setBlockedDates(prev => {
+                            const propBlocked = (prev[activePropId] || []).filter(d => syncedDates[activePropId]?.[d] !== sync.platform);
+                            return { ...prev, [activePropId]: propBlocked };
+                          });
+                          toast.success(`Calendar ${sync.platform} deconectat.`);
+                        }}
+                        className="text-red-400 hover:text-red-600 flex-shrink-0 p-1"
+                        title="Șterge"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add sync form */}
+              {showSyncForm ? (
+                <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">Platformă</label>
+                      <select value={syncPlatform} onChange={e => setSyncPlatform(e.target.value)} className="input text-sm">
+                        <option value="booking">Booking.com</option>
+                        <option value="airbnb">Airbnb</option>
+                        <option value="other">Altă platformă</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">URL calendar iCal</label>
+                      <input
+                        value={syncUrl}
+                        onChange={e => setSyncUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="input text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!syncUrl.trim()) return;
+                        const res = await fetch(`/api/properties/${activePropId}/calendar-sync`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ platform: syncPlatform, icalUrl: syncUrl.trim() }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setCalendarSyncs(prev => ({
+                            ...prev,
+                            [activePropId]: [...(prev[activePropId] || []), data.sync],
+                          }));
+                          setSyncUrl('');
+                          setShowSyncForm(false);
+                          toast.success(`Calendar ${syncPlatform} conectat! Sincronizarea va rula automat.`);
+                        } else {
+                          toast.error(data.error || 'Eroare la adăugare');
+                        }
+                      }}
+                      className="btn-primary text-xs px-4 py-2"
+                    >
+                      Adaugă
+                    </button>
+                    <button onClick={() => { setShowSyncForm(false); setSyncUrl(''); }} className="btn-secondary text-xs px-4 py-2">
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowSyncForm(true)} className="btn-secondary text-sm flex items-center gap-2">
+                  <Plus size={14} /> Adaugă calendar extern
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Action bar for range confirmation — fixed at bottom */}
           {rangeStart && !isAllView && (
