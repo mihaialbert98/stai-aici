@@ -42,6 +42,22 @@ export async function sendVerificationEmail(email: string, name: string, token: 
   });
 }
 
+export async function sendPasswordResetEmail(email: string, name: string, token: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  await sendEmail({
+    to: email,
+    subject: 'Resetare parolă – StaiAici',
+    html: `
+      <h2>Salut ${name},</h2>
+      <p>Am primit o cerere de resetare a parolei pentru contul tău.</p>
+      <p><a href="${appUrl}/auth/reset-password?token=${token}" style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Resetează parola</a></p>
+      <p style="color:#666;font-size:14px;">Linkul este valabil 1 oră. Dacă nu ai solicitat resetarea parolei, ignoră acest email.</p>
+      <br/>
+      <p>— Echipa StaiAici</p>
+    `,
+  });
+}
+
 export async function sendBookingRequestEmail(hostEmail: string, hostName: string, guestName: string, propertyTitle: string, startDate: string, endDate: string) {
   await sendEmail({
     to: hostEmail,

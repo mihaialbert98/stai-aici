@@ -8,6 +8,7 @@ const items = [
   { href: '/dashboard/host/bookings', label: 'Rezervări' },
   { href: '/dashboard/host/calendar', label: 'Calendar' },
   { href: '/dashboard/host/messages', label: 'Mesaje' },
+  { href: '/dashboard/host/settings', label: 'Setări' },
 ];
 
 export default function HostLayout({ children }: { children: React.ReactNode }) {

@@ -92,9 +92,14 @@ export default function LoginPage() {
             {loading ? 'Se încarcă...' : 'Autentificare'}
           </button>
         </form>
-        <p className="text-sm text-gray-500 mt-4 text-center">
-          Nu ai cont? <Link href="/auth/register" className="text-primary-600 hover:underline">Înregistrează-te</Link>
-        </p>
+        <div className="mt-4 text-center space-y-2">
+          <p className="text-sm">
+            <Link href="/auth/forgot-password" className="text-gray-500 hover:text-primary-600 hover:underline">Ai uitat parola?</Link>
+          </p>
+          <p className="text-sm text-gray-500">
+            Nu ai cont? <Link href="/auth/register" className="text-primary-600 hover:underline">Înregistrează-te</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

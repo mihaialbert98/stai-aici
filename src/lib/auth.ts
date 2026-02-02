@@ -72,6 +72,30 @@ export async function verifyVerificationToken(token: string): Promise<Verificati
   }
 }
 
+// Password reset tokens
+interface ResetPayload {
+  userId: string;
+  email: string;
+  purpose: 'reset';
+}
+
+export async function createResetToken(userId: string, email: string): Promise<string> {
+  return new SignJWT({ userId, email, purpose: 'reset' } as unknown as Record<string, unknown>)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('1h')
+    .sign(secret);
+}
+
+export async function verifyResetToken(token: string): Promise<ResetPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if ((payload as any).purpose !== 'reset') return null;
+    return payload as unknown as ResetPayload;
+  } catch {
+    return null;
+  }
+}
+
 export function clearSessionCookie() {
   return {
     name: COOKIE_NAME,
