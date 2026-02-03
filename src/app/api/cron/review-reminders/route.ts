@@ -33,7 +33,6 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   let sent = 0;
 
   for (const booking of bookings) {
@@ -61,7 +60,6 @@ export async function GET(req: NextRequest) {
       booking.guest.email,
       booking.guest.name,
       booking.property.title,
-      appUrl,
       booking.id,
     );
 

@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
     if (minPrice) where.pricePerNight = { ...where.pricePerNight, gte: parseFloat(minPrice) };
     if (maxPrice) where.pricePerNight = { ...where.pricePerNight, lte: parseFloat(maxPrice) };
     if (guests) where.maxGuests = { gte: parseInt(guests) };
+    const propertyType = searchParams.get('propertyType');
+    if (propertyType) where.propertyType = propertyType;
     if (amenities) {
       const ids = amenities.split(',');
       where.amenities = { some: { amenityId: { in: ids } } };

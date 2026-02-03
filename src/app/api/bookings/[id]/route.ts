@@ -88,6 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     data: { status },
     include: {
       guest: { select: { email: true, name: true } },
+      host: { select: { name: true, phone: true } },
       property: { select: { title: true } },
     },
   });
@@ -127,6 +128,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       updated.property.title,
       format(updated.startDate, 'dd.MM.yyyy'),
       format(updated.endDate, 'dd.MM.yyyy'),
+      updated.host.name,
+      updated.host.phone ?? undefined,
     );
   } else if (status === 'REJECTED') {
     sendBookingRejectedEmail(

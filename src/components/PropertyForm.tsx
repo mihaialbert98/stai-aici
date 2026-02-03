@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, X, GripVertical, ImageIcon, Loader2 } from 'lucide-react';
+import { PROPERTY_TYPES, PROPERTY_TYPE_LABELS, PropertyType } from '@/lib/validations';
 
 interface Props {
   initialData?: any;
@@ -25,6 +26,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     address: initialData?.address || '',
     pricePerNight: initialData?.pricePerNight || 0,
     maxGuests: initialData?.maxGuests || 1,
+    propertyType: (initialData?.propertyType || 'APARTMENT') as PropertyType,
     checkInInfo: initialData?.checkInInfo || '',
     houseRules: initialData?.houseRules || '',
     localTips: initialData?.localTips || '',
@@ -168,6 +170,14 @@ export function PropertyForm({ initialData, propertyId }: Props) {
         <div>
           <label className="label">Nr. maxim oaspeți</label>
           <input type="number" className="input" placeholder="ex. 4" value={form.maxGuests} onChange={e => update('maxGuests', e.target.value)} required min={1} />
+        </div>
+        <div>
+          <label className="label">Tip proprietate</label>
+          <select className="input" value={form.propertyType} onChange={e => update('propertyType', e.target.value)}>
+            {PROPERTY_TYPES.map(t => (
+              <option key={t} value={t}>{PROPERTY_TYPE_LABELS[t]}</option>
+            ))}
+          </select>
         </div>
       </div>
 

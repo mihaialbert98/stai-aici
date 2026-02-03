@@ -16,6 +16,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Introduceți parola'),
 });
 
+export const PROPERTY_TYPES = ['APARTMENT', 'HOUSE', 'CABIN', 'VILLA', 'STUDIO', 'ROOM', 'PENSION', 'OTHER'] as const;
+export type PropertyType = typeof PROPERTY_TYPES[number];
+
+export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  APARTMENT: 'Apartament',
+  HOUSE: 'Casa',
+  CABIN: 'Cabana',
+  VILLA: 'Vila',
+  STUDIO: 'Garsoniera',
+  ROOM: 'Camera',
+  PENSION: 'Pensiune',
+  OTHER: 'Altele',
+};
+
 export const propertySchema = z.object({
   title: cleanStr(5, 'Minim 5 caractere'),
   description: cleanStr(20, 'Minim 20 caractere'),
@@ -23,6 +37,7 @@ export const propertySchema = z.object({
   address: cleanStr(5, 'Introduceți adresa'),
   pricePerNight: z.number().min(1, 'Prețul trebuie să fie pozitiv'),
   maxGuests: z.number().int().min(1, 'Minim 1 oaspete'),
+  propertyType: z.enum(PROPERTY_TYPES).optional(),
   checkInInfo: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   houseRules: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   localTips: z.string().optional().transform(v => v ? sanitizeText(v) : v),

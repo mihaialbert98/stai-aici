@@ -32,6 +32,17 @@ enum CancellationPolicy {
   STRICT      // 50% refund up to 7 days before, no refund after
 }
 
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  CABIN
+  VILLA
+  STUDIO
+  ROOM
+  PENSION
+  OTHER
+}
+
 enum NotificationType {
   BOOKING_NEW
   BOOKING_ACCEPTED
@@ -74,6 +85,7 @@ model Property {
   address        String
   pricePerNight  Float
   maxGuests      Int
+  propertyType   PropertyType @default(APARTMENT)
   checkInInfo    String?  // check-in instructions
   houseRules     String?
   localTips      String?  // local recommendations

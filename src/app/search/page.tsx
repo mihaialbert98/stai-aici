@@ -7,6 +7,7 @@ import { CityPicker } from '@/components/CityPicker';
 import { Pagination } from '@/components/Pagination';
 import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import { SlidersHorizontal } from 'lucide-react';
+import { PROPERTY_TYPES, PROPERTY_TYPE_LABELS, PropertyType } from '@/lib/validations';
 
 interface Amenity { id: string; name: string }
 
@@ -34,6 +35,7 @@ function SearchContent() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
   const [guests, setGuests] = useState(searchParams.get('guests') || '');
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [propertyType, setPropertyType] = useState(searchParams.get('propertyType') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest');
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -70,6 +72,7 @@ function SearchContent() {
     if (maxPrice) params.set('maxPrice', maxPrice);
     if (guests) params.set('guests', guests);
     if (selectedAmenities.length) params.set('amenities', selectedAmenities.join(','));
+    if (propertyType) params.set('propertyType', propertyType);
     if (sortBy && sortBy !== 'newest') params.set('sortBy', sortBy);
     // Preserve date params from homepage search
     const checkIn = searchParams.get('checkIn');
@@ -140,6 +143,17 @@ function SearchContent() {
             <div>
               <label className="label">Oaspeți</label>
               <input type="number" className="input" placeholder="Nr. oaspeți" min={1} value={guests} onChange={(e) => setGuests(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="label">Tip proprietate</label>
+              <select className="input" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
+                <option value="">Toate tipurile</option>
+                {PROPERTY_TYPES.map(t => (
+                  <option key={t} value={t}>{PROPERTY_TYPE_LABELS[t]}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="mb-4">
