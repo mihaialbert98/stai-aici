@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NotificationType } from '@prisma/client';
+import { logger } from '@/lib/logger';
 
 export async function createNotification(data: {
   userId: string;
@@ -11,6 +12,6 @@ export async function createNotification(data: {
   try {
     await prisma.notification.create({ data });
   } catch (err) {
-    console.error('Failed to create notification:', err);
+    logger.error('Failed to create notification', err, { userId: data.userId, type: data.type });
   }
 }

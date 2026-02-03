@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { eachDayOfInterval, startOfDay, format } from 'date-fns';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
 
       synced++;
     } catch (err) {
-      console.error(`iCal sync error for ${sync.id} (${sync.icalUrl}):`, err);
+      logger.error('iCal sync failed', err, { syncId: sync.id, icalUrl: sync.icalUrl });
       errors++;
     }
   }

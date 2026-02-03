@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { propertySchema } from '@/lib/validations';
 import { removeDiacritics } from '@/lib/utils';
 import { ROMANIAN_CITIES } from '@/lib/cities';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ properties: propertiesWithRating, total, pages: Math.ceil(total / limit) });
   } catch (err: any) {
-    console.error('GET /api/properties error:', err);
+    logger.error('GET /api/properties failed', err);
     return NextResponse.json({ error: err.message, properties: [], total: 0, pages: 0 }, { status: 500 });
   }
 }
