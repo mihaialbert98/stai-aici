@@ -59,17 +59,15 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Prevent body scroll when open — compensate scrollbar width to avoid layout shift
+  // Prevent body scroll on mobile only (bottom sheet needs it); desktop dropdown doesn't need scroll lock
   useEffect(() => {
-    if (open) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    if (open && isMobile) {
       document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
       document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
     }
-    return () => { document.body.style.overflow = ''; document.body.style.paddingRight = ''; };
+    return () => { document.body.style.overflow = ''; };
   }, [open]);
 
   const handleDayClick = useCallback((day: Date) => {

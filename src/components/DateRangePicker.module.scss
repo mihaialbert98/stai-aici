@@ -22,10 +22,10 @@
 /* Mobile: bottom sheet, Desktop: absolute dropdown */
 .dropdown {
   @apply bg-white rounded-xl shadow-xl border border-gray-200 p-4 md:p-5 z-50 text-gray-900;
-  /* Mobile */
+  /* Mobile: full-width bottom sheet */
   @apply fixed inset-x-0 bottom-0 rounded-b-none max-h-[85vh] overflow-y-auto;
-  /* Desktop */
-  @apply md:absolute md:relative md:inset-auto md:top-full md:left-0 md:mt-2 md:rounded-xl md:max-h-none md:overflow-visible;
+  /* Desktop: positioned dropdown */
+  @apply md:absolute md:inset-auto md:top-full md:left-0 md:mt-2 md:rounded-xl md:max-h-none md:overflow-visible;
   @apply md:w-[620px];
 }
 
