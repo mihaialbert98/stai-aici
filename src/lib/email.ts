@@ -1,18 +1,8 @@
-import nodemailer from 'nodemailer';
 import { logger } from '@/lib/logger';
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'localhost',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: process.env.SMTP_USER ? {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  } : undefined,
-});
 
 const FROM = process.env.EMAIL_FROM || 'StaiAici <noreply@staiaici.ro>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 interface SendEmailOptions {
   to: string;
@@ -21,10 +11,31 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html }: SendEmailOptions) {
+  if (!RESEND_API_KEY) {
+    logger.error('RESEND_API_KEY missing; cannot send email', undefined, { to, subject });
+    return;
+  }
+
   try {
-    await transporter.sendMail({ from: FROM, to, subject, html });
+    logger.info('Sending email via Resend', { to, subject });
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Resend error ${res.status}: ${body}`);
+    }
+
+    logger.info('Email sent via Resend', { to, subject });
   } catch (err) {
-    logger.error('Failed to send email', err, { to, subject });
+    logger.error('Failed to send email via Resend', err, { to, subject });
   }
 }
 
