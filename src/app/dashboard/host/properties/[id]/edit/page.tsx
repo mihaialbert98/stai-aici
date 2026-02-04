@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { PropertyForm } from '@/components/PropertyForm';
+import { PeriodPricingManager } from '@/components/PeriodPricingManager';
 
 export default function EditPropertyPage() {
   const { id } = useParams();
@@ -17,7 +18,24 @@ export default function EditPropertyPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Editează proprietate</h1>
-      <PropertyForm initialData={property} propertyId={id as string} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <PropertyForm initialData={property} propertyId={id as string} />
+        </div>
+        <div>
+          <PeriodPricingManager
+            propertyId={id as string}
+            initialPricings={property.periodPricings?.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              startDate: p.startDate,
+              endDate: p.endDate,
+              pricePerNight: p.pricePerNight,
+            })) || []}
+            defaultPrice={property.pricePerNight}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from './PropertyCard.module.scss';
-import { formatRON } from '@/lib/utils';
 import { Users, Star, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -81,9 +80,6 @@ export function PropertyCard({ property, searchParams, isFavorited, onToggleFavo
               <span className="text-xs bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded-full font-medium">Nou</span>
             )}
           </div>
-          <p className={styles.price}>
-            {formatRON(property.pricePerNight)} <span className={styles.priceUnit}>/ noapte</span>
-          </p>
         </div>
       </div>
     </Link>

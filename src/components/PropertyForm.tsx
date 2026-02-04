@@ -26,6 +26,8 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     address: initialData?.address || '',
     pricePerNight: initialData?.pricePerNight || 0,
     maxGuests: initialData?.maxGuests || 1,
+    baseGuests: initialData?.baseGuests || 0,
+    extraGuestPrice: initialData?.extraGuestPrice || 0,
     propertyType: (initialData?.propertyType || 'APARTMENT') as PropertyType,
     checkInInfo: initialData?.checkInInfo || '',
     houseRules: initialData?.houseRules || '',
@@ -118,6 +120,8 @@ export function PropertyForm({ initialData, propertyId }: Props) {
       ...form,
       pricePerNight: Number(form.pricePerNight),
       maxGuests: Number(form.maxGuests),
+      baseGuests: Number(form.baseGuests),
+      extraGuestPrice: Number(form.extraGuestPrice),
       imageUrls: form.imageUrls.filter((u: string) => u.trim()),
     };
 
@@ -178,6 +182,42 @@ export function PropertyForm({ initialData, propertyId }: Props) {
               <option key={t} value={t}>{PROPERTY_TYPE_LABELS[t]}</option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* Extra Guest Pricing */}
+      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="font-medium text-gray-900 mb-3">Taxă oaspeți suplimentari (opțional)</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Setează un număr de oaspeți incluși în prețul de bază. Pentru fiecare oaspete suplimentar se va adăuga taxa specificată.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Oaspeți incluși în preț</label>
+            <input
+              type="number"
+              className="input"
+              placeholder="ex. 2"
+              value={form.baseGuests}
+              onChange={e => update('baseGuests', e.target.value)}
+              min={0}
+              max={form.maxGuests}
+            />
+            <p className="text-xs text-gray-400 mt-1">0 = fără taxe suplimentare</p>
+          </div>
+          {Number(form.baseGuests) > 0 && (
+            <div>
+              <label className="label">Preț per oaspete extra (RON/noapte)</label>
+              <input
+                type="number"
+                className="input"
+                placeholder="ex. 50"
+                value={form.extraGuestPrice}
+                onChange={e => update('extraGuestPrice', e.target.value)}
+                min={0}
+              />
+            </div>
+          )}
         </div>
       </div>
 

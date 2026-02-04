@@ -85,6 +85,8 @@ model Property {
   address        String
   pricePerNight  Float
   maxGuests      Int
+  baseGuests     Int      @default(0)   // 0 = no extra guest fee
+  extraGuestPrice Float   @default(0)   // RON per extra guest per night
   propertyType   PropertyType @default(APARTMENT)
   checkInInfo    String?  // check-in instructions
   houseRules     String?
@@ -102,6 +104,7 @@ model Property {
   reviews        Review[]
   favorites      Favorite[]
   calendarSyncs  CalendarSync[]
+  periodPricings PeriodPricing[]
 
   @@index([city])
   @@index([hostId])
@@ -137,17 +140,20 @@ model PropertyAmenity {
 }
 
 model Booking {
-  id         String        @id @default(cuid())
-  propertyId String
-  guestId    String
-  hostId     String
-  startDate  DateTime
-  endDate    DateTime
-  status     BookingStatus @default(PENDING)
-  totalPrice Float
-  guests     Int           @default(1)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  propertyId    String
+  guestId       String
+  hostId        String
+  startDate     DateTime
+  endDate       DateTime
+  status        BookingStatus @default(PENDING)
+  totalPrice    Float
+  basePrice     Float?        // Sum of nightly prices
+  extraGuestFee Float?        // Extra guest charges
+  nightlyPrices Json?         // [{date, price, periodName?}]
+  guests        Int           @default(1)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   property   Property  @relation(fields: [propertyId], references: [id])
   guest      User      @relation("GuestBookings", fields: [guestId], references: [id])
@@ -160,6 +166,20 @@ model Booking {
   @@index([propertyId])
   @@index([guestId])
   @@index([hostId])
+}
+
+model PeriodPricing {
+  id            String   @id @default(cuid())
+  propertyId    String
+  name          String   // e.g., "Sarbatori de iarna"
+  startDate     DateTime
+  endDate       DateTime
+  pricePerNight Float
+  createdAt     DateTime @default(now())
+
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
 }
 
 model BlockedDate {

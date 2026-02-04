@@ -3,12 +3,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
-  getDay, isToday, parseISO, isSameDay, isBefore, isAfter,
+  getDay, isToday, parseISO, isSameDay, isBefore, isAfter, isWithinInterval,
 } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock, RefreshCw, Link2, Trash2, Copy, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock, RefreshCw, Link2, Trash2, Copy, Plus, DollarSign, Loader2 } from 'lucide-react';
 import { formatRON } from '@/lib/utils';
 import { toast } from 'sonner';
+
+interface PeriodPricing {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  pricePerNight: number;
+}
 
 interface BookingData {
   id: string;
@@ -70,6 +78,12 @@ export default function HostCalendarPage() {
   const [syncUrl, setSyncUrl] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
+  // Period pricing state
+  const [periodPricings, setPeriodPricings] = useState<Record<string, PeriodPricing[]>>({});
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [priceForm, setPriceForm] = useState({ name: '', pricePerNight: 0 });
+  const [savingPrice, setSavingPrice] = useState(false);
+
   const gridRef = useRef<HTMLDivElement>(null);
   const propDropdownRef = useRef<HTMLDivElement>(null);
   const [propDropdownOpen, setPropDropdownOpen] = useState(false);
@@ -87,6 +101,7 @@ export default function HostCalendarPage() {
       const blocked: Record<string, string[]> = {};
       const synced: Record<string, Record<string, string>> = {};
       const syncsMap: Record<string, any[]> = {};
+      const pricingsMap: Record<string, PeriodPricing[]> = {};
       for (const p of myProps) {
         const dates = p.blockedDates || [];
         blocked[p.id] = dates.map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd'));
@@ -97,10 +112,18 @@ export default function HostCalendarPage() {
           }
         });
         syncsMap[p.id] = p.calendarSyncs || [];
+        pricingsMap[p.id] = (p.periodPricings || []).map((pp: any) => ({
+          id: pp.id,
+          name: pp.name,
+          startDate: pp.startDate,
+          endDate: pp.endDate,
+          pricePerNight: pp.pricePerNight,
+        }));
       }
       setBlockedDates(blocked);
       setSyncedDates(synced);
       setCalendarSyncs(syncsMap);
+      setPeriodPricings(pricingsMap);
 
       if (myProps.length === 1) setActivePropId(myProps[0].id);
       setLoading(false);
@@ -153,6 +176,32 @@ export default function HostCalendarPage() {
     return eachDayOfInterval({ start: from, end: to }).map(d => format(d, 'yyyy-MM-dd'));
   }, []);
 
+  // Get the price for a specific date (checks period pricings, returns highest if overlapping)
+  const getPriceForDate = useCallback((dateStr: string, propId: string): { price: number; periodName?: string } | null => {
+    const prop = properties.find(p => p.id === propId);
+    if (!prop) return null;
+
+    const propPricings = periodPricings[propId] || [];
+    const date = parseISO(dateStr);
+
+    // Find all matching period pricings for this date
+    const matchingPeriods = propPricings.filter(pp => {
+      const start = parseISO(pp.startDate.split('T')[0]);
+      const end = parseISO(pp.endDate.split('T')[0]);
+      return isWithinInterval(date, { start, end });
+    });
+
+    if (matchingPeriods.length > 0) {
+      // If multiple periods overlap, use the highest price
+      const highest = matchingPeriods.reduce((max, pp) =>
+        pp.pricePerNight > max.pricePerNight ? pp : max
+      );
+      return { price: highest.pricePerNight, periodName: highest.name };
+    }
+
+    return { price: prop.pricePerNight };
+  }, [properties, periodPricings]);
+
   const handleDateClick = useCallback((dateStr: string) => {
     if (isAllView) return;
     setConflictMsg(null);
@@ -199,6 +248,62 @@ export default function HostCalendarPage() {
     setRangeEnd(null);
     setHoverDate(null);
     setConflictMsg(null);
+    setShowPriceModal(false);
+    setPriceForm({ name: '', pricePerNight: activeProp?.pricePerNight || 0 });
+  };
+
+  const openPriceModal = () => {
+    setPriceForm({
+      name: '',
+      pricePerNight: activeProp?.pricePerNight || 0,
+    });
+    setShowPriceModal(true);
+  };
+
+  const savePeriodPricing = async () => {
+    if (!rangeStart || !activePropId || isAllView) return;
+    const end = rangeEnd || rangeStart;
+    const dates = getRangeDates(rangeStart, end);
+    const [startDate, endDate] = isBefore(parseISO(rangeStart), parseISO(end))
+      ? [rangeStart, end]
+      : [end, rangeStart];
+
+    // Auto-generate name if not provided
+    const periodName = priceForm.name.trim() ||
+      `${format(parseISO(startDate), 'd MMM', { locale: ro })} - ${format(parseISO(endDate), 'd MMM', { locale: ro })}`;
+
+    setSavingPrice(true);
+    try {
+      const res = await fetch(`/api/properties/${activePropId}/period-pricing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: periodName,
+          startDate,
+          endDate,
+          pricePerNight: priceForm.pricePerNight,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Eroare la salvare');
+        setSavingPrice(false);
+        return;
+      }
+
+      // Update local state with new period pricing
+      setPeriodPricings(prev => ({
+        ...prev,
+        [activePropId]: [...(prev[activePropId] || []), data.periodPricing],
+      }));
+
+      toast.success(`Preț setat pentru ${dates.length} zile`);
+      clearSelection();
+    } catch {
+      toast.error('Eroare la salvare');
+    }
+    setSavingPrice(false);
   };
 
   const confirmBlock = async (block: boolean) => {
@@ -381,12 +486,12 @@ export default function HostCalendarPage() {
             {!isAllView ? (
               <p className="text-sm text-gray-500">
                 <Lock size={13} className="inline mr-1 -mt-0.5" />
-                Click pe o dată sau selectează o perioadă pentru a bloca/debloca zile.
+                Click pe o dată sau selectează o perioadă pentru a bloca zile sau seta prețuri personalizate.
                 {blockedCount > 0 && <span className="text-red-500 ml-1">({blockedCount} zile blocate)</span>}
               </p>
             ) : (
               <p className="text-sm text-gray-500">
-                Vizualizare generală. Selectează o proprietate pentru a gestiona disponibilitatea.
+                Vizualizare generală. Selectează o proprietate pentru a gestiona disponibilitatea și prețurile.
               </p>
             )}
             {conflictMsg && (
@@ -474,6 +579,19 @@ export default function HostCalendarPage() {
                       }`}>
                         {format(day, 'd')}
                       </span>
+                      {/* Price display (only when single property selected) */}
+                      {!isAllView && !isBlockedHere && (() => {
+                        const priceInfo = getPriceForDate(dateStr, activePropId);
+                        if (!priceInfo) return null;
+                        const isPeriodPrice = !!priceInfo.periodName;
+                        return (
+                          <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 text-[11px] md:text-xs font-semibold ${
+                            isPeriodPrice ? 'text-emerald-600' : 'text-gray-500'
+                          }`}>
+                            {priceInfo.price}
+                          </span>
+                        );
+                      })()}
                       {/* Blocked indicator */}
                       {isBlockedHere && (
                         <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-semibold ${isSynced ? 'text-violet-600' : 'text-red-400'}`}>
@@ -741,6 +859,9 @@ export default function HostCalendarPage() {
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Blocat</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-100 border border-violet-300" /> Sincronizat extern</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> Azi</span>
+              {!isAllView && (
+                <span className="flex items-center gap-1"><span className="text-emerald-600 font-medium">123</span> Preț personalizat</span>
+              )}
               {!isAllView && rangeStart && (
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200" /> Selecție</span>
               )}
@@ -942,8 +1063,8 @@ export default function HostCalendarPage() {
           )}
 
           {/* Action bar for range confirmation — fixed at bottom */}
-          {rangeStart && !isAllView && (
-            <div className="fixed bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:max-w-md bg-white border-t md:border md:rounded-xl shadow-xl p-4 z-50">
+          {rangeStart && !isAllView && !showPriceModal && (
+            <div className="fixed bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:max-w-lg bg-white border-t md:border md:rounded-xl shadow-xl p-4 z-50">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm min-w-0">
                   <p className="font-medium truncate">{activeProp?.title}</p>
@@ -953,6 +1074,10 @@ export default function HostCalendarPage() {
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={openPriceModal}
+                    className="px-3 py-2 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition flex items-center gap-1.5">
+                    <DollarSign size={13} /> Setează preț
+                  </button>
                   {!allBlocked && (
                     <button onClick={() => confirmBlock(true)} disabled={blocking}
                       className="btn-primary text-xs px-3 py-2 flex items-center gap-1.5">
@@ -970,6 +1095,77 @@ export default function HostCalendarPage() {
                     <X size={13} />
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Price setting modal */}
+          {showPriceModal && rangeStart && !isAllView && (
+            <div className="fixed bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:max-w-md bg-white border-t md:border md:rounded-xl shadow-xl p-4 z-50">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-sm">Setează preț pentru perioadă</h4>
+                  <button onClick={() => setShowPriceModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <X size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {format(parseISO(rangeStart), 'd MMM', { locale: ro })}
+                  {rangeEnd && rangeEnd !== rangeStart && ` — ${format(parseISO(rangeEnd), 'd MMM yyyy', { locale: ro })}`}
+                  {!rangeEnd && ` — ${format(parseISO(rangeStart), 'yyyy', { locale: ro })}`}
+                  {' '}({rangeCount} {rangeCount === 1 ? 'zi' : 'zile'})
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Nume perioadă (opțional)</label>
+                  <input
+                    type="text"
+                    className="input text-sm"
+                    placeholder="ex. Sărbători de iarnă (se generează automat dacă lași gol)"
+                    value={priceForm.name}
+                    onChange={e => setPriceForm(f => ({ ...f, name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Preț per noapte (RON)</label>
+                  <input
+                    type="number"
+                    className="input text-sm"
+                    placeholder="ex. 350"
+                    value={priceForm.pricePerNight}
+                    onChange={e => setPriceForm(f => ({ ...f, pricePerNight: Number(e.target.value) }))}
+                    min={1}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Preț standard: {formatRON(activeProp?.pricePerNight || 0)}/noapte
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={savePeriodPricing}
+                  disabled={savingPrice}
+                  className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5"
+                >
+                  {savingPrice ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" /> Se salvează...
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign size={13} /> Salvează
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowPriceModal(false)}
+                  className="btn-secondary text-xs px-4 py-2"
+                >
+                  Anulează
+                </button>
               </div>
             </div>
           )}

@@ -1,14 +1,15 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Users, CheckCircle, Star } from 'lucide-react';
+import { MapPin, Users, CheckCircle, Star, Tag } from 'lucide-react';
 import { PropertyGuide } from '@/components/PropertyGuide';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { ImageLightbox } from '@/components/ImageLightbox';
+import { addMonths, eachDayOfInterval, format, isWithinInterval, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 export function PropertyDetail() {
   return (
@@ -34,6 +35,8 @@ function PropertyContent() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [priceBreakdown, setPriceBreakdown] = useState<any>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -48,7 +51,76 @@ function PropertyContent() {
 
   const guests = Number(guestsStr) || 0;
   const nights = checkIn && checkOut ? nightsBetween(checkIn, checkOut) : 0;
-  const totalPrice = nights > 0 && property ? nights * property.pricePerNight : 0;
+
+  // Fetch price breakdown when dates/guests change
+  useEffect(() => {
+    if (!property || nights < 1 || guests < 1) {
+      setPriceBreakdown(null);
+      return;
+    }
+
+    setLoadingPrice(true);
+    fetch(`/api/properties/${id}/price-preview?startDate=${checkIn}&endDate=${checkOut}&guests=${guests}`)
+      .then(r => r.json())
+      .then(data => {
+        setPriceBreakdown(data.breakdown);
+        setLoadingPrice(false);
+      })
+      .catch(() => setLoadingPrice(false));
+  }, [id, checkIn, checkOut, guests, nights, property]);
+
+  const totalPrice = priceBreakdown?.totalPrice || (nights > 0 && property ? nights * property.pricePerNight : 0);
+
+  // Generate day prices for calendar display (next 6 months)
+  // Must be placed before early returns to follow React hooks rules
+  const dayPrices = useMemo(() => {
+    if (!property) return {};
+
+    // Compute unavailable dates inside useMemo to avoid dependency issues
+    const blockedSet = new Set([
+      ...property.blockedDates.map((d: any) => new Date(d.date).toISOString().split('T')[0]),
+      ...property.bookings.flatMap((b: any) => {
+        const dates: string[] = [];
+        const s = new Date(b.startDate);
+        const e = new Date(b.endDate);
+        for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+          dates.push(d.toISOString().split('T')[0]);
+        }
+        return dates;
+      }),
+    ]);
+
+    const prices: Record<string, { price: number; isPeriodPrice?: boolean }> = {};
+    const today = startOfDay(new Date());
+    const sixMonthsLater = endOfMonth(addMonths(today, 6));
+    const allDays = eachDayOfInterval({ start: today, end: sixMonthsLater });
+    const periodPricings = property.periodPricings || [];
+
+    for (const day of allDays) {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      if (blockedSet.has(dateStr)) continue; // Don't show price for unavailable dates
+
+      // Check if day falls within any period pricing
+      let price = property.pricePerNight;
+      let isPeriodPrice = false;
+
+      for (const period of periodPricings) {
+        const periodStart = startOfDay(new Date(period.startDate));
+        const periodEnd = startOfDay(new Date(period.endDate));
+        if (isWithinInterval(day, { start: periodStart, end: periodEnd })) {
+          // Use highest price if multiple periods overlap
+          if (period.pricePerNight > price || !isPeriodPrice) {
+            price = period.pricePerNight;
+            isPeriodPrice = true;
+          }
+        }
+      }
+
+      prices[dateStr] = { price, isPeriodPrice };
+    }
+
+    return prices;
+  }, [property]);
 
   // Check date availability
   const unavailableOverlap = checkIn && checkOut && property ? (() => {
@@ -208,7 +280,6 @@ function PropertyContent() {
             <h1 className="text-3xl font-bold mb-2">{property.title}</h1>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span className="flex items-center gap-1"><Users size={14} /> Max {property.maxGuests} oaspeți</span>
-              <span className="flex items-center gap-1 font-semibold text-primary-600">{formatRON(property.pricePerNight)} / noapte</span>
               {property.reviews?.length > 0 && (
                 <span className="flex items-center gap-1">
                   <Star size={14} className="fill-yellow-400 text-yellow-400" />
@@ -326,6 +397,7 @@ function PropertyContent() {
                       onChange={(start, end) => { setCheckIn(start); setCheckOut(end); }}
                       placeholder="Selectează perioada"
                       unavailableDates={unavailableDates}
+                      dayPrices={dayPrices}
                     />
                   </div>
                   <div>
@@ -341,14 +413,66 @@ function PropertyContent() {
 
                 {nights > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>{formatRON(property.pricePerNight)} × {nights} nopți</span>
-                      <span>{formatRON(totalPrice)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                      <span>Total</span>
-                      <span className="text-primary-600">{formatRON(totalPrice)}</span>
-                    </div>
+                    {loadingPrice ? (
+                      <p className="text-gray-400 text-center py-2">Se calculează prețul...</p>
+                    ) : priceBreakdown ? (
+                      <>
+                        {/* Check if prices vary across nights */}
+                        {priceBreakdown.nightlyPrices.some((n: any, i: number, arr: any[]) => i > 0 && n.price !== arr[0].price) ? (
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-primary-600 hover:underline">
+                              Vezi detalii ({priceBreakdown.nights} nopți)
+                            </summary>
+                            <div className="mt-2 space-y-1 max-h-32 overflow-y-auto text-gray-600">
+                              {priceBreakdown.nightlyPrices.map((n: any, i: number) => (
+                                <div key={i} className="flex justify-between">
+                                  <span>{n.date}{n.periodName && ` (${n.periodName})`}</span>
+                                  <span>{formatRON(n.price)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        ) : (
+                          <div className="flex justify-between">
+                            <span>{formatRON(priceBreakdown.nightlyPrices[0]?.price || property.pricePerNight)} × {priceBreakdown.nights} nopți</span>
+                            <span>{formatRON(priceBreakdown.basePrice)}</span>
+                          </div>
+                        )}
+
+                        {priceBreakdown.extraGuestFee > 0 && (
+                          <div className="flex justify-between text-gray-600">
+                            <span>Oaspeți suplimentari ({priceBreakdown.extraGuests} × {priceBreakdown.nights} nopți)</span>
+                            <span>{formatRON(priceBreakdown.extraGuestFee)}</span>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                          <span>Total</span>
+                          <span className="text-primary-600">{formatRON(priceBreakdown.totalPrice)}</span>
+                        </div>
+
+                        {/* Savings display - only show if user saved money (positive savings) */}
+                        {priceBreakdown.savings > 0 && (
+                          <div className="flex items-center gap-2 mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <Tag size={14} className="text-emerald-600 flex-shrink-0" />
+                            <span className="text-xs text-emerald-700">
+                              Economisești <span className="font-bold">{formatRON(priceBreakdown.savings)}</span> față de prețul standard!
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between">
+                          <span>{formatRON(property.pricePerNight)} × {nights} nopți</span>
+                          <span>{formatRON(totalPrice)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                          <span>Total</span>
+                          <span className="text-primary-600">{formatRON(totalPrice)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 

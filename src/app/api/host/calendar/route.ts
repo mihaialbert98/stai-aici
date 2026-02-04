@@ -14,9 +14,20 @@ export async function GET(_req: NextRequest) {
     select: {
       id: true,
       title: true,
+      pricePerNight: true,
       images: { orderBy: { order: 'asc' }, take: 1, select: { url: true } },
       blockedDates: { select: { date: true, source: true } },
       calendarSyncs: { orderBy: { createdAt: 'desc' } },
+      periodPricings: {
+        select: {
+          id: true,
+          name: true,
+          startDate: true,
+          endDate: true,
+          pricePerNight: true,
+        },
+        orderBy: { startDate: 'asc' },
+      },
     },
   });
 

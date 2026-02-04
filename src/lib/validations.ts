@@ -37,6 +37,8 @@ export const propertySchema = z.object({
   address: cleanStr(5, 'Introduceți adresa'),
   pricePerNight: z.number().min(1, 'Prețul trebuie să fie pozitiv'),
   maxGuests: z.number().int().min(1, 'Minim 1 oaspete'),
+  baseGuests: z.number().int().min(0).optional(),
+  extraGuestPrice: z.number().min(0).optional(),
   propertyType: z.enum(PROPERTY_TYPES).optional(),
   checkInInfo: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   houseRules: z.string().optional().transform(v => v ? sanitizeText(v) : v),
@@ -44,6 +46,14 @@ export const propertySchema = z.object({
   cancellationPolicy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT']).optional(),
   amenityIds: z.array(z.string()).optional(),
   imageUrls: z.array(z.string().url()).optional(),
+});
+
+export const periodPricingSchema = z.object({
+  id: z.string().optional(),
+  name: cleanStr(2, 'Minim 2 caractere'),
+  startDate: z.string(),
+  endDate: z.string(),
+  pricePerNight: z.number().min(1, 'Prețul trebuie să fie pozitiv'),
 });
 
 export const bookingSchema = z.object({

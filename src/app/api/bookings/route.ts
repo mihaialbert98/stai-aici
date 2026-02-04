@@ -5,6 +5,7 @@ import { bookingSchema } from '@/lib/validations';
 import { differenceInDays, eachDayOfInterval, parseISO, format } from 'date-fns';
 import { sendBookingRequestEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
+import { calculateBookingPrice } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +50,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = bookingSchema.parse(body);
 
-    const property = await prisma.property.findUnique({ where: { id: data.propertyId } });
+    const property = await prisma.property.findUnique({
+      where: { id: data.propertyId },
+      include: { periodPricings: true },
+    });
     if (!property || !property.isActive) {
       return NextResponse.json({ error: 'Proprietate indisponibilă' }, { status: 400 });
     }
@@ -86,6 +90,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Perioada se suprapune cu o altă rezervare' }, { status: 400 });
     }
 
+    // Calculate price with period pricing and extra guest fees
+    const priceBreakdown = calculateBookingPrice({
+      property,
+      startDate,
+      endDate,
+      guests: data.guests,
+    });
+
     const booking = await prisma.booking.create({
       data: {
         propertyId: data.propertyId,
@@ -94,7 +106,10 @@ export async function POST(req: NextRequest) {
         startDate,
         endDate,
         guests: data.guests,
-        totalPrice: nights * property.pricePerNight,
+        totalPrice: priceBreakdown.totalPrice,
+        basePrice: priceBreakdown.basePrice,
+        extraGuestFee: priceBreakdown.extraGuestFee,
+        nightlyPrices: priceBreakdown.nightlyPrices as any,
       },
       include: { property: true, host: { select: { email: true, name: true } }, guest: { select: { name: true } } },
     });

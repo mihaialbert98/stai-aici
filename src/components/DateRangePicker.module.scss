@@ -24,9 +24,9 @@
   @apply bg-white rounded-xl shadow-xl border border-gray-200 p-4 md:p-5 z-50 text-gray-900;
   /* Mobile: full-width bottom sheet */
   @apply fixed inset-x-0 bottom-0 rounded-b-none max-h-[85vh] overflow-y-auto;
-  /* Desktop: positioned dropdown */
-  @apply md:absolute md:inset-auto md:top-full md:left-0 md:mt-2 md:rounded-xl md:max-h-none md:overflow-visible;
-  @apply md:w-[620px];
+  /* Desktop: positioned dropdown - use right:0 to prevent cutoff on smaller screens */
+  @apply md:absolute md:inset-auto md:top-full md:right-0 md:mt-2 md:rounded-xl md:max-h-none md:overflow-visible;
+  @apply md:w-[620px] md:max-w-[calc(100vw-2rem)];
 }
 
 .backdrop {
@@ -55,6 +55,18 @@
 
 .day {
   @apply h-10 md:h-9 flex items-center justify-center text-sm rounded-lg cursor-pointer transition;
+}
+
+.dayWithPrice {
+  @apply flex-col h-12 md:h-11 gap-0.5;
+}
+
+.dayPrice {
+  @apply text-[9px] text-gray-400 font-medium leading-none;
+}
+
+.dayPricePeriod {
+  @apply text-emerald-600;
 }
 
 .dayDefault {

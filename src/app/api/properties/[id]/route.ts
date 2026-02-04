@@ -22,6 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
         include: { guest: { select: { id: true, name: true } } },
         orderBy: { createdAt: 'desc' },
       },
+      periodPricings: { orderBy: { startDate: 'asc' } },
     },
   });
 

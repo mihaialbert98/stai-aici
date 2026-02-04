@@ -9,12 +9,18 @@ import { ro } from 'date-fns/locale';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './DateRangePicker.module.scss';
 
+interface DayPrice {
+  price: number;
+  isPeriodPrice?: boolean; // true if it's a custom period price
+}
+
 interface Props {
   startDate: string;
   endDate: string;
   onChange: (start: string, end: string) => void;
   placeholder?: string;
   unavailableDates?: string[];
+  dayPrices?: Record<string, DayPrice>; // Optional: show prices for each day
 }
 
 function parseDate(s: string): Date | null {
@@ -35,7 +41,7 @@ function localToday(): Date {
   return new Date(n.getFullYear(), n.getMonth(), n.getDate());
 }
 
-export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'Selectează perioada', unavailableDates = [] }: Props) {
+export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'Selectează perioada', unavailableDates = [], dayPrices }: Props) {
   const [open, setOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
@@ -116,16 +122,26 @@ export function DateRangePicker({ startDate, endDate, onChange, placeholder = 'S
         </div>
         <div className={styles.dayGrid}>
           {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} className={styles.day} />)}
-          {days.map(day => (
-            <div
-              key={day.toISOString()}
-              className={`${styles.day} ${getDayClass(day)}`}
-              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDayClick(day); }}
-              onMouseEnter={() => setHoveredDate(day)}
-            >
-              {format(day, 'd')}
-            </div>
-          ))}
+          {days.map(day => {
+            const dateStr = toDateStr(day);
+            const priceInfo = dayPrices?.[dateStr];
+            const isAvailable = !isBefore(day, today) && !blockedSet.has(dateStr);
+            return (
+              <div
+                key={day.toISOString()}
+                className={`${styles.day} ${getDayClass(day)} ${dayPrices ? styles.dayWithPrice : ''}`}
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleDayClick(day); }}
+                onMouseEnter={() => setHoveredDate(day)}
+              >
+                <span>{format(day, 'd')}</span>
+                {dayPrices && isAvailable && priceInfo && (
+                  <span className={`${styles.dayPrice} ${priceInfo.isPeriodPrice ? styles.dayPricePeriod : ''}`}>
+                    {priceInfo.price}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

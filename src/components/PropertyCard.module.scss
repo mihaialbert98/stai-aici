@@ -30,6 +30,10 @@
   @apply text-primary-600 font-bold text-lg mt-2;
 }
 
+.priceFrom {
+  @apply text-sm font-normal text-gray-500;
+}
+
 .priceUnit {
   @apply text-sm font-normal text-gray-500;
 }
