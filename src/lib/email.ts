@@ -1,6 +1,16 @@
 import { logger } from '@/lib/logger';
 
-const FROM = process.env.EMAIL_FROM || 'StaiAici <noreply@staiaici.ro>';
+const FALLBACK_FROM = 'StaiAici <onboarding@resend.dev>';
+
+function isValidFrom(value?: string | null): value is string {
+  if (!value) return false;
+  const trimmed = value.trim();
+  const emailOnly = /^[^\s<>@]+@[^\s<>@]+$/;
+  const nameEmail = /^.+<\s*[^\s<>@]+@[^\s<>@]+\s*>$/;
+  return emailOnly.test(trimmed) || nameEmail.test(trimmed);
+}
+
+const FROM = isValidFrom(process.env.EMAIL_FROM) ? process.env.EMAIL_FROM!.trim() : FALLBACK_FROM;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -17,7 +27,7 @@ async function sendEmail({ to, subject, html }: SendEmailOptions) {
   }
 
   try {
-    logger.info('Sending email via Resend', { to, subject });
+    logger.info('Sending email via Resend', { to, subject, from: FROM });
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -33,7 +43,7 @@ async function sendEmail({ to, subject, html }: SendEmailOptions) {
       throw new Error(`Resend error ${res.status}: ${body}`);
     }
 
-    logger.info('Email sent via Resend', { to, subject });
+    logger.info('Email sent via Resend', { to, subject, from: FROM });
   } catch (err) {
     logger.error('Failed to send email via Resend', err, { to, subject });
   }
