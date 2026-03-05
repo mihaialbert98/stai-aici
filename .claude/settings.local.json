@@ -37,7 +37,11 @@
       "Bash(git -C /Users/mihaialbert/Projects/stai-aici config user.name)",
       "Bash(git -C /Users/mihaialbert/Projects/stai-aici config user.email)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate resolve --applied \"20260204180736_add_pricing_features\")",
-      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate deploy)"
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate deploy)",
+      "Bash(DIRECT_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate deploy)",
+      "Bash(PGPASSWORD=\"npg_iswZhc2xY7Ty\" psql \"postgresql://neondb_owner@ep-broad-cherry-ag463gtz.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" -c 'ALTER TABLE \"\"GuestForm\"\" ADD COLUMN IF NOT EXISTS \"\"wordFileContent\"\" BYTEA;')",
+      "Bash(npx prisma:*)",
+      "Bash(DIRECT_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate resolve --applied \"20260305204927_add_word_file_content\")"
     ]
   }
 }
