@@ -65,6 +65,8 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  receptionistSignature String?
+
   properties      Property[]
   bookingsAsGuest Booking[]  @relation("GuestBookings")
   bookingsAsHost  Booking[]  @relation("HostBookings")
@@ -74,6 +76,7 @@ model User {
   hostReviewsReceived HostReview[] @relation("HostReviewsReceived")
   notifications   Notification[]
   favorites       Favorite[]
+  formRequests    FormRequest[]
 }
 
 model Property {
@@ -105,9 +108,63 @@ model Property {
   favorites      Favorite[]
   calendarSyncs  CalendarSync[]
   periodPricings PeriodPricing[]
+  checkInLink    CheckInLink?
+  guestFormLink  GuestFormLink?
+  guestSubmissions GuestSubmission[]
+  formRequests   FormRequest[]
 
   @@index([city])
   @@index([hostId])
+}
+
+model CheckInLink {
+  id           String   @id @default(cuid())
+  propertyId   String   @unique
+  token        String   @unique @default(cuid())
+  isActive     Boolean  @default(true)
+  wifiName     String?
+  wifiPassword String?
+  videoUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model GuestFormLink {
+  id         String            @id @default(cuid())
+  propertyId String            @unique
+  token      String            @unique @default(cuid())
+  isActive   Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+
+  property   Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  submissions GuestSubmission[]
+}
+
+model GuestSubmission {
+  id             String   @id @default(cuid())
+  formLinkId     String
+  propertyId     String
+  bookingId      String?
+  lastName       String
+  firstName      String
+  dateOfBirth    DateTime
+  citizenship    String
+  documentType   String
+  documentNumber String
+  checkInDate    DateTime
+  checkOutDate   DateTime
+  numberOfGuests Int
+  gdprConsent    Boolean
+  submittedAt    DateTime @default(now())
+  retentionDate  DateTime
+
+  formLink  GuestFormLink @relation(fields: [formLinkId], references: [id])
+  property  Property      @relation(fields: [propertyId], references: [id])
+
+  @@index([propertyId])
+  @@index([retentionDate])
 }
 
 model PropertyImage {
@@ -283,4 +340,53 @@ model CalendarSync {
   property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
+}
+
+model FormRequest {
+  id            String      @id @default(cuid())
+  propertyId    String
+  hostId        String
+  bookingId     String?
+  arrivalDate   DateTime?
+  departureDate DateTime?
+  totalGuests   Int
+  publicToken   String      @unique @default(cuid())
+  createdAt     DateTime    @default(now())
+
+  property      Property    @relation(fields: [propertyId], references: [id])
+  host          User        @relation(fields: [hostId], references: [id])
+  guestForms    GuestForm[]
+
+  @@index([hostId])
+  @@index([propertyId])
+}
+
+model GuestForm {
+  id              String      @id @default(cuid())
+  formRequestId   String
+  guestIndex      Int
+
+  fullName        String?
+  dateOfBirth     String?
+  placeOfBirth    String?
+  nationality     String?
+  city            String?
+  street          String?
+  streetNumber    String?
+  country         String?
+  arrivalDate     String?
+  departureDate   String?
+  purposeOfTravel String?
+  idType          String?
+  idSeries        String?
+  idNumber        String?
+  signatureImage  String?     // base64 PNG
+
+  submittedAt     DateTime?
+  wordFilePath    String?
+
+  formRequest     FormRequest @relation(fields: [formRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([formRequestId, guestIndex])
+  @@index([formRequestId])
 }

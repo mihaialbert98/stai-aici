@@ -25,19 +25,19 @@ async function main() {
 
   // Users
   const admin = await prisma.user.create({
-    data: { email: 'admin@staiaici.ro', passwordHash: hash, name: 'Admin StaiAici', role: Role.ADMIN },
+    data: { email: 'admin@staiaici.ro', passwordHash: hash, name: 'Admin StaiAici', role: Role.ADMIN, emailVerified: true },
   });
   const host1 = await prisma.user.create({
-    data: { email: 'maria@example.com', passwordHash: hash, name: 'Maria Popescu', role: Role.HOST, phone: '0722000001' },
+    data: { email: 'maria@example.com', passwordHash: hash, name: 'Maria Popescu', role: Role.HOST, phone: '0722000001', emailVerified: true },
   });
   const host2 = await prisma.user.create({
-    data: { email: 'ion@example.com', passwordHash: hash, name: 'Ion Ionescu', role: Role.HOST, phone: '0722000002' },
+    data: { email: 'ion@example.com', passwordHash: hash, name: 'Ion Ionescu', role: Role.HOST, phone: '0722000002', emailVerified: true },
   });
   const guest1 = await prisma.user.create({
-    data: { email: 'andrei@example.com', passwordHash: hash, name: 'Andrei Georgescu', role: Role.GUEST, phone: '0733000001' },
+    data: { email: 'andrei@example.com', passwordHash: hash, name: 'Andrei Georgescu', role: Role.GUEST, phone: '0733000001', emailVerified: true },
   });
   const guest2 = await prisma.user.create({
-    data: { email: 'elena@example.com', passwordHash: hash, name: 'Elena Dumitrescu', role: Role.GUEST, phone: '0733000002' },
+    data: { email: 'elena@example.com', passwordHash: hash, name: 'Elena Dumitrescu', role: Role.GUEST, phone: '0733000002', emailVerified: true },
   });
 
   // Amenities

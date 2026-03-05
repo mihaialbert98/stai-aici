@@ -16,6 +16,12 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/properties') ||
     pathname.startsWith('/api/amenities') ||
     pathname.startsWith('/api/hosts') ||
+    pathname.startsWith('/checkin/') ||
+    pathname.startsWith('/api/checkin/') ||
+    pathname.startsWith('/form/') ||
+    pathname.startsWith('/api/guest-form/') ||
+    pathname.startsWith('/register/') ||
+    pathname.startsWith('/api/registration/') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon')
   ) {

@@ -5,8 +5,10 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 const items = [
   { href: '/dashboard/host', label: 'Panou principal' },
   { href: '/dashboard/host/properties', label: 'Proprietăți' },
-  { href: '/dashboard/host/bookings', label: 'Rezervări' },
   { href: '/dashboard/host/calendar', label: 'Calendar' },
+  { href: '/dashboard/host/bookings', label: 'Rezervări' },
+  { href: '/dashboard/host/checkin-links', label: 'Link-uri check-in' },
+  { href: '/dashboard/host/registrations', label: 'Fișe de cazare' },
   { href: '/dashboard/host/messages', label: 'Mesaje' },
   { href: '/dashboard/host/settings', label: 'Setări' },
 ];

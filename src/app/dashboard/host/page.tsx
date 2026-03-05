@@ -6,6 +6,7 @@ import { formatRON } from '@/lib/utils';
 import {
   CalendarDays, Moon, DollarSign, Clock, TrendingUp, Star,
   BarChart3, ChevronLeft, ChevronRight, ChevronDown, Check,
+  RefreshCw, Link2, FileText, Plus,
 } from 'lucide-react';
 import {
   startOfMonth, endOfMonth, startOfYear, endOfYear,
@@ -287,6 +288,61 @@ export default function HostDashboard() {
           Vezi cererile în așteptare ({stats.pendingCount})
         </Link>
       )}
+
+      {/* Quick actions */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-4">Acțiuni rapide</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              href: '/dashboard/host/properties/new',
+              icon: Plus,
+              label: 'Adaugă proprietate',
+              desc: 'Creează o proprietate nouă',
+              color: 'text-blue-600',
+              bg: 'bg-blue-50',
+            },
+            {
+              href: '/dashboard/host/calendar',
+              icon: RefreshCw,
+              label: 'Sincronizare iCal',
+              desc: 'Conectează Airbnb și Booking.com',
+              color: 'text-green-600',
+              bg: 'bg-green-50',
+            },
+            {
+              href: '/dashboard/host/checkin-links',
+              icon: Link2,
+              label: 'Link-uri check-in',
+              desc: 'Trimite instrucțiuni oaspeților',
+              color: 'text-purple-600',
+              bg: 'bg-purple-50',
+            },
+            {
+              href: '/dashboard/host/guest-forms',
+              icon: FileText,
+              label: 'Fișe de cazare',
+              desc: 'Colectează date digital',
+              color: 'text-orange-600',
+              bg: 'bg-orange-50',
+            },
+          ].map(({ href, icon: Icon, label, desc, color, bg }) => (
+            <Link
+              key={href}
+              href={href}
+              className="card hover:shadow-md transition-shadow flex items-start gap-3"
+            >
+              <div className={`${bg} ${color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                <Icon size={18} />
+              </div>
+              <div>
+                <p className="font-medium text-sm">{label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

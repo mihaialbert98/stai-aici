@@ -48,6 +48,13 @@ export function Navbar() {
     router.refresh();
   };
 
+  // Hide navbar on public-facing form pages (no auth context needed)
+  if (
+    pathname.startsWith('/register/') ||
+    pathname.startsWith('/form/') ||
+    pathname.startsWith('/checkin/')
+  ) return null;
+
   const isHostMode = pathname.startsWith('/dashboard/host');
   const isGuestMode = pathname.startsWith('/dashboard/guest');
 

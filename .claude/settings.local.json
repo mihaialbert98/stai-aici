@@ -31,7 +31,9 @@
       "Bash(npm run build:*)",
       "Bash(npm uninstall:*)",
       "Bash(npx next build:*)",
-      "Bash(npm run test:run:*)"
+      "Bash(npm run test:run:*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(grep -n \"type=\"\"date\"\"\" /Users/mihaialbert/Projects/stai-aici/src/app/form/[token]/page.tsx)"
     ]
   }
 }
