@@ -194,10 +194,10 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div>
                 <label className="label">Data sosirii *</label>
                 <div className="relative">
-                  <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                   <input
                     type="date"
-                    className={`input pl-9 ${!isFirstGuest ? 'bg-blue-50' : ''}`}
+                    className={`input sm:pl-9 ${!isFirstGuest ? 'bg-blue-50' : ''}`}
                     required
                     value={form.arrivalDate}
                     onChange={e => set('arrivalDate', e.target.value)}
@@ -207,10 +207,10 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div>
                 <label className="label">Data plecării *</label>
                 <div className="relative">
-                  <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                   <input
                     type="date"
-                    className={`input pl-9 ${!isFirstGuest ? 'bg-blue-50' : ''}`}
+                    className={`input sm:pl-9 ${!isFirstGuest ? 'bg-blue-50' : ''}`}
                     required
                     value={form.departureDate}
                     onChange={e => set('departureDate', e.target.value)}
@@ -242,12 +242,12 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
                 <input className="input" required value={form.fullName}
                   onChange={e => set('fullName', e.target.value)} placeholder="Popescu Ion" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Data nașterii *</label>
                   <div className="relative">
-                    <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    <input type="date" className="input pl-9" required value={form.dateOfBirth}
+                    <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
+                    <input type="date" className="input sm:pl-9" required value={form.dateOfBirth}
                       onChange={e => set('dateOfBirth', e.target.value)} />
                   </div>
                 </div>
@@ -269,8 +269,8 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
           <section>
             <h2 className="font-semibold text-sm uppercase tracking-wide text-gray-400 mb-3">Adresă domiciliu</h2>
             <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
+              <div className="grid grid-cols-[1fr_5rem] gap-3">
+                <div>
                   <label className="label">Stradă *</label>
                   <input className="input" required value={form.street}
                     onChange={e => set('street', e.target.value)} placeholder="Str. Victoriei" />
@@ -281,7 +281,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
                     onChange={e => set('streetNumber', e.target.value)} placeholder="12" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Oraș *</label>
                   <input className="input" required value={form.city}

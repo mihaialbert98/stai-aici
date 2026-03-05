@@ -33,7 +33,11 @@
       "Bash(npx next build:*)",
       "Bash(npm run test:run:*)",
       "Bash(npx tsc --noEmit)",
-      "Bash(grep -n \"type=\"\"date\"\"\" /Users/mihaialbert/Projects/stai-aici/src/app/form/[token]/page.tsx)"
+      "Bash(grep -n \"type=\"\"date\"\"\" /Users/mihaialbert/Projects/stai-aici/src/app/form/[token]/page.tsx)",
+      "Bash(git -C /Users/mihaialbert/Projects/stai-aici config user.name)",
+      "Bash(git -C /Users/mihaialbert/Projects/stai-aici config user.email)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate resolve --applied \"20260204180736_add_pricing_features\")",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_iswZhc2xY7Ty@ep-broad-cherry-ag463gtz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate deploy)"
     ]
   }
 }
