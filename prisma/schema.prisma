@@ -382,8 +382,9 @@ model GuestForm {
   idNumber        String?
   signatureImage  String?     // base64 PNG
 
-  submittedAt     DateTime?
-  wordFilePath    String?
+  submittedAt      DateTime?
+  wordFilePath     String?
+  wordFileContent  Bytes?
 
   formRequest     FormRequest @relation(fields: [formRequestId], references: [id], onDelete: Cascade)
 

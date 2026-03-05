@@ -21,31 +21,44 @@ export async function GET(
       id: params.guestFormId,
       formRequest: { id: params.id, hostId: session.userId },
     },
-    select: { id: true, fullName: true, wordFilePath: true, submittedAt: true },
+    select: { id: true, fullName: true, wordFilePath: true, wordFileContent: true, submittedAt: true },
   });
 
   if (!guestForm) {
     return NextResponse.json({ error: 'Formular negăsit' }, { status: 404 });
   }
 
-  if (!guestForm.wordFilePath || !guestForm.submittedAt) {
+  if (!guestForm.submittedAt) {
     return NextResponse.json({ error: 'Documentul nu a fost generat încă' }, { status: 404 });
   }
 
-  const absolutePath = path.join(process.cwd(), guestForm.wordFilePath);
-
-  if (!fs.existsSync(absolutePath)) {
-    return NextResponse.json({ error: 'Fișierul nu a fost găsit' }, { status: 404 });
-  }
-
-  const fileBuffer = fs.readFileSync(absolutePath);
   const safeName = (guestForm.fullName || guestForm.id).replace(/[^a-z0-9]/gi, '-').toLowerCase();
   const filename = `fisa-cazare-${safeName}.docx`;
+  const contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-  return new NextResponse(fileBuffer, {
-    headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-    },
-  });
+  // New records: content stored in DB
+  if (guestForm.wordFileContent) {
+    return new NextResponse(guestForm.wordFileContent, {
+      headers: {
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
+  }
+
+  // Legacy: content stored on filesystem
+  if (guestForm.wordFilePath && guestForm.wordFilePath !== 'db') {
+    const absolutePath = path.join(process.cwd(), guestForm.wordFilePath);
+    if (fs.existsSync(absolutePath)) {
+      const fileBuffer = fs.readFileSync(absolutePath);
+      return new NextResponse(fileBuffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      });
+    }
+  }
+
+  return NextResponse.json({ error: 'Fișierul nu a fost găsit' }, { status: 404 });
 }

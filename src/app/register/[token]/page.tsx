@@ -239,7 +239,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
             <div className="space-y-3">
               <div>
                 <label className="label">Nume complet *</label>
-                <input className="input" required value={form.fullName}
+                <input className="input" required autoComplete="name" value={form.fullName}
                   onChange={e => set('fullName', e.target.value)} placeholder="Popescu Ion" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -272,7 +272,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div className="grid grid-cols-[1fr_5rem] gap-3">
                 <div>
                   <label className="label">Stradă *</label>
-                  <input className="input" required value={form.street}
+                  <input className="input" required autoComplete="street-address" value={form.street}
                     onChange={e => set('street', e.target.value)} placeholder="Str. Victoriei" />
                 </div>
                 <div>
@@ -284,12 +284,12 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Oraș *</label>
-                  <input className="input" required value={form.city}
+                  <input className="input" required autoComplete="address-level2" value={form.city}
                     onChange={e => set('city', e.target.value)} placeholder="București" />
                 </div>
                 <div>
                   <label className="label">Țară *</label>
-                  <input className="input" required value={form.country}
+                  <input className="input" required autoComplete="country-name" value={form.country}
                     onChange={e => set('country', e.target.value)} placeholder="România" />
                 </div>
               </div>
@@ -303,19 +303,21 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div>
                 <label className="label">Tip act *</label>
                 <select className="input" value={form.idType}
-                  onChange={e => set('idType', e.target.value)}>
+                  onChange={e => { set('idType', e.target.value); set('idSeries', ''); }}>
                   <option>Carte de identitate</option>
                   <option>Pașaport</option>
                   <option>Permis de ședere</option>
                   <option>Alt document</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Serie *</label>
-                  <input className="input" required value={form.idSeries}
-                    onChange={e => set('idSeries', e.target.value)} placeholder="AB" />
-                </div>
+              <div className={`grid gap-3 ${form.idType === 'Carte de identitate' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {form.idType === 'Carte de identitate' && (
+                  <div>
+                    <label className="label">Serie *</label>
+                    <input className="input" required value={form.idSeries}
+                      onChange={e => set('idSeries', e.target.value)} placeholder="AB" />
+                  </div>
+                )}
                 <div>
                   <label className="label">Număr *</label>
                   <input className="input" required value={form.idNumber}

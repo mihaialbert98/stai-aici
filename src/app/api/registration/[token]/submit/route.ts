@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { sanitizeText } from '@/lib/sanitize';
 import { generateRegistrationDoc } from '@/lib/word-generator';
-import fs from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
+
+const ID_TYPES_WITH_SERIES = ['Carte de identitate'];
 
 // POST /api/registration/[token]/submit — public, submit guest form + generate .docx
 export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
@@ -46,8 +46,16 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     signatureImage,
   } = body;
 
-  const required = { fullName, dateOfBirth, placeOfBirth, nationality, city, street, streetNumber, country, arrivalDate, departureDate, purposeOfTravel, idType, idSeries, idNumber, signatureImage };
-  const missing = Object.entries(required).find(([, v]) => !v);
+  const requiresSeries = ID_TYPES_WITH_SERIES.includes(idType);
+
+  const requiredFields: Record<string, unknown> = {
+    fullName, dateOfBirth, placeOfBirth, nationality,
+    city, street, streetNumber, country,
+    arrivalDate, departureDate, purposeOfTravel, idType, idNumber, signatureImage,
+  };
+  if (requiresSeries) requiredFields.idSeries = idSeries;
+
+  const missing = Object.entries(requiredFields).find(([, v]) => !v);
   if (missing) {
     return NextResponse.json({ error: `Câmpul "${missing[0]}" este obligatoriu` }, { status: 400 });
   }
@@ -55,6 +63,8 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   if (!String(signatureImage).startsWith('data:image/')) {
     return NextResponse.json({ error: 'Semnătura este invalidă' }, { status: 400 });
   }
+
+  const seriesValue = requiresSeries ? sanitizeText(String(idSeries)) : '';
 
   // Generate Word document
   const docBuffer = await generateRegistrationDoc({
@@ -70,19 +80,13 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     departureDate: sanitizeText(String(departureDate)),
     purposeOfTravel: sanitizeText(String(purposeOfTravel)),
     idType: sanitizeText(String(idType)),
-    idSeries: sanitizeText(String(idSeries)),
+    idSeries: seriesValue,
     idNumber: sanitizeText(String(idNumber)),
     touristSignature: String(signatureImage),
     receptionistSignature: formRequest.host.receptionistSignature,
   });
 
-  // Save file
-  const uploadsDir = path.join(process.cwd(), 'uploads', 'registrations');
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  const wordFilePath = path.join('uploads', 'registrations', `${nextPending.id}.docx`);
-  fs.writeFileSync(path.join(process.cwd(), wordFilePath), docBuffer);
-
-  // Update GuestForm
+  // Update GuestForm — store docx in DB (works on any hosting, no filesystem needed)
   await prisma.guestForm.update({
     where: { id: nextPending.id },
     data: {
@@ -98,11 +102,12 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       departureDate: sanitizeText(String(departureDate)),
       purposeOfTravel: sanitizeText(String(purposeOfTravel)),
       idType: sanitizeText(String(idType)),
-      idSeries: sanitizeText(String(idSeries)),
+      idSeries: seriesValue,
       idNumber: sanitizeText(String(idNumber)),
       signatureImage: String(signatureImage),
       submittedAt: new Date(),
-      wordFilePath,
+      wordFilePath: 'db',
+      wordFileContent: docBuffer,
     },
   });
 
