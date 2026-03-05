@@ -38,7 +38,7 @@ export async function GET(
 
   // New records: content stored in DB
   if (guestForm.wordFileContent) {
-    return new NextResponse(guestForm.wordFileContent, {
+    return new NextResponse(new Uint8Array(guestForm.wordFileContent), {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${filename}"`,
@@ -51,7 +51,7 @@ export async function GET(
     const absolutePath = path.join(process.cwd(), guestForm.wordFilePath);
     if (fs.existsSync(absolutePath)) {
       const fileBuffer = fs.readFileSync(absolutePath);
-      return new NextResponse(fileBuffer, {
+      return new NextResponse(new Uint8Array(fileBuffer), {
         headers: {
           'Content-Type': contentType,
           'Content-Disposition': `attachment; filename="${filename}"`,
