@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
-import { CheckCircle, FileText, PenLine, Trash2 } from 'lucide-react';
+import { Calendar, CheckCircle, FileText, PenLine, Trash2 } from 'lucide-react';
 
 interface FormContext {
   status: 'pending' | 'complete';
@@ -193,24 +193,30 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="label">Data sosirii *</label>
-                <input
-                  type="date"
-                  className={`input ${!isFirstGuest ? 'bg-blue-50' : ''}`}
-                  required
-                  value={form.arrivalDate}
-                  onChange={e => set('arrivalDate', e.target.value)}
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    className={`input pr-9 ${!isFirstGuest ? 'bg-blue-50' : ''}`}
+                    required
+                    value={form.arrivalDate}
+                    onChange={e => set('arrivalDate', e.target.value)}
+                  />
+                  <Calendar size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
               </div>
               <div>
                 <label className="label">Data plecării *</label>
-                <input
-                  type="date"
-                  className={`input ${!isFirstGuest ? 'bg-blue-50' : ''}`}
-                  required
-                  value={form.departureDate}
-                  onChange={e => set('departureDate', e.target.value)}
-                  min={form.arrivalDate}
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    className={`input pr-9 ${!isFirstGuest ? 'bg-blue-50' : ''}`}
+                    required
+                    value={form.departureDate}
+                    onChange={e => set('departureDate', e.target.value)}
+                    min={form.arrivalDate}
+                  />
+                  <Calendar size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             </div>
             {!isFirstGuest && (
@@ -239,8 +245,11 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Data nașterii *</label>
-                  <input type="date" className="input" required value={form.dateOfBirth}
-                    onChange={e => set('dateOfBirth', e.target.value)} />
+                  <div className="relative">
+                    <input type="date" className="input pr-9" required value={form.dateOfBirth}
+                      onChange={e => set('dateOfBirth', e.target.value)} />
+                    <Calendar size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
                 <div>
                   <label className="label">Locul nașterii *</label>
