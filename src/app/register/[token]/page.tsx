@@ -185,7 +185,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 space-y-6 overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 space-y-6">
 
           {/* Stay details — first so guests see dates before filling personal info */}
           <section>
@@ -195,7 +195,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
                 <label className="label">Data sosirii *</label>
                 <input
                   type="date"
-                  className={`input h-10 max-w-full ${!isFirstGuest ? 'bg-blue-50' : ''}`}
+                  className={`input ${!isFirstGuest ? 'bg-blue-50' : ''}`}
                   required
                   value={form.arrivalDate}
                   onChange={e => set('arrivalDate', e.target.value)}
@@ -205,7 +205,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
                 <label className="label">Data plecării *</label>
                 <input
                   type="date"
-                  className={`input h-10 max-w-full ${!isFirstGuest ? 'bg-blue-50' : ''}`}
+                  className={`input ${!isFirstGuest ? 'bg-blue-50' : ''}`}
                   required
                   value={form.departureDate}
                   onChange={e => set('departureDate', e.target.value)}
@@ -239,7 +239,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Data nașterii *</label>
-                  <input type="date" className="input h-10 max-w-full" required value={form.dateOfBirth}
+                  <input type="date" className="input" required value={form.dateOfBirth}
                     onChange={e => set('dateOfBirth', e.target.value)} />
                 </div>
                 <div>
