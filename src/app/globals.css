@@ -36,11 +36,21 @@
     min-width: 0;
     min-height: 2.625rem;
     line-height: 1.5;
+    position: relative;
   }
   input[type="date"].input::-webkit-calendar-picker-indicator {
-    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
   }
-  input[type="date"].input[value=""]::-webkit-datetime-edit {
+  input[type="date"].input:not(:focus)[value=""]::-webkit-datetime-edit {
     color: transparent;
   }
   .label {
