@@ -37,6 +37,12 @@
     min-height: 2.625rem;
     line-height: 1.5;
   }
+  input[type="date"].input::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+  input[type="date"].input[value=""]::-webkit-datetime-edit {
+    color: transparent;
+  }
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1;
   }
