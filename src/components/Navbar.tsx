@@ -86,9 +86,11 @@ export function Navbar() {
         <div className={styles.desktopRight}>
           <button
             onClick={toggleLang}
-            className="text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
+            title={lang === 'ro' ? 'Switch to English' : 'Schimbă în Română'}
+            className="inline-flex items-center gap-0.5 rounded-lg border border-primary-200 bg-primary-50 overflow-hidden text-xs font-semibold transition hover:border-primary-300"
           >
-            {lang === 'ro' ? 'EN' : 'RO'}
+            <span className={`px-2.5 py-1.5 transition ${lang === 'ro' ? 'bg-primary-600 text-white' : 'text-primary-600 hover:bg-primary-100'}`}>RO</span>
+            <span className={`px-2.5 py-1.5 transition ${lang === 'en' ? 'bg-primary-600 text-white' : 'text-primary-600 hover:bg-primary-100'}`}>EN</span>
           </button>
           {user ? (
             <>
@@ -119,7 +121,7 @@ export function Navbar() {
                     </Link>
                     <button onClick={logout} className={styles.dropdownItem}>
                       <LogOut size={16} />
-                      Ieși din cont
+                      {lang === 'ro' ? 'Ieși din cont' : 'Sign out'}
                     </button>
                   </div>
                 )}
@@ -127,8 +129,8 @@ export function Navbar() {
             </>
           ) : (
             <div className={styles.authButtons}>
-              <Link href="/auth/login" className={styles.loginBtn}>Intră în cont</Link>
-              <Link href="/auth/register" className={styles.registerBtn}>Înregistrare</Link>
+              <Link href="/auth/login" className={styles.loginBtn}>{lang === 'ro' ? 'Intră în cont' : 'Sign in'}</Link>
+              <Link href="/auth/register" className={styles.registerBtn}>{lang === 'ro' ? 'Înregistrare' : 'Sign up'}</Link>
             </div>
           )}
         </div>
@@ -152,9 +154,11 @@ export function Navbar() {
           <div className="px-4 pt-3 pb-1">
             <button
               onClick={toggleLang}
-              className="text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
+              title={lang === 'ro' ? 'Switch to English' : 'Schimbă în Română'}
+              className="inline-flex items-center gap-0.5 rounded-lg border border-primary-200 bg-primary-50 overflow-hidden text-xs font-semibold transition hover:border-primary-300"
             >
-              {lang === 'ro' ? 'EN' : 'RO'}
+              <span className={`px-2.5 py-1.5 transition ${lang === 'ro' ? 'bg-primary-600 text-white' : 'text-primary-600 hover:bg-primary-100'}`}>RO</span>
+              <span className={`px-2.5 py-1.5 transition ${lang === 'en' ? 'bg-primary-600 text-white' : 'text-primary-600 hover:bg-primary-100'}`}>EN</span>
             </button>
           </div>
           {user ? (
@@ -174,16 +178,16 @@ export function Navbar() {
               <div className={styles.mobileDivider} />
               <button onClick={logout} className={`${styles.mobileLink} ${styles.mobileLinkDanger}`}>
                 <LogOut size={16} />
-                Ieși din cont
+                {lang === 'ro' ? 'Ieși din cont' : 'Sign out'}
               </button>
             </>
           ) : (
             <div className={styles.mobileAuthButtons}>
               <Link href="/auth/login" className={styles.mobileLoginBtn} onClick={() => setMenuOpen(false)}>
-                Intră în cont
+                {lang === 'ro' ? 'Intră în cont' : 'Sign in'}
               </Link>
               <Link href="/auth/register" className={styles.mobileRegisterBtn} onClick={() => setMenuOpen(false)}>
-                Înregistrare
+                {lang === 'ro' ? 'Înregistrare' : 'Sign up'}
               </Link>
             </div>
           )}

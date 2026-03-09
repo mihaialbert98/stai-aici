@@ -10,7 +10,7 @@ export function Footer() {
   const t = dashboardT[lang].footer;
 
   return (
-    <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
+    <footer className="mt-auto" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(20,184,166,0.13)' }}>
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}

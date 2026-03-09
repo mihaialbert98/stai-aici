@@ -1,5 +1,8 @@
 .nav {
-  @apply bg-white/80 backdrop-blur-md border-b border-gray-200/60 sticky top-0 z-50;
+  @apply backdrop-blur-md sticky top-0 z-50;
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(20, 184, 166, 0.14);
+  box-shadow: 0 1px 12px rgba(15, 118, 110, 0.07);
 }
 
 .container {

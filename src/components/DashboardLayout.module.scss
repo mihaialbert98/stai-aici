@@ -4,7 +4,10 @@
 
 /* Mobile top bar with hamburger */
 .mobileBar {
-  @apply flex md:hidden items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shrink-0;
+  @apply flex md:hidden items-center gap-3 px-4 py-3 shrink-0;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(20, 184, 166, 0.12);
 }
 
 .menuBtn {
@@ -17,12 +20,15 @@
 
 /* Sidebar */
 .sidebar {
-  @apply w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto shrink-0
+  @apply w-64 p-4 overflow-y-auto shrink-0
     /* Mobile: off-screen drawer below navbar */
     fixed left-0 z-40 -translate-x-full transition-transform duration-200
     top-16 bottom-0
     /* Desktop: static */
     md:static md:translate-x-0 md:z-auto md:top-auto md:bottom-auto;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fffd 100%);
+  border-right: 1px solid rgba(20, 184, 166, 0.12);
+  box-shadow: inset -1px 0 0 rgba(20, 184, 166, 0.06);
 }
 
 .sidebarOpen {
@@ -50,7 +56,9 @@
 }
 
 .navItemActive {
-  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-primary-50 text-primary-700 font-medium;
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary-700 font-medium;
+  background: linear-gradient(90deg, #ccfbf1 0%, #e6faf8 100%);
+  box-shadow: 0 1px 4px rgba(15, 118, 110, 0.12);
 }
 
 .content {
