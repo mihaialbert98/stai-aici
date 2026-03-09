@@ -848,6 +848,16 @@ export const landingT = {
       { name: 'Starter', price: '49 RON', desc: 'Pentru gazde în creștere', features: ['Până la 5 proprietăți', 'Tot din Free', 'Fișe de cazare digitale', 'Prețuri pe perioade', 'Export CSV'], cta: 'Începe trial gratuit' },
       { name: 'Pro', price: '129 RON', desc: 'Pentru profesioniști', features: ['Proprietăți nelimitate', 'Tot din Starter', 'Export PDF', 'Suport prioritar', 'Analytics avansat'], cta: 'Alege Pro' },
     ],
+    comingSoonTitle: 'Ce urmează',
+    comingSoonSubtitle: 'Lucrăm continuu la funcționalități noi. Iată ce vine în curând:',
+    comingSoon: [
+      { title: 'Rezervări directe', desc: 'Acceptă rezervări direct prin platformă, fără comisioane externe.' },
+      { title: 'Mesagerie integrată', desc: 'Comunică cu oaspeții tăi direct din dashboard, cu notificări în timp real.' },
+      { title: 'Recenzii', desc: 'Colectează și afișează recenzii de la oaspeți pentru a crește încrederea.' },
+      { title: 'Aplicație mobilă', desc: 'Gestionează tot de pe telefon — notificări push, calendar și check-in.' },
+      { title: 'Prețuri dinamice', desc: 'Ajustare automată a prețurilor în funcție de sezon, cerere și concurență.' },
+      { title: 'Portal pentru oaspeți', desc: 'Oaspeții tăi vor putea vizualiza și gestiona rezervările lor direct.' },
+    ],
   },
   en: {
     heroTitle: 'Manage your Airbnb and Booking.com properties from one place',
@@ -877,6 +887,16 @@ export const landingT = {
       { name: 'Free', price: '0 RON', desc: 'For hosts just getting started', features: ['1 property', 'iCal sync', 'Bookings & messages', 'Check-in link', 'Stats dashboard'], cta: 'Start for free' },
       { name: 'Starter', price: '49 RON', desc: 'For growing hosts', features: ['Up to 5 properties', 'Everything in Free', 'Digital guest forms', 'Period pricing', 'CSV export'], cta: 'Start free trial' },
       { name: 'Pro', price: '129 RON', desc: 'For professionals', features: ['Unlimited properties', 'Everything in Starter', 'PDF export', 'Priority support', 'Advanced analytics'], cta: 'Choose Pro' },
+    ],
+    comingSoonTitle: "What's coming next",
+    comingSoonSubtitle: "We're constantly building new features. Here's what's on the roadmap:",
+    comingSoon: [
+      { title: 'Direct bookings', desc: 'Accept bookings directly through the platform with no external commissions.' },
+      { title: 'Integrated messaging', desc: 'Communicate with your guests from the dashboard with real-time notifications.' },
+      { title: 'Reviews', desc: 'Collect and display guest reviews to build trust and credibility.' },
+      { title: 'Mobile app', desc: 'Manage everything from your phone — push notifications, calendar and check-in.' },
+      { title: 'Dynamic pricing', desc: 'Automatically adjust prices based on season, demand and competition.' },
+      { title: 'Guest portal', desc: 'Your guests will be able to view and manage their bookings directly.' },
     ],
   },
 };

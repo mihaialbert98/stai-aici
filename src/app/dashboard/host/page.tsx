@@ -143,8 +143,8 @@ export default function HostDashboard() {
     { label: t.nights, value: stats.totalNights, icon: Moon, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: t.revenue, value: formatRON(stats.totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
     { label: t.occupancy, value: `${stats.occupancyRate}%`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: t.avgRating, value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50', link: stats.reviewCount > 0 ? (singlePropertyId ? `/dashboard/host/properties/${singlePropertyId}/reviews` : `/dashboard/host/reviews${selectedPropertyIds.size > 0 ? `?propertyIds=${Array.from(selectedPropertyIds).join(',')}` : ''}`) : undefined },
-    { label: t.pending, value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50', link: stats.pendingCount > 0 ? '/dashboard/host/bookings' : undefined },
+    { label: t.avgRating, value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { label: t.pending, value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50' },
   ] : [];
 
   return (
@@ -288,12 +288,6 @@ export default function HostDashboard() {
             return <div key={c.label} className="card min-h-[120px]">{inner}</div>;
           })}
         </div>
-      )}
-
-      {stats?.pendingCount > 0 && (
-        <Link href="/dashboard/host/bookings" className="btn-primary">
-          {t.viewPending(stats.pendingCount)}
-        </Link>
       )}
 
       {/* Quick actions */}

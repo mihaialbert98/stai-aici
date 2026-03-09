@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { Calendar, Link2, FileText, BarChart3, CheckCircle, ArrowRight, Zap } from 'lucide-react';
+import { Calendar, Link2, FileText, BarChart3, CheckCircle, ArrowRight, Zap, Clock } from 'lucide-react';
 import { getSession } from '@/lib/auth';
 import type { Lang } from '@/lib/i18n';
 import { landingT } from '@/lib/i18n';
@@ -233,6 +233,34 @@ export default async function HomePage() {
             >
               {t.plans[2].cta}
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Coming soon ── */}
+      <section className="py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium px-4 py-1.5 rounded-full mb-5">
+              <Clock size={13} /> {lang === 'ro' ? 'Roadmap' : 'Roadmap'}
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">{t.comingSoonTitle}</h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">{t.comingSoonSubtitle}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {t.comingSoon.map((item) => (
+              <div
+                key={item.title}
+                className="relative bg-white/70 rounded-2xl p-6 border border-dashed border-gray-200"
+                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
+              >
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full mb-4">
+                  <Clock size={11} /> {lang === 'ro' ? 'În curând' : 'Coming soon'}
+                </span>
+                <h3 className="font-semibold text-gray-900 mb-1.5">{item.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

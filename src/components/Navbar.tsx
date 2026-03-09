@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
-import { NotificationBell } from '@/components/NotificationBell';
 import { NestlyLogo } from '@/components/NestlyLogo';
 import { setLangCookie } from '@/lib/i18n';
 import { useLang, dispatchLangChange } from '@/lib/useLang';
@@ -94,7 +93,6 @@ export function Navbar() {
           </button>
           {user ? (
             <>
-              <NotificationBell />
               <div className={styles.profileDropdown} ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(o => !o)}
@@ -135,9 +133,8 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile: bell + hamburger */}
+        {/* Mobile: hamburger */}
         <div className={styles.mobileActions}>
-          {user && <NotificationBell />}
           <button
             className={styles.hamburger}
             onClick={() => setMenuOpen(o => !o)}
