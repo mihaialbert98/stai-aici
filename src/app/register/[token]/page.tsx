@@ -108,7 +108,8 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
         body: JSON.stringify({ ...form, signatureImage }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       if (!res.ok) { setError(data.error || 'Eroare la trimitere'); return; }
 
       if (data.hasMore) {

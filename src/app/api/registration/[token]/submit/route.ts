@@ -67,24 +67,30 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   const seriesValue = requiresSeries ? sanitizeText(String(idSeries)) : '';
 
   // Generate Word document
-  const docBuffer = await generateRegistrationDoc({
-    fullName: sanitizeText(String(fullName)),
-    dateOfBirth: sanitizeText(String(dateOfBirth)),
-    placeOfBirth: sanitizeText(String(placeOfBirth)),
-    nationality: sanitizeText(String(nationality)),
-    city: sanitizeText(String(city)),
-    street: sanitizeText(String(street)),
-    streetNumber: sanitizeText(String(streetNumber)),
-    country: sanitizeText(String(country)),
-    arrivalDate: sanitizeText(String(arrivalDate)),
-    departureDate: sanitizeText(String(departureDate)),
-    purposeOfTravel: sanitizeText(String(purposeOfTravel)),
-    idType: sanitizeText(String(idType)),
-    idSeries: seriesValue,
-    idNumber: sanitizeText(String(idNumber)),
-    touristSignature: String(signatureImage),
-    receptionistSignature: formRequest.host.receptionistSignature,
-  });
+  let docBuffer: Buffer;
+  try {
+    docBuffer = await generateRegistrationDoc({
+      fullName: sanitizeText(String(fullName)),
+      dateOfBirth: sanitizeText(String(dateOfBirth)),
+      placeOfBirth: sanitizeText(String(placeOfBirth)),
+      nationality: sanitizeText(String(nationality)),
+      city: sanitizeText(String(city)),
+      street: sanitizeText(String(street)),
+      streetNumber: sanitizeText(String(streetNumber)),
+      country: sanitizeText(String(country)),
+      arrivalDate: sanitizeText(String(arrivalDate)),
+      departureDate: sanitizeText(String(departureDate)),
+      purposeOfTravel: sanitizeText(String(purposeOfTravel)),
+      idType: sanitizeText(String(idType)),
+      idSeries: seriesValue,
+      idNumber: sanitizeText(String(idNumber)),
+      touristSignature: String(signatureImage),
+      receptionistSignature: formRequest.host.receptionistSignature,
+    });
+  } catch (err) {
+    console.error('generateRegistrationDoc failed:', err);
+    return NextResponse.json({ error: 'Eroare la generarea documentului Word' }, { status: 500 });
+  }
 
   // Update GuestForm — store docx in DB (works on any hosting, no filesystem needed)
   await prisma.guestForm.update({

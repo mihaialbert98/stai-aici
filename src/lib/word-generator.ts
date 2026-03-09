@@ -35,6 +35,11 @@ export async function generateRegistrationDoc(data: RegistrationData): Promise<B
   const templateContent = fs.readFileSync(TEMPLATE_PATH, 'binary');
   const zip = new PizZip(templateContent);
 
+  // Normalize image tags from single-brace {%TAG} to double-brace {{%TAG}} to match delimiters
+  const docXml = zip.file('word/document.xml')!.asText();
+  const patchedXml = docXml.replace(/\{%(\w+)\}/g, '{{%$1}}');
+  zip.file('word/document.xml', patchedXml);
+
   const imageModule = new ImageModule({
     centered: false,
     getImage(tagValue: string) {
@@ -49,6 +54,7 @@ export async function generateRegistrationDoc(data: RegistrationData): Promise<B
     modules: [imageModule],
     paragraphLoop: true,
     linebreaks: true,
+    delimiters: { start: '{{', end: '}}' },
   });
 
   doc.render({
