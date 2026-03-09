@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Politica de cookies – StaiAici',
+  title: 'Politica de cookies – Nestly',
 };
 
 export default function CookiePolicyPage() {
@@ -22,7 +22,7 @@ export default function CookiePolicyPage() {
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Cookie-urile pe care le folosim</h2>
-          <p>StaiAici foloseste exclusiv cookie-uri esentiale necesare pentru functionarea platformei:</p>
+          <p>Nestly foloseste exclusiv cookie-uri esentiale necesare pentru functionarea platformei:</p>
 
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm border border-gray-200 rounded-lg">
@@ -36,7 +36,7 @@ export default function CookiePolicyPage() {
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">stai-aici-token</code></td>
+                  <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">nestly-token</code></td>
                   <td className="px-4 py-2 border-b">Autentificarea utilizatorului (sesiune JWT)</td>
                   <td className="px-4 py-2 border-b">7 zile</td>
                   <td className="px-4 py-2 border-b">Esential</td>
@@ -55,7 +55,7 @@ export default function CookiePolicyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">3. Cookie-uri terte</h2>
           <p>
-            In prezent, StaiAici nu foloseste cookie-uri de la terti (analytics, publicitate, retele sociale).
+            In prezent, Nestly nu foloseste cookie-uri de la terti (analytics, publicitate, retele sociale).
             Daca acest lucru se va schimba in viitor, vom actualiza aceasta politica si vom solicita
             consimtamantul dumneavoastra.
           </p>
@@ -83,7 +83,7 @@ export default function CookiePolicyPage() {
           </p>
           <p className="mt-2">
             <strong>ABT SOFTWARE HUB SRL</strong><br />
-            Email: contact@staiaici.ro
+            Email: contact@nestly.app
           </p>
         </section>
       </div>

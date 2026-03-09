@@ -1,4 +1,4 @@
-# StaiAici – Platformă de cazare în România
+# Nestly – Property Management Platform
 
 ## Cerințe
 
@@ -41,7 +41,7 @@ Toate conturile au parola: `password123`
 
 | Rol    | Email                |
 |--------|----------------------|
-| Admin  | admin@staiaici.ro    |
+| Admin  | admin@nestly.app    |
 | Gazdă  | maria@example.com    |
 | Gazdă  | ion@example.com      |
 | Oaspete| andrei@example.com   |

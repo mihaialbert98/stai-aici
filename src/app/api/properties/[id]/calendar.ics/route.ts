@@ -9,7 +9,7 @@ function formatICalDate(date: Date): string {
 }
 
 function uid(id: string, type: string): string {
-  return `${id}-${type}@staiaici.ro`;
+  return `${id}-${type}@nestly.app`;
 }
 
 // Group consecutive dates into ranges for cleaner iCal output
@@ -62,7 +62,7 @@ export async function GET(
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//StaiAici//Calendar//RO',
+    'PRODID:-//Nestly//Calendar//RO',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${property.title}`,
@@ -76,7 +76,7 @@ export async function GET(
       `DTSTART;VALUE=DATE:${formatICalDate(booking.startDate)}`,
       `DTEND;VALUE=DATE:${formatICalDate(booking.endDate)}`,
       `DTSTAMP:${format(now, "yyyyMMdd'T'HHmmss'Z'")}`,
-      `SUMMARY:Rezervare StaiAici`,
+      `SUMMARY:Rezervare Nestly`,
       'STATUS:CONFIRMED',
       'TRANSP:OPAQUE',
       'END:VEVENT'
@@ -93,7 +93,7 @@ export async function GET(
       `DTSTART;VALUE=DATE:${formatICalDate(range.start)}`,
       `DTEND;VALUE=DATE:${formatICalDate(range.end)}`,
       `DTSTAMP:${format(now, "yyyyMMdd'T'HHmmss'Z'")}`,
-      `SUMMARY:Blocat StaiAici`,
+      `SUMMARY:Blocat Nestly`,
       'STATUS:CONFIRMED',
       'TRANSP:OPAQUE',
       'END:VEVENT'

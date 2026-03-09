@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, Menu, X, LayoutDashboard, LogOut, ChevronDown, Heart } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
+import { NestlyLogo } from '@/components/NestlyLogo';
 import styles from './Navbar.module.scss';
 
 interface User {
@@ -73,7 +74,7 @@ export function Navbar() {
       <div className={styles.container}>
         {/* Left: logo + mode toggle */}
         <div className={styles.leftSection}>
-          <Link href="/" className={styles.logo}>StaiAici</Link>
+          <Link href="/" className={styles.logo}><NestlyLogo /></Link>
           {user?.role === 'HOST' && (
             <button
               onClick={() => router.push(isHostMode ? '/dashboard/guest/profile' : '/dashboard/host')}

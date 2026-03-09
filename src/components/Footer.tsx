@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { NestlyLogo } from '@/components/NestlyLogo';
 
 export function Footer() {
   return (
@@ -7,11 +8,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <Link href="/" className="text-xl font-bold text-primary-700">
-              StaiAici
+            <Link href="/" className="text-primary-700 inline-block">
+              <NestlyLogo />
             </Link>
             <p className="text-sm text-gray-500 mt-2">
-              Platforma de cazare din Romania.
+              Platforma de management cazare..
             </p>
           </div>
 
@@ -40,7 +41,7 @@ export function Footer() {
           {/* Copyright */}
           <div className="md:text-right">
             <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} StaiAici. Toate drepturile rezervate.
+              &copy; {new Date().getFullYear()} Nestly. Toate drepturile rezervate.
             </p>
             <p className="text-xs text-gray-400 mt-1">
               Realizat de <span className="font-medium text-gray-500">ABT SOFTWARE HUB SRL</span>

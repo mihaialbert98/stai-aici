@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Termeni si conditii – StaiAici',
+  title: 'Termeni si conditii – Nestly',
 };
 
 export default function TermsPage() {
@@ -14,9 +14,9 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Descrierea platformei</h2>
           <p>
-            StaiAici este o platforma online de intermediere intre gazde care ofera cazare si oaspeti care cauta
+            Nestly este o platforma online de intermediere intre gazde care ofera cazare si oaspeti care cauta
             cazare in Romania. Platforma este operata de <strong>ABT SOFTWARE HUB SRL</strong>.
-            StaiAici actioneaza exclusiv ca intermediar si nu este parte in contractul de cazare dintre gazda si oaspete.
+            Nestly actioneaza exclusiv ca intermediar si nu este parte in contractul de cazare dintre gazda si oaspete.
           </p>
         </section>
 
@@ -60,7 +60,7 @@ export default function TermsPage() {
             specifice de anulare sunt stabilite de fiecare gazda in parte.
           </p>
           <p className="mt-2">
-            Plata se face direct intre oaspete si gazda, StaiAici nefiind implicat in tranzactia financiara.
+            Plata se face direct intre oaspete si gazda, Nestly nefiind implicat in tranzactia financiara.
           </p>
         </section>
 
@@ -76,7 +76,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Limitarea raspunderii</h2>
           <p>
-            StaiAici actioneaza ca intermediar si nu garanteaza calitatea cazarii, acuratetea informatiilor
+            Nestly actioneaza ca intermediar si nu garanteaza calitatea cazarii, acuratetea informatiilor
             furnizate de gazde sau disponibilitatea proprietatilor. Nu suntem responsabili pentru:
           </p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
@@ -90,7 +90,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Proprietate intelectuala</h2>
           <p>
-            Continutul platformei StaiAici (design, cod sursa, texte, logo) este proprietatea ABT SOFTWARE HUB SRL
+            Continutul platformei Nestly (design, cod sursa, texte, logo) este proprietatea ABT SOFTWARE HUB SRL
             si este protejat de legislatia privind drepturile de autor. Fotografiile proprietatilor apartin gazdelor
             care le-au incarcat si sunt utilizate cu acordul acestora.
           </p>
@@ -116,7 +116,7 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Contact</h2>
           <p>
             <strong>ABT SOFTWARE HUB SRL</strong><br />
-            Email: contact@staiaici.ro
+            Email: contact@nestly.app
           </p>
         </section>
       </div>

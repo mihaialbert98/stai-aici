@@ -208,7 +208,7 @@ export default function HostCalendarPage() {
 
     // Prevent clicking on synced dates
     if (syncedDates[activePropId]?.[dateStr]) {
-      setConflictMsg(`Această dată este blocată automat de pe ${syncedDates[activePropId][dateStr]}. Nu trebuie să o blochezi și pe StaiAici — sincronizarea se ocupă de asta. Gestionează disponibilitatea de pe platforma externă sau șterge sincronizarea.`);
+      setConflictMsg(`Această dată este blocată automat de pe ${syncedDates[activePropId][dateStr]}. Nu trebuie să o blochezi și pe Nestly — sincronizarea se ocupă de asta. Gestionează disponibilitatea de pe platforma externă sau șterge sincronizarea.`);
       return;
     }
 

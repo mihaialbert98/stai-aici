@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { Role } from '@prisma/client';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret-change-me');
-const COOKIE_NAME = 'stai-aici-token';
+const COOKIE_NAME = 'nestly-token';
 
 export interface SessionPayload {
   userId: string;

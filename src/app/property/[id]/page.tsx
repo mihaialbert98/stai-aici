@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 
   if (!property) {
-    return { title: 'Proprietate negăsită – StaiAici' };
+    return { title: 'Proprietate negăsită – Nestly' };
   }
 
   const avgRating = property.reviews.length > 0
@@ -34,10 +34,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const images = property.images.map(img => ({
     url: img.url,
-    alt: `${property.title} – cazare ${property.city} – StaiAici`,
+    alt: `${property.title} – cazare ${property.city} – Nestly`,
   }));
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://staiaici.ro';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nestly.app';
 
   return {
     title,
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'website',
       url: `${appUrl}/property/${params.id}`,
       images,
-      siteName: 'StaiAici',
+      siteName: 'Nestly',
       locale: 'ro_RO',
     },
     twitter: {
@@ -88,7 +88,7 @@ export default async function PropertyPage({ params }: Props) {
     },
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://staiaici.ro';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nestly.app';
 
   const jsonLd = property ? {
     '@context': 'https://schema.org',

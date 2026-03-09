@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Politica de confidentialitate – StaiAici',
+  title: 'Politica de confidentialitate – Nestly',
 };
 
 export default function PrivacyPolicyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Cine suntem</h2>
           <p>
-            Platforma StaiAici este operata de <strong>ABT SOFTWARE HUB SRL</strong> (denumita in continuare &quot;Operatorul&quot;).
+            Platforma Nestly este operata de <strong>ABT SOFTWARE HUB SRL</strong> (denumita in continuare &quot;Operatorul&quot;).
             Protejarea datelor dumneavoastra cu caracter personal este o prioritate pentru noi. Aceasta politica descrie modul in care
             colectam, utilizam si protejam datele dumneavoastra in conformitate cu Regulamentul General privind Protectia Datelor (GDPR)
             — Regulamentul (UE) 2016/679.
@@ -91,7 +91,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Cookie-uri</h2>
           <p>
-            Folosim un cookie esential de sesiune (<code className="text-xs bg-gray-100 px-1 py-0.5 rounded">stai-aici-token</code>) necesar
+            Folosim un cookie esential de sesiune (<code className="text-xs bg-gray-100 px-1 py-0.5 rounded">nestly-token</code>) necesar
             pentru autentificarea pe platforma. Pentru detalii complete, consultati <a href="/cookies" className="text-primary-600 underline">Politica de cookies</a>.
           </p>
         </section>
@@ -103,7 +103,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <p className="mt-2">
             <strong>ABT SOFTWARE HUB SRL</strong><br />
-            Email: contact@staiaici.ro
+            Email: contact@nestly.app
           </p>
         </section>
       </div>
