@@ -78,6 +78,7 @@ model User {
   notifications   Notification[]
   favorites       Favorite[]
   formRequests    FormRequest[]
+  manualReservations ManualReservation[] @relation("HostManualReservations")
 }
 
 model Property {
@@ -113,6 +114,7 @@ model Property {
   guestFormLink  GuestFormLink?
   guestSubmissions GuestSubmission[]
   formRequests   FormRequest[]
+  manualReservations ManualReservation[]
 
   @@index([city])
   @@index([hostId])
@@ -395,6 +397,27 @@ model FormRequest {
   property      Property    @relation(fields: [propertyId], references: [id])
   host          User        @relation(fields: [hostId], references: [id])
   guestForms    GuestForm[]
+
+  @@index([hostId])
+  @@index([propertyId])
+}
+
+model ManualReservation {
+  id         String   @id @default(cuid())
+  propertyId String
+  hostId     String
+  guestName  String?
+  checkIn    DateTime
+  checkOut   DateTime
+  revenue       Float
+  source        String?  // e.g. "Airbnb", "Booking.com", "Direct"
+  notes         String?
+  blockCalendar Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  host       User     @relation("HostManualReservations", fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
   @@index([propertyId])

@@ -49,5 +49,21 @@ export async function GET(_req: NextRequest) {
     orderBy: { startDate: 'asc' },
   });
 
-  return NextResponse.json({ properties, bookings });
+  const manualReservations = await prisma.manualReservation.findMany({
+    where: { hostId: session.userId },
+    select: {
+      id: true,
+      propertyId: true,
+      guestName: true,
+      checkIn: true,
+      checkOut: true,
+      revenue: true,
+      source: true,
+      notes: true,
+      blockCalendar: true,
+    },
+    orderBy: { checkIn: 'asc' },
+  });
+
+  return NextResponse.json({ properties, bookings, manualReservations });
 }

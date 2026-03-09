@@ -6,6 +6,7 @@ import { startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  try {
   const session = await getSession();
   if (!session || session.role !== 'HOST') {
     return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
@@ -34,9 +35,20 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const totalBookings = bookings.length;
-  const totalNights = bookings.reduce((sum, b) => sum + differenceInDays(b.endDate, b.startDate), 0);
-  const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
+  const manualReservations = await prisma.manualReservation.findMany({
+    where: {
+      hostId: session.userId,
+      checkIn: { lte: periodEnd },
+      checkOut: { gte: periodStart },
+      ...(propertyFilter ? { propertyId: propertyFilter } : {}),
+    },
+  });
+
+  const totalBookings = bookings.length + manualReservations.length;
+  const totalNights = bookings.reduce((sum, b) => sum + differenceInDays(b.endDate, b.startDate), 0)
+    + manualReservations.reduce((sum, r) => sum + differenceInDays(r.checkOut, r.checkIn), 0);
+  const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0)
+    + manualReservations.reduce((sum, r) => sum + r.revenue, 0);
 
   const propertyCount = await prisma.property.count({
     where: {
@@ -80,4 +92,8 @@ export async function GET(req: NextRequest) {
     reviewCount: reviews.length,
     pendingCount,
   });
+  } catch (err) {
+    console.error('[stats]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

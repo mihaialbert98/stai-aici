@@ -20,6 +20,18 @@ interface PeriodPricing {
   pricePerNight: number;
 }
 
+interface ManualReservationData {
+  id: string;
+  propertyId: string;
+  guestName: string | null;
+  checkIn: string;
+  checkOut: string;
+  revenue: number;
+  source: string | null;
+  notes: string | null;
+  blockCalendar: boolean;
+}
+
 interface BookingData {
   id: string;
   startDate: string;
@@ -54,6 +66,11 @@ export default function HostCalendarPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [activePropId, setActivePropId] = useState<string>('all');
   const [bookings, setBookings] = useState<BookingData[]>([]);
+  const [manualReservations, setManualReservations] = useState<ManualReservationData[]>([]);
+  const [manualBlockedDates, setManualBlockedDates] = useState<Record<string, Set<string>>>({});
+  const [editingManual, setEditingManual] = useState<ManualReservationData | null>(null);
+  const [editManualForm, setEditManualForm] = useState({ guestName: '', checkIn: '', checkOut: '', revenue: '', source: '', notes: '' });
+  const [savingManualEdit, setSavingManualEdit] = useState(false);
   const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -84,12 +101,55 @@ export default function HostCalendarPage() {
   const [priceForm, setPriceForm] = useState({ name: '', pricePerNight: 0 });
   const [savingPrice, setSavingPrice] = useState(false);
 
+  // Manual reservation modal state
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    propertyId: '', guestName: '', checkIn: '', checkOut: '',
+    revenue: '', source: '', notes: '',
+  });
+  const [savingManual, setSavingManual] = useState(false);
+  const tm = dashboardT[lang].manualReservation;
+
   const gridRef = useRef<HTMLDivElement>(null);
   const propDropdownRef = useRef<HTMLDivElement>(null);
   const [propDropdownOpen, setPropDropdownOpen] = useState(false);
 
   const isAllView = activePropId === 'all';
   const activeProp = properties.find(p => p.id === activePropId);
+
+  const refreshCalendarData = async () => {
+    const data = await fetch('/api/host/calendar').then(r => r.json());
+    const myProps = data.properties || [];
+    setProperties(myProps);
+    setBookings(data.bookings || []);
+    const blocked: Record<string, string[]> = {};
+    const synced: Record<string, Record<string, string>> = {};
+    const manualBlocked: Record<string, Set<string>> = {};
+    for (const p of myProps) {
+      const dates = p.blockedDates || [];
+      manualBlocked[p.id] = new Set<string>();
+      blocked[p.id] = [];
+      synced[p.id] = {};
+      dates.forEach((bd: any) => {
+        const dateStr = format(new Date(bd.date), 'yyyy-MM-dd');
+        if (bd.source?.startsWith('external:')) {
+          manualBlocked[p.id].add(dateStr);
+          blocked[p.id].push(dateStr);
+        } else {
+          blocked[p.id].push(dateStr);
+          if (bd.source) synced[p.id][dateStr] = bd.source;
+        }
+      });
+    }
+    setBlockedDates(blocked);
+    setSyncedDates(synced);
+    setManualBlockedDates(manualBlocked);
+    setManualReservations((data.manualReservations || []).map((mr: any) => ({
+      ...mr,
+      checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
+      checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
+    })));
+  };
 
   useEffect(() => {
     (async () => {
@@ -100,15 +160,23 @@ export default function HostCalendarPage() {
 
       const blocked: Record<string, string[]> = {};
       const synced: Record<string, Record<string, string>> = {};
+      const manualBlocked: Record<string, Set<string>> = {};
       const syncsMap: Record<string, any[]> = {};
       const pricingsMap: Record<string, PeriodPricing[]> = {};
       for (const p of myProps) {
         const dates = p.blockedDates || [];
-        blocked[p.id] = dates.map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd'));
+        manualBlocked[p.id] = new Set<string>();
+        blocked[p.id] = [];
         synced[p.id] = {};
         dates.forEach((bd: any) => {
-          if (bd.source) {
-            synced[p.id][format(new Date(bd.date), 'yyyy-MM-dd')] = bd.source;
+          const dateStr = format(new Date(bd.date), 'yyyy-MM-dd');
+          if (bd.source?.startsWith('external:')) {
+            // Manual reservation blocks — tracked separately, shown as pills
+            manualBlocked[p.id].add(dateStr);
+            blocked[p.id].push(dateStr); // still block for canClick
+          } else {
+            blocked[p.id].push(dateStr);
+            if (bd.source) synced[p.id][dateStr] = bd.source;
           }
         });
         syncsMap[p.id] = p.calendarSyncs || [];
@@ -122,6 +190,12 @@ export default function HostCalendarPage() {
       }
       setBlockedDates(blocked);
       setSyncedDates(synced);
+      setManualBlockedDates(manualBlocked);
+      setManualReservations((data.manualReservations || []).map((mr: any) => ({
+        ...mr,
+        checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
+        checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
+      })));
       setCalendarSyncs(syncsMap);
       setPeriodPricings(pricingsMap);
 
@@ -392,12 +466,114 @@ export default function HostCalendarPage() {
     return rows;
   };
 
+  const getManualPillInfo = (mr: ManualReservationData) => {
+    const start = parseISO(mr.checkIn);
+    const end = parseISO(mr.checkOut);
+    const clampedStart = isBefore(start, monthStart) ? monthStart : start;
+    const clampedEnd = isAfter(end, monthEnd) ? monthEnd : end;
+    if (isAfter(clampedStart, monthEnd) || isBefore(clampedEnd, monthStart)) return [];
+    const startIdx = startPad + days.findIndex(d => isSameDay(d, clampedStart));
+    const endIdx = startPad + days.findIndex(d => isSameDay(d, clampedEnd));
+    if (startIdx < 0 || endIdx < 0 || endIdx < startIdx) return [];
+    const rows: { row: number; colStart: number; colEnd: number }[] = [];
+    let currentCol = startIdx;
+    while (currentCol <= endIdx) {
+      const rowNum = Math.floor(currentCol / 7);
+      const rowEnd = Math.min(endIdx, (rowNum + 1) * 7 - 1);
+      rows.push({ row: rowNum, colStart: currentCol % 7, colEnd: rowEnd % 7 });
+      currentCol = (rowNum + 1) * 7;
+    }
+    return rows;
+  };
+
+  const openEditManual = (mr: ManualReservationData, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditManualForm({
+      guestName: mr.guestName || '',
+      checkIn: mr.checkIn,
+      checkOut: mr.checkOut,
+      revenue: String(mr.revenue),
+      source: mr.source || '',
+      notes: mr.notes || '',
+    });
+    setEditingManual(mr);
+  };
+
+  const saveManualEdit = async () => {
+    if (!editingManual) return;
+    setSavingManualEdit(true);
+    try {
+      await fetch(`/api/host/manual-reservations/${editingManual.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestName: editManualForm.guestName || null,
+          checkIn: editManualForm.checkIn,
+          checkOut: editManualForm.checkOut,
+          revenue: parseFloat(editManualForm.revenue) || 0,
+          source: editManualForm.source || null,
+          notes: editManualForm.notes || null,
+          blockCalendar: true,
+        }),
+      });
+      setEditingManual(null);
+      await refreshCalendarData();
+      toast.success(lang === 'ro' ? 'Rezervare actualizată' : 'Reservation updated');
+    } catch {
+      toast.error(lang === 'ro' ? 'Eroare la salvare' : 'Error saving');
+    } finally {
+      setSavingManualEdit(false);
+    }
+  };
+
+  const deleteManualEdit = async () => {
+    if (!editingManual || !confirm(tm.deleteConfirm)) return;
+    try {
+      await fetch(`/api/host/manual-reservations/${editingManual.id}`, { method: 'DELETE' });
+      setEditingManual(null);
+      await refreshCalendarData();
+      toast.success(lang === 'ro' ? 'Rezervare ștearsă' : 'Reservation deleted');
+    } catch {
+      toast.error(lang === 'ro' ? 'Eroare la ștergere' : 'Error deleting');
+    }
+  };
+
   const handlePillClick = (e: React.MouseEvent<HTMLDivElement>, booking: BookingData) => {
     e.stopPropagation();
     const rect = gridRef.current?.getBoundingClientRect();
     const pillRect = e.currentTarget.getBoundingClientRect();
     if (!rect) return;
     setTooltip({ booking, x: pillRect.left - rect.left, y: pillRect.bottom - rect.top + 4 });
+  };
+
+  const openManualModal = () => {
+    setManualForm({
+      propertyId: !isAllView ? activePropId : (properties[0]?.id || ''),
+      guestName: '', checkIn: '', checkOut: '',
+      revenue: '', source: '', notes: '',
+    });
+    setShowManualModal(true);
+  };
+
+  const saveManualReservation = async () => {
+    if (!manualForm.propertyId || !manualForm.checkIn || !manualForm.checkOut || !manualForm.revenue) return;
+    setSavingManual(true);
+    try {
+      const res = await fetch('/api/host/manual-reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...manualForm, blockCalendar: true }),
+      });
+      if (!res.ok) throw new Error();
+      // Always refresh calendar data to update pills and blocked dates
+      await refreshCalendarData();
+      setShowManualModal(false);
+      toast.success(lang === 'ro' ? 'Rezervare adăugată' : 'Reservation added');
+    } catch {
+      toast.error(lang === 'ro' ? 'Eroare la salvare' : 'Error saving');
+    } finally {
+      setSavingManual(false);
+    }
   };
 
   if (loading) return <p className="text-gray-500">{t.loading}</p>;
@@ -411,7 +587,14 @@ export default function HostCalendarPage() {
 
   return (
     <div className="pb-24">
-      <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{t.title}</h1>
+        {properties.length > 0 && (
+          <button onClick={openManualModal} className="btn-primary flex items-center gap-2 text-sm">
+            <Plus size={15} /> {t.addManualReservation}
+          </button>
+        )}
+      </div>
 
       {properties.length === 0 ? (
         <p className="text-gray-500">{t.noProperties}</p>
@@ -535,14 +718,17 @@ export default function HostCalendarPage() {
                 {days.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   const isBlockedHere = propBlocked.includes(dateStr);
+                  const isManualBlocked = !isAllView && (manualBlockedDates[activePropId]?.has(dateStr) ?? false);
                   const syncSource = !isAllView ? syncedDates[activePropId]?.[dateStr] : null;
                   const isSynced = !!syncSource;
-                  // In "all" view, show blocked if any property has it blocked
-                  const isBlockedAny = isAllView && properties.some(p => (blockedDates[p.id] || []).includes(dateStr));
+                  // True when the date is blocked ONLY by a manual reservation (no other block type)
+                  const isOnlyManualBlocked = isManualBlocked && !isSynced;
+                  // In "all" view, show blocked if any property has it blocked (excluding manual blocks)
+                  const isBlockedAny = isAllView && properties.some(p => (blockedDates[p.id] || []).includes(dateStr) && !manualBlockedDates[p.id]?.has(dateStr));
                   const isInPreview = !isAllView && previewDates.has(dateStr);
                   const isRangeEdge = dateStr === rangeStart || dateStr === rangeEnd;
                   const hasAcceptedBooking = !isAllView && !!getBookingForDate(dateStr, activePropId);
-                  const canClick = !isAllView && !isSynced && (!hasAcceptedBooking || getBookingForDate(dateStr, activePropId)?.status !== 'ACCEPTED');
+                  const canClick = !isAllView && !isSynced && !isManualBlocked && (!hasAcceptedBooking || getBookingForDate(dateStr, activePropId)?.status !== 'ACCEPTED');
 
                   return (
                     <div
@@ -556,10 +742,10 @@ export default function HostCalendarPage() {
                         ${!isAllView && canClick ? 'cursor-pointer hover:bg-gray-50' : ''}
                         ${isToday(day) && !isInPreview && !isBlockedHere ? 'bg-primary-50' : ''}
                         ${isSynced && !isInPreview ? 'bg-violet-100 border-violet-300' : ''}
-                        ${(isBlockedHere || isBlockedAny) && !isSynced && !isInPreview ? 'bg-red-50' : ''}
+                        ${(isBlockedHere || isBlockedAny) && !isSynced && !isInPreview && !isOnlyManualBlocked ? 'bg-red-50' : ''}
                         ${isInPreview && !isBlockedHere ? 'bg-indigo-50' : ''}
                         ${isInPreview && isBlockedHere ? 'bg-red-100' : ''}
-                        ${(hasAcceptedBooking || isSynced) && !isAllView ? 'cursor-not-allowed' : ''}
+                        ${(hasAcceptedBooking || isSynced || isManualBlocked) && !isAllView ? 'cursor-not-allowed' : ''}
                       `}
                     >
                       <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 text-xs md:text-sm rounded-full z-[1] relative ${
@@ -583,15 +769,15 @@ export default function HostCalendarPage() {
                           </span>
                         );
                       })()}
-                      {/* Blocked indicator */}
-                      {isBlockedHere && (
+                      {/* Blocked indicator — not shown for manual reservation days (shown as pills) */}
+                      {isBlockedHere && !isOnlyManualBlocked && (
                         <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-semibold ${isSynced ? 'text-violet-600' : 'text-red-400'}`}>
                           {isSynced ? `⬤ ${syncSource}` : t.blockedLabel}
                         </span>
                       )}
                       {/* In "all" view, show which properties have this date blocked */}
                       {isAllView && (() => {
-                        const blockedProps = properties.filter(p => (blockedDates[p.id] || []).includes(dateStr));
+                        const blockedProps = properties.filter(p => (blockedDates[p.id] || []).includes(dateStr) && !manualBlockedDates[p.id]?.has(dateStr));
                         if (!blockedProps.length) return null;
                         return (
                           <div
@@ -682,6 +868,36 @@ export default function HostCalendarPage() {
                   }
                 });
 
+                // Manual reservation pills — stacked after platform booking pills
+                const visibleManuals = manualReservations.filter(mr => {
+                  if (!isAllView && mr.propertyId !== activePropId) return false;
+                  return !(isAfter(parseISO(mr.checkIn), monthEnd) || isBefore(parseISO(mr.checkOut), monthStart));
+                });
+                // Track max stackIndex per cell to stack manuals on top
+                const cellMaxStack: Map<string, number> = new Map();
+                pillSegments.forEach(seg => {
+                  for (let c = seg.pr.colStart; c <= seg.pr.colEnd; c++) {
+                    const key = `${seg.pr.row}-${c}`;
+                    cellMaxStack.set(key, Math.max(cellMaxStack.get(key) ?? -1, seg.stackIndex));
+                  }
+                });
+                const manualPillSegments: { mr: ManualReservationData; pr: { row: number; colStart: number; colEnd: number }; ri: number; stackIndex: number }[] = [];
+                visibleManuals.forEach(mr => {
+                  const pillRows = getManualPillInfo(mr);
+                  pillRows.forEach((pr, ri) => {
+                    let maxExisting = -1;
+                    for (let c = pr.colStart; c <= pr.colEnd; c++) {
+                      maxExisting = Math.max(maxExisting, cellMaxStack.get(`${pr.row}-${c}`) ?? -1);
+                    }
+                    const stackIndex = maxExisting + 1;
+                    manualPillSegments.push({ mr, pr, ri, stackIndex });
+                    for (let c = pr.colStart; c <= pr.colEnd; c++) {
+                      const key = `${pr.row}-${c}`;
+                      cellMaxStack.set(key, Math.max(cellMaxStack.get(key) ?? -1, stackIndex));
+                    }
+                  });
+                });
+
                 const badgeCells: Map<string, { row: number; col: number; count: number; bookings: BookingData[] }> = new Map();
                 cellBookings.forEach((entries, key) => {
                   const hiddenInCell = entries.filter(e => globallyHiddenBookings.has(e.booking.id)).map(e => e.booking);
@@ -738,6 +954,26 @@ export default function HostCalendarPage() {
                           style={{ top: `${top}px`, left, width, height: `${pillH}px`, lineHeight: `${pillH}px`, zIndex: 20 }}
                         >
                           +{count}
+                        </div>
+                      );
+                    })}
+
+                    {manualPillSegments.filter(seg => seg.stackIndex < maxSlots).map(seg => {
+                      const top = (seg.pr.row * cellH) + pillOffset + seg.stackIndex * (pillH + pillGap);
+                      const left = `${(seg.pr.colStart / 7) * 100}%`;
+                      const width = `${((seg.pr.colEnd - seg.pr.colStart + 1) / 7) * 100}%`;
+                      const label = seg.mr.guestName || seg.mr.source || (lang === 'ro' ? 'Rezervare manuală' : 'Manual reservation');
+                      return (
+                        <div
+                          key={`manual-${seg.mr.id}-${seg.ri}`}
+                          data-pill
+                          onClick={(e) => openEditManual(seg.mr, e)}
+                          className="absolute bg-amber-200 text-amber-900 border border-amber-400 rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity"
+                          style={{ top: `${top}px`, left, width, height: `${pillH}px`, zIndex: 10 + seg.stackIndex }}
+                          title={`${label}${isAllView ? ` · ${manualReservations.find(m => m.id === seg.mr.id) ? properties.find(p => p.id === seg.mr.propertyId)?.title || '' : ''}` : ''}`}
+                        >
+                          {isMobile ? label.split(' ')[0] : label}
+                          {!isMobile && isAllView && ` · ${properties.find(p => p.id === seg.mr.propertyId)?.title || ''}`}
                         </div>
                       );
                     })}
@@ -1161,6 +1397,137 @@ export default function HostCalendarPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Manual reservation modal */}
+      {showManualModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="font-semibold text-base">{tm.newEntryTitle}</h3>
+              <button onClick={() => setShowManualModal(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.property}</label>
+                  <select
+                    className="input"
+                    value={manualForm.propertyId}
+                    onChange={e => setManualForm(f => ({ ...f, propertyId: e.target.value }))}
+                  >
+                    <option value="">{tm.selectProperty}</option>
+                    {properties.map(p => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">{tm.guestName}</label>
+                  <input className="input" placeholder={tm.guestNamePlaceholder} value={manualForm.guestName}
+                    onChange={e => setManualForm(f => ({ ...f, guestName: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{tm.source}</label>
+                  <input className="input" placeholder={tm.sourcePlaceholder} value={manualForm.source}
+                    onChange={e => setManualForm(f => ({ ...f, source: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{tm.checkIn}</label>
+                  <input type="date" className="input" value={manualForm.checkIn}
+                    onChange={e => setManualForm(f => ({ ...f, checkIn: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{tm.checkOut}</label>
+                  <input type="date" className="input" value={manualForm.checkOut}
+                    onChange={e => setManualForm(f => ({ ...f, checkOut: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.revenue}</label>
+                  <input type="number" min="0" step="0.01" className="input" placeholder="0.00"
+                    value={manualForm.revenue} onChange={e => setManualForm(f => ({ ...f, revenue: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.notes}</label>
+                  <textarea className="input min-h-[60px] resize-none" placeholder={tm.notesPlaceholder}
+                    value={manualForm.notes} onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-gray-100">
+              <button
+                onClick={saveManualReservation}
+                disabled={savingManual || !manualForm.propertyId || !manualForm.checkIn || !manualForm.checkOut || !manualForm.revenue}
+                className="btn-primary disabled:opacity-50 flex items-center gap-2"
+              >
+                {savingManual ? tm.saving : tm.save}
+              </button>
+              <button onClick={() => setShowManualModal(false)} className="btn-secondary">{tm.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit manual reservation modal */}
+      {editingManual && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="font-semibold text-base">{tm.editEntryTitle}</h3>
+              <button onClick={() => setEditingManual(null)} className="text-gray-400 hover:text-gray-600 p-1">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">{tm.guestName}</label>
+                  <input className="input" placeholder={tm.guestNamePlaceholder} value={editManualForm.guestName}
+                    onChange={e => setEditManualForm(f => ({ ...f, guestName: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{tm.source}</label>
+                  <input className="input" placeholder={tm.sourcePlaceholder} value={editManualForm.source}
+                    onChange={e => setEditManualForm(f => ({ ...f, source: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{tm.checkIn}</label>
+                  <input type="date" className="input" value={editManualForm.checkIn}
+                    onChange={e => setEditManualForm(f => ({ ...f, checkIn: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">{tm.checkOut}</label>
+                  <input type="date" className="input" value={editManualForm.checkOut}
+                    onChange={e => setEditManualForm(f => ({ ...f, checkOut: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.revenue}</label>
+                  <input type="number" min="0" step="0.01" className="input" placeholder="0.00"
+                    value={editManualForm.revenue} onChange={e => setEditManualForm(f => ({ ...f, revenue: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.notes}</label>
+                  <textarea className="input min-h-[60px] resize-none" placeholder={tm.notesPlaceholder}
+                    value={editManualForm.notes} onChange={e => setEditManualForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-5 border-t border-gray-100">
+              <button onClick={deleteManualEdit} className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 transition">
+                <Trash2 size={14} /> {tm.deleteEntry}
+              </button>
+              <div className="flex gap-3">
+                <button onClick={() => setEditingManual(null)} className="btn-secondary">{tm.cancel}</button>
+                <button onClick={saveManualEdit} disabled={savingManualEdit || !editManualForm.checkIn || !editManualForm.checkOut}
+                  className="btn-primary disabled:opacity-50">
+                  {savingManualEdit ? tm.saving : tm.save}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
