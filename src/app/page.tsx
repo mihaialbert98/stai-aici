@@ -1,7 +1,17 @@
 import Link from 'next/link';
-import { Calendar, Link2, FileText, BarChart3, CheckCircle, ArrowRight } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { Calendar, Link2, FileText, BarChart3, CheckCircle } from 'lucide-react';
+import { getSession } from '@/lib/auth';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getSession();
+  if (session) {
+    const dest =
+      session.role === 'ADMIN' ? '/dashboard/admin' :
+      session.role === 'HOST'  ? '/dashboard/host'  :
+                                 '/dashboard/guest/profile';
+    redirect(dest);
+  }
   return (
     <div>
       {/* Hero */}
@@ -178,13 +188,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Secondary marketplace link */}
-      <section className="border-t border-gray-100 py-12 px-4 text-center bg-gray-50">
-        <p className="text-gray-500 mb-2">Cauți o cazare în România?</p>
-        <Link href="/search" className="text-primary-600 font-medium hover:underline inline-flex items-center gap-1">
-          Caută cazări disponibile <ArrowRight size={16} />
-        </Link>
-      </section>
     </div>
   );
 }

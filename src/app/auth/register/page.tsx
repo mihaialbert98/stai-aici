@@ -8,7 +8,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'GUEST' | 'HOST'>('GUEST');
+  const role = 'HOST';
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -74,19 +74,6 @@ export default function RegisterPage() {
           <div>
             <label className="label">Parolă</label>
             <input type="password" className="input" placeholder="Minim 6 caractere" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-          </div>
-          <div>
-            <label className="label">Tip cont</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="role" value="GUEST" checked={role === 'GUEST'} onChange={() => setRole('GUEST')} />
-                <span className="text-sm">Oaspete</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="role" value="HOST" checked={role === 'HOST'} onChange={() => setRole('HOST')} />
-                <span className="text-sm">Gazdă</span>
-              </label>
-            </div>
           </div>
           <button type="submit" className="btn-primary w-full" disabled={loading}>
             {loading ? 'Se încarcă...' : 'Înregistrare'}

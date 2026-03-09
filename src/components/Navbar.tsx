@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, Menu, X, LayoutDashboard, LogOut, ChevronDown, Heart } from 'lucide-react';
+import { Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { NestlyLogo } from '@/components/NestlyLogo';
 import styles from './Navbar.module.scss';
@@ -56,14 +56,9 @@ export function Navbar() {
     pathname.startsWith('/checkin/')
   ) return null;
 
-  const isHostMode = pathname.startsWith('/dashboard/host');
-  const isGuestMode = pathname.startsWith('/dashboard/guest');
-
   const dashboardLink = user?.role === 'ADMIN'
     ? '/dashboard/admin'
-    : user?.role === 'HOST'
-      ? (isGuestMode ? '/dashboard/guest/profile' : '/dashboard/host')
-      : '/dashboard/guest/profile';
+    : '/dashboard/host';
 
   const initials = user?.name
     ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -72,18 +67,9 @@ export function Navbar() {
   return (
     <nav className={styles.nav}>
       <div className={styles.container}>
-        {/* Left: logo + mode toggle */}
+        {/* Left: logo */}
         <div className={styles.leftSection}>
           <Link href="/" className={styles.logo}><NestlyLogo /></Link>
-          {user?.role === 'HOST' && (
-            <button
-              onClick={() => router.push(isHostMode ? '/dashboard/guest/profile' : '/dashboard/host')}
-              className={styles.modeToggle}
-            >
-              <ArrowLeftRight size={14} />
-              <span>{isHostMode ? 'Mod oaspete' : 'Mod gazdă'}</span>
-            </button>
-          )}
         </div>
 
         {/* Right desktop: bell + profile dropdown */}
@@ -114,14 +100,6 @@ export function Navbar() {
                     >
                       <LayoutDashboard size={16} />
                       Dashboard
-                    </Link>
-                    <Link
-                      href="/dashboard/guest/favorites"
-                      className={styles.dropdownItem}
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <Heart size={16} />
-                      Favorite
                     </Link>
                     <button onClick={logout} className={styles.dropdownItem}>
                       <LogOut size={16} />
@@ -165,22 +143,9 @@ export function Navbar() {
                 </div>
               </div>
               <div className={styles.mobileDivider} />
-              {user.role === 'HOST' && (
-                <button
-                  onClick={() => { router.push(isHostMode ? '/dashboard/guest/profile' : '/dashboard/host'); setMenuOpen(false); }}
-                  className={styles.mobileLink}
-                >
-                  <ArrowLeftRight size={16} />
-                  {isHostMode ? 'Mod oaspete' : 'Mod gazdă'}
-                </button>
-              )}
               <Link href={dashboardLink} className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
                 <LayoutDashboard size={16} />
                 Dashboard
-              </Link>
-              <Link href="/dashboard/guest/favorites" className={styles.mobileLink} onClick={() => setMenuOpen(false)}>
-                <Heart size={16} />
-                Favorite
               </Link>
               <div className={styles.mobileDivider} />
               <button onClick={logout} className={`${styles.mobileLink} ${styles.mobileLinkDanger}`}>
