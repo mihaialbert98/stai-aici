@@ -17,7 +17,7 @@ export async function GET() {
       id: true,
       title: true,
       images: { orderBy: { order: 'asc' }, take: 1, select: { url: true } },
-      checkInLink: { select: { id: true, token: true, isActive: true, wifiName: true, wifiPassword: true, videoUrl: true } },
+      checkInLink: true,
     },
     orderBy: { title: 'asc' },
   });

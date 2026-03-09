@@ -123,9 +123,47 @@ model CheckInLink {
   propertyId   String   @unique
   token        String   @unique @default(cuid())
   isActive     Boolean  @default(true)
-  wifiName     String?
-  wifiPassword String?
-  videoUrl     String?
+
+  // Timing
+  checkInFrom      String?
+  checkInTo        String?
+  checkOutBy       String?
+
+  // Getting there
+  parkingAvailable Boolean  @default(false)
+  parkingInfo      String?
+  parkingLocation  String?
+  parkingCode      String?
+  transportInfo    String?
+
+  // Building & apartment access
+  buildingEntrance String?
+  buildingFloor    String?
+  buildingCode     String?
+  buildingNotes    String?
+  accessType       String?
+  accessCode       String?
+  accessLocation   String?
+  accessNotes      String?
+
+  // WiFi
+  wifiName         String?
+  wifiPassword     String?
+
+  // Apartment guide & rules
+  apartmentGuide   String?
+  houseRules       String?
+
+  // Check-out
+  checkOutNotes    String?
+
+  // Contact
+  hostPhone        String?
+  emergencyPhone   String?
+
+  // Media
+  videoUrl         String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
