@@ -8,14 +8,8 @@ import {
   Home, ShieldCheck, LogOut, Phone, Video, ArrowLeft, Save,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const ACCESS_TYPES = [
-  { value: '', label: 'Selectează...' },
-  { value: 'key_box', label: 'Cutie de chei (key box)' },
-  { value: 'smart_lock', label: 'Broască inteligentă / Cod digital' },
-  { value: 'host_handover', label: 'Predare personală de gazdă' },
-  { value: 'key_pickup', label: 'Ridicare chei de la o locație' },
-];
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface FormState {
   checkInFrom: string; checkInTo: string; checkOutBy: string;
@@ -85,9 +79,19 @@ function Section({ icon: Icon, title, color, children }: {
 }
 
 export default function CheckInLinkEditPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].checkinEditor;
   const params = useParams();
   const router = useRouter();
   const propertyId = params.propertyId as string;
+
+  const ACCESS_TYPES = [
+    { value: '', label: t.accessMethodPh },
+    { value: 'key_box', label: t.accessTypes.key_box },
+    { value: 'smart_lock', label: t.accessTypes.smart_lock },
+    { value: 'host_handover', label: t.accessTypes.host_handover },
+    { value: 'key_pickup', label: t.accessTypes.key_pickup },
+  ];
 
   const [propertyTitle, setPropertyTitle] = useState('');
   const [form, setForm] = useState<FormState>(empty);
@@ -120,10 +124,10 @@ export default function CheckInLinkEditPage() {
     });
     setSaving(false);
     if (res.ok) {
-      toast.success('Ghid salvat cu succes');
+      toast.success(t.savedSuccess);
       router.push('/dashboard/host/checkin-links');
     } else {
-      toast.error('Eroare la salvare');
+      toast.error(t.saveError);
     }
   };
 
@@ -146,7 +150,7 @@ export default function CheckInLinkEditPage() {
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Editează ghidul de check-in</h1>
+          <h1 className="text-2xl font-bold">{t.title}</h1>
           {propertyTitle && <p className="text-sm text-gray-500 mt-0.5">{propertyTitle}</p>}
         </div>
       </div>
@@ -154,169 +158,169 @@ export default function CheckInLinkEditPage() {
       <div className="space-y-4">
 
         {/* Timing */}
-        <Section icon={Clock} title="Program" color="text-blue-600">
+        <Section icon={Clock} title={t.sectionSchedule} color="text-blue-600">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="label">Check-in de la</label>
+              <label className="label">{t.checkInFrom}</label>
               <input type="time" className={inp} value={form.checkInFrom} onChange={set('checkInFrom')} />
             </div>
             <div>
-              <label className="label">Check-in până la</label>
+              <label className="label">{t.checkInTo}</label>
               <input type="time" className={inp} value={form.checkInTo} onChange={set('checkInTo')} />
             </div>
             <div>
-              <label className="label">Check-out până la</label>
+              <label className="label">{t.checkOutBy}</label>
               <input type="time" className={inp} value={form.checkOutBy} onChange={set('checkOutBy')} />
             </div>
           </div>
         </Section>
 
         {/* Getting there */}
-        <Section icon={Car} title="Cum ajungi / Parcare" color="text-orange-600">
+        <Section icon={Car} title={t.sectionParking} color="text-orange-600">
           <div className="space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.parkingAvailable} onChange={setBool('parkingAvailable')} className="w-4 h-4 accent-primary-600" />
-              <span className="text-sm font-medium">Parcare disponibilă</span>
+              <span className="text-sm font-medium">{t.parkingAvailable}</span>
             </label>
             {form.parkingAvailable && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Locul de parcare</label>
-                  <input className={inp} placeholder="Ex: Nivelul -1, locul 42" value={form.parkingLocation} onChange={set('parkingLocation')} />
+                  <label className="label">{t.parkingSpot}</label>
+                  <input className={inp} placeholder={t.parkingSpotPh} value={form.parkingLocation} onChange={set('parkingLocation')} />
                 </div>
                 <div>
-                  <label className="label">Cod acces parcare</label>
-                  <input className={inp} placeholder="Ex: #1234" value={form.parkingCode} onChange={set('parkingCode')} />
+                  <label className="label">{t.parkingCode}</label>
+                  <input className={inp} placeholder={t.parkingCodePh} value={form.parkingCode} onChange={set('parkingCode')} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="label">Adresă / cum se ajunge la parcare</label>
-                  <input className={inp} placeholder="Ex: Intrarea în parcare pe Strada Florilor, lângă supermarket" value={form.parkingInfo} onChange={set('parkingInfo')} />
+                  <label className="label">{t.parkingAddress}</label>
+                  <input className={inp} placeholder={t.parkingAddressPh} value={form.parkingInfo} onChange={set('parkingInfo')} />
                 </div>
               </div>
             )}
             <div>
-              <label className="label">Transport în comun (opțional)</label>
-              <input className={inp} placeholder="Ex: Metrou Unirii — 3 min pe jos" value={form.transportInfo} onChange={set('transportInfo')} />
+              <label className="label">{t.transport}</label>
+              <input className={inp} placeholder={t.transportPh} value={form.transportInfo} onChange={set('transportInfo')} />
             </div>
           </div>
         </Section>
 
         {/* Building */}
-        <Section icon={Building2} title="Intrare în clădire" color="text-slate-600">
+        <Section icon={Building2} title={t.sectionBuilding} color="text-slate-600">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
-              <label className="label">Intrarea în clădire</label>
-              <input className={inp} placeholder="Ex: Intrarea principală pe Strada Florilor, nr. 5 — ușa albastră" value={form.buildingEntrance} onChange={set('buildingEntrance')} />
+              <label className="label">{t.buildingEntrance}</label>
+              <input className={inp} placeholder={t.buildingEntrancePh} value={form.buildingEntrance} onChange={set('buildingEntrance')} />
             </div>
             <div>
-              <label className="label">Etaj / Apartament</label>
-              <input className={inp} placeholder="Ex: Etaj 3, Ap. 12" value={form.buildingFloor} onChange={set('buildingFloor')} />
+              <label className="label">{t.buildingFloor}</label>
+              <input className={inp} placeholder={t.buildingFloorPh} value={form.buildingFloor} onChange={set('buildingFloor')} />
             </div>
             <div>
-              <label className="label">Cod interfon / intrare</label>
-              <input className={inp} placeholder="Ex: 0742" value={form.buildingCode} onChange={set('buildingCode')} />
+              <label className="label">{t.buildingCode}</label>
+              <input className={inp} placeholder={t.buildingCodePh} value={form.buildingCode} onChange={set('buildingCode')} />
             </div>
           </div>
           <div className="mt-3">
-            <label className="label">Note suplimentare</label>
-            <textarea className={ta} rows={2} placeholder="Ex: Sună de două ori, apoi uși se deblochează automat" value={form.buildingNotes} onChange={set('buildingNotes')} />
+            <label className="label">{t.buildingNotes}</label>
+            <textarea className={ta} rows={2} placeholder={t.buildingNotesPh} value={form.buildingNotes} onChange={set('buildingNotes')} />
           </div>
         </Section>
 
         {/* Apartment access */}
-        <Section icon={KeyRound} title="Acces apartament" color="text-yellow-600">
+        <Section icon={KeyRound} title={t.sectionAccess} color="text-yellow-600">
           <div className="space-y-3">
             <div>
-              <label className="label">Metodă de acces</label>
+              <label className="label">{t.accessMethod}</label>
               <select className={inp} value={form.accessType} onChange={set('accessType')}>
-                {ACCESS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                {ACCESS_TYPES.map(at => <option key={at.value} value={at.value}>{at.label}</option>)}
               </select>
             </div>
             {form.accessType && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Cod / PIN</label>
-                  <input className={inp} placeholder="Ex: 1234" value={form.accessCode} onChange={set('accessCode')} />
+                  <label className="label">{t.accessCode}</label>
+                  <input className={inp} placeholder={t.accessCodePh} value={form.accessCode} onChange={set('accessCode')} />
                 </div>
                 <div>
-                  <label className="label">Unde se află cheia / cutia</label>
-                  <input className={inp} placeholder="Ex: Cutia e pe peretele din stânga ușii" value={form.accessLocation} onChange={set('accessLocation')} />
+                  <label className="label">{t.accessLocation}</label>
+                  <input className={inp} placeholder={t.accessLocationPh} value={form.accessLocation} onChange={set('accessLocation')} />
                 </div>
               </div>
             )}
             <div>
-              <label className="label">Instrucțiuni suplimentare acces</label>
-              <textarea className={ta} rows={2} placeholder="Ex: Ușa se trage ușor spre tine înainte de a introduce codul" value={form.accessNotes} onChange={set('accessNotes')} />
+              <label className="label">{t.accessNotes}</label>
+              <textarea className={ta} rows={2} placeholder={t.accessNotesPh} value={form.accessNotes} onChange={set('accessNotes')} />
             </div>
           </div>
         </Section>
 
         {/* WiFi */}
-        <Section icon={Wifi} title="Wi-Fi" color="text-green-600">
+        <Section icon={Wifi} title={t.sectionWifi} color="text-green-600">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="label">Nume rețea</label>
-              <input className={inp} placeholder="Ex: CasaMea_5G" value={form.wifiName} onChange={set('wifiName')} />
+              <label className="label">{t.wifiName}</label>
+              <input className={inp} placeholder={t.wifiNamePh} value={form.wifiName} onChange={set('wifiName')} />
             </div>
             <div>
-              <label className="label">Parolă</label>
-              <input className={inp} placeholder="Ex: parola1234" value={form.wifiPassword} onChange={set('wifiPassword')} />
+              <label className="label">{t.wifiPassword}</label>
+              <input className={inp} placeholder={t.wifiPasswordPh} value={form.wifiPassword} onChange={set('wifiPassword')} />
             </div>
           </div>
         </Section>
 
         {/* Apartment guide */}
-        <Section icon={Home} title="Ghid apartament" color="text-teal-600">
+        <Section icon={Home} title={t.sectionApartment} color="text-teal-600">
           <textarea
             className={ta}
             rows={6}
-            placeholder={`Descrie cum funcționează aparatele și ce trebuie să știe oaspetele:\n\n• Termostat: butonul rotund din living, setează temperatura dorită\n• Mașina de spălat: butonul de start e cel verde din stânga\n• Cafetieră: capsulele se găsesc în sertarul de sub aparat\n• Gunoi: se separă în pubelele colorate din fața blocului`}
+            placeholder={t.apartmentPh}
             value={form.apartmentGuide}
             onChange={set('apartmentGuide')}
           />
         </Section>
 
         {/* House rules */}
-        <Section icon={ShieldCheck} title="Reguli casă" color="text-purple-600">
+        <Section icon={ShieldCheck} title={t.sectionRules} color="text-purple-600">
           <textarea
             className={ta}
             rows={4}
-            placeholder={`Ex:\n• Fără fumat în interior\n• Fără animale de companie\n• Liniște după ora 22:00\n• Maxim 4 persoane`}
+            placeholder={t.rulesPh}
             value={form.houseRules}
             onChange={set('houseRules')}
           />
         </Section>
 
         {/* Check-out */}
-        <Section icon={LogOut} title="Instrucțiuni check-out" color="text-red-600">
+        <Section icon={LogOut} title={t.sectionCheckout} color="text-red-600">
           <textarea
             className={ta}
             rows={5}
-            placeholder={`Descrie ce trebuie să facă oaspetele la plecare:\n\n• Lasă cheile pe masa din hol\n• Închide toate geamurile și ușa de la intrare\n• Pune vasele în mașina de spălat\n• Aruncă gunoiul la pubele`}
+            placeholder={t.checkoutPh}
             value={form.checkOutNotes}
             onChange={set('checkOutNotes')}
           />
         </Section>
 
         {/* Contact */}
-        <Section icon={Phone} title="Contact" color="text-gray-600">
+        <Section icon={Phone} title={t.sectionContact} color="text-gray-600">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="label">Telefon gazdă</label>
-              <input className={inp} placeholder="Ex: +40 722 123 456" value={form.hostPhone} onChange={set('hostPhone')} />
+              <label className="label">{t.hostPhone}</label>
+              <input className={inp} placeholder={t.hostPhonePh} value={form.hostPhone} onChange={set('hostPhone')} />
             </div>
             <div>
-              <label className="label">Contact urgențe / administrator</label>
-              <input className={inp} placeholder="Ex: +40 722 999 888" value={form.emergencyPhone} onChange={set('emergencyPhone')} />
+              <label className="label">{t.emergencyPhone}</label>
+              <input className={inp} placeholder={t.emergencyPhonePh} value={form.emergencyPhone} onChange={set('emergencyPhone')} />
             </div>
           </div>
         </Section>
 
         {/* Media */}
-        <Section icon={Video} title="Video de bun venit (opțional)" color="text-pink-600">
+        <Section icon={Video} title={t.sectionVideo} color="text-pink-600">
           <div>
-            <label className="label">Link YouTube sau Vimeo</label>
-            <input type="url" className={inp} placeholder="https://youtube.com/watch?v=..." value={form.videoUrl} onChange={set('videoUrl')} />
+            <label className="label">{t.videoUrl}</label>
+            <input type="url" className={inp} placeholder={t.videoUrlPh} value={form.videoUrl} onChange={set('videoUrl')} />
           </div>
         </Section>
 
@@ -325,11 +329,11 @@ export default function CheckInLinkEditPage() {
       {/* Save bar */}
       <div className="fixed bottom-0 left-0 right-0 z-10 px-4 py-3 bg-white/80 backdrop-blur-md border-t border-gray-200 flex items-center justify-end gap-3">
         <Link href="/dashboard/host/checkin-links" className="btn-secondary">
-          Anulează
+          {t.cancel}
         </Link>
         <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
           <Save size={16} />
-          {saving ? 'Se salvează…' : 'Salvează ghidul'}
+          {saving ? t.saving : t.save}
         </button>
       </div>
       {/* Spacer so last card isn't hidden behind the fixed bar */}

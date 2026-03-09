@@ -4,8 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
+import { loginT } from '@/lib/i18n';
+import { useLang } from '@/lib/useLang';
 
 export default function LoginPage() {
+  const lang = useLang();
+  const t = loginT[lang];
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -58,21 +63,21 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-[80vh] px-4">
       <div className="card w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6">Intră în cont</h1>
+        <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
         {error && (
           <div className="mb-4">
             <p className="text-red-600 text-sm">{error}</p>
             {needsVerification && (
               <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 {resent ? (
-                  <p className="text-sm text-green-600">Email de verificare retrimis la {verificationEmail}!</p>
+                  <p className="text-sm text-green-600">{t.resentSuccess(verificationEmail)}</p>
                 ) : (
                   <button
                     onClick={handleResend}
                     disabled={resending}
                     className="text-sm text-primary-600 hover:underline flex items-center gap-1"
                   >
-                    <Mail size={13} /> {resending ? 'Se trimite...' : 'Retrimite email de verificare'}
+                    <Mail size={13} /> {resending ? t.resending : t.resendVerification}
                   </button>
                 )}
               </div>
@@ -81,23 +86,23 @@ export default function LoginPage() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="label">Email</label>
+            <label className="label">{t.email}</label>
             <input type="email" className="input" placeholder="exemplu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="label">Parolă</label>
-            <input type="password" className="input" placeholder="Introduceți parola" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <label className="label">{t.password}</label>
+            <input type="password" className="input" placeholder={t.passwordPlaceholder} value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? 'Se încarcă...' : 'Autentificare'}
+            {loading ? t.submitting : t.submit}
           </button>
         </form>
         <div className="mt-4 text-center space-y-2">
           <p className="text-sm">
-            <Link href="/auth/forgot-password" className="text-gray-500 hover:text-primary-600 hover:underline">Ai uitat parola?</Link>
+            <Link href="/auth/forgot-password" className="text-gray-500 hover:text-primary-600 hover:underline">{t.forgotPassword}</Link>
           </p>
           <p className="text-sm text-gray-500">
-            Nu ai cont? <Link href="/auth/register" className="text-primary-600 hover:underline">Înregistrează-te</Link>
+            {t.noAccount} <Link href="/auth/register" className="text-primary-600 hover:underline">{t.register}</Link>
           </p>
         </div>
       </div>

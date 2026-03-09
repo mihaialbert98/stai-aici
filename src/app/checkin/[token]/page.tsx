@@ -6,19 +6,17 @@ import {
 } from 'lucide-react';
 import { CopyButton } from '@/components/CopyButton';
 import { NestlyLogo } from '@/components/NestlyLogo';
+import { cookies } from 'next/headers';
+import { LanguageToggleLinks } from '@/components/LanguageToggle';
+import type { Lang } from '@/lib/i18n';
+import { checkinT } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { token: string };
+  searchParams: { lang?: string };
 }
-
-const ACCESS_LABELS: Record<string, string> = {
-  key_box: 'Cutie de chei',
-  smart_lock: 'Broască inteligentă / Cod digital',
-  host_handover: 'Predare personală',
-  key_pickup: 'Ridicare chei',
-};
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -49,7 +47,13 @@ function Row({ label, value, copy }: { label: string; value: string; copy?: bool
   );
 }
 
-export default async function CheckInPage({ params }: Props) {
+export default async function CheckInPage({ params, searchParams }: Props) {
+  const cookieLang = cookies().get('nestly-lang')?.value;
+  const lang: Lang = searchParams.lang === 'en' ? 'en'
+    : searchParams.lang === 'ro' ? 'ro'
+    : cookieLang === 'en' ? 'en'
+    : 'ro';
+  const t = checkinT[lang];
   const link = await prisma.checkInLink.findUnique({
     where: { token: params.token },
     include: {
@@ -88,9 +92,12 @@ export default async function CheckInPage({ params }: Props) {
 
       <div className="max-w-lg mx-auto px-4 py-7 space-y-4">
 
-        {/* Title + address */}
+        {/* Title + address + language toggle */}
         <div>
-          <h1 className="text-2xl font-bold mb-1">{property.title}</h1>
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h1 className="text-2xl font-bold">{property.title}</h1>
+            <LanguageToggleLinks current={lang} baseUrl={`/checkin/${params.token}`} />
+          </div>
           <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary-600 hover:underline text-sm">
             <MapPin size={15} />
             {property.address}, {property.city}
@@ -100,11 +107,11 @@ export default async function CheckInPage({ params }: Props) {
         {/* Timing */}
         {(link.checkInFrom || link.checkInTo || link.checkOutBy) && (
           <Card>
-            <SectionTitle icon={Clock} label="Program" color="text-blue-600" />
+            <SectionTitle icon={Clock} label={t.schedule} color="text-blue-600" />
             <div className="grid grid-cols-2 gap-3">
               {(link.checkInFrom || link.checkInTo) && (
                 <div className="bg-blue-50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-blue-500 font-medium uppercase tracking-wide mb-1">Check-in</p>
+                  <p className="text-xs text-blue-500 font-medium uppercase tracking-wide mb-1">{t.checkIn}</p>
                   <p className="font-bold text-lg text-blue-800">
                     {link.checkInFrom || '–'}{link.checkInTo ? ` – ${link.checkInTo}` : ''}
                   </p>
@@ -112,8 +119,8 @@ export default async function CheckInPage({ params }: Props) {
               )}
               {link.checkOutBy && (
                 <div className="bg-orange-50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-orange-500 font-medium uppercase tracking-wide mb-1">Check-out</p>
-                  <p className="font-bold text-lg text-orange-800">până la {link.checkOutBy}</p>
+                  <p className="text-xs text-orange-500 font-medium uppercase tracking-wide mb-1">{t.checkOut}</p>
+                  <p className="font-bold text-lg text-orange-800">{t.until} {link.checkOutBy}</p>
                 </div>
               )}
             </div>
@@ -123,15 +130,15 @@ export default async function CheckInPage({ params }: Props) {
         {/* Parking & transport */}
         {hasParking && (
           <Card>
-            <SectionTitle icon={Car} label="Parcare & transport" color="text-orange-600" />
+            <SectionTitle icon={Car} label={t.parking} color="text-orange-600" />
             {link.parkingAvailable && (
               <div className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded-full mb-3">
-                Parcare disponibilă
+                {t.parkingAvailable}
               </div>
             )}
             {link.parkingInfo && <p className="text-sm text-gray-700 mb-2">{link.parkingInfo}</p>}
-            {link.parkingLocation && <Row label="Locul de parcare" value={link.parkingLocation} />}
-            {link.parkingCode && <Row label="Cod acces" value={link.parkingCode} copy />}
+            {link.parkingLocation && <Row label={t.parkingSpot} value={link.parkingLocation} />}
+            {link.parkingCode && <Row label={t.parkingCode} value={link.parkingCode} copy />}
             {link.transportInfo && (
               <p className="text-sm text-gray-500 mt-2 flex items-start gap-1.5">
                 <MapPin size={14} className="mt-0.5 flex-shrink-0 text-gray-400" />
@@ -144,10 +151,10 @@ export default async function CheckInPage({ params }: Props) {
         {/* Building access */}
         {hasBuilding && (
           <Card>
-            <SectionTitle icon={Building2} label="Intrare în clădire" color="text-slate-600" />
+            <SectionTitle icon={Building2} label={t.building} color="text-slate-600" />
             {link.buildingEntrance && <p className="text-sm text-gray-700 mb-2">{link.buildingEntrance}</p>}
-            {link.buildingFloor && <Row label="Etaj / Apartament" value={link.buildingFloor} />}
-            {link.buildingCode && <Row label="Cod interfon / intrare" value={link.buildingCode} copy />}
+            {link.buildingFloor && <Row label={t.floor} value={link.buildingFloor} />}
+            {link.buildingCode && <Row label={t.buildingCode} value={link.buildingCode} copy />}
             {link.buildingNotes && (
               <p className="text-sm text-gray-600 mt-2 bg-gray-50 rounded-xl p-3 whitespace-pre-wrap">{link.buildingNotes}</p>
             )}
@@ -157,10 +164,10 @@ export default async function CheckInPage({ params }: Props) {
         {/* Apartment access */}
         {hasAccess && (
           <Card>
-            <SectionTitle icon={KeyRound} label="Acces apartament" color="text-yellow-600" />
+            <SectionTitle icon={KeyRound} label={t.access} color="text-yellow-600" />
             {link.accessType && (
               <div className="inline-flex items-center gap-1.5 text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200 px-2.5 py-1 rounded-full mb-3">
-                {ACCESS_LABELS[link.accessType] || link.accessType}
+                {t.accessTypes[link.accessType as keyof typeof t.accessTypes] || link.accessType}
               </div>
             )}
             {link.accessCode && <Row label="Cod / PIN" value={link.accessCode} copy />}
@@ -174,16 +181,16 @@ export default async function CheckInPage({ params }: Props) {
         {/* WiFi */}
         {hasWifi && (
           <Card>
-            <SectionTitle icon={Wifi} label="Wi-Fi" color="text-green-600" />
-            {link.wifiName && <Row label="Rețea" value={link.wifiName} copy />}
-            {link.wifiPassword && <Row label="Parolă" value={link.wifiPassword} copy />}
+            <SectionTitle icon={Wifi} label={t.wifi} color="text-green-600" />
+            {link.wifiName && <Row label={t.network} value={link.wifiName} copy />}
+            {link.wifiPassword && <Row label={t.password} value={link.wifiPassword} copy />}
           </Card>
         )}
 
         {/* Apartment guide */}
         {link.apartmentGuide && (
           <Card>
-            <SectionTitle icon={Home} label="Ghid apartament" color="text-teal-600" />
+            <SectionTitle icon={Home} label={t.apartment} color="text-teal-600" />
             <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{link.apartmentGuide}</p>
           </Card>
         )}
@@ -191,7 +198,7 @@ export default async function CheckInPage({ params }: Props) {
         {/* House rules */}
         {link.houseRules && (
           <Card>
-            <SectionTitle icon={ShieldCheck} label="Reguli casă" color="text-purple-600" />
+            <SectionTitle icon={ShieldCheck} label={t.rules} color="text-purple-600" />
             <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{link.houseRules}</p>
           </Card>
         )}
@@ -199,22 +206,22 @@ export default async function CheckInPage({ params }: Props) {
         {/* Contact */}
         {hasContact && (
           <Card>
-            <SectionTitle icon={Phone} label="Contact" color="text-gray-600" />
+            <SectionTitle icon={Phone} label={t.contact} color="text-gray-600" />
             <div className="space-y-3">
               {link.hostPhone && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Gazdă</span>
+                  <span className="text-sm text-gray-500">{t.host}</span>
                   <div className="flex items-center gap-2">
                     <a href={`tel:${link.hostPhone}`} className="text-sm font-medium text-primary-600 hover:underline">{link.hostPhone}</a>
                     <a href={`https://wa.me/${link.hostPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 transition">
-                      <MessageCircle size={12} /> WhatsApp
+                      <MessageCircle size={12} /> {t.whatsapp}
                     </a>
                   </div>
                 </div>
               )}
               {link.emergencyPhone && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Urgențe</span>
+                  <span className="text-sm text-gray-500">{t.emergency}</span>
                   <a href={`tel:${link.emergencyPhone}`} className="text-sm font-medium text-red-600 hover:underline">{link.emergencyPhone}</a>
                 </div>
               )}
@@ -225,7 +232,7 @@ export default async function CheckInPage({ params }: Props) {
         {/* Check-out */}
         {link.checkOutNotes && (
           <Card className="border-orange-100 bg-orange-50">
-            <SectionTitle icon={LogOut} label="Instrucțiuni check-out" color="text-orange-600" />
+            <SectionTitle icon={LogOut} label={t.checkout} color="text-orange-600" />
             <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{link.checkOutNotes}</p>
           </Card>
         )}
@@ -233,7 +240,7 @@ export default async function CheckInPage({ params }: Props) {
         {/* Video */}
         {hasVideo && (
           <Card>
-            <SectionTitle icon={Video} label="Video de bun venit" color="text-pink-600" />
+            <SectionTitle icon={Video} label={t.video} color="text-pink-600" />
             <div className="aspect-video rounded-xl overflow-hidden bg-black">
               <iframe
                 src={link.videoUrl!.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}

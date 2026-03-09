@@ -6,6 +6,9 @@ import { FileText, Copy, RefreshCw, Check, Download, ExternalLink, ToggleLeft, T
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface GuestFormLink {
   id: string;
@@ -35,6 +38,8 @@ interface Submission {
 }
 
 export default function GuestFormsPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].guestForms;
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -74,7 +79,7 @@ export default function GuestFormsPage() {
   const copyLink = async (token: string, propertyId: string) => {
     await navigator.clipboard.writeText(publicUrl(token));
     setCopiedId(propertyId);
-    toast.success('Link copiat!');
+    toast.success(t.copied);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -87,13 +92,13 @@ export default function GuestFormsPage() {
   };
 
   const regenerateLink = async (propertyId: string) => {
-    if (!confirm('Linkul vechi nu va mai funcționa. Ești sigur?')) return;
+    if (!confirm(t.regenerateConfirm)) return;
     const res = await fetch(`/api/properties/${propertyId}/guest-form-link`, { method: 'POST' });
     const data = await res.json();
     setProperties(prev =>
       prev.map(p => p.id === propertyId ? { ...p, guestFormLink: data.link } : p)
     );
-    toast.success('Link regenerat');
+    toast.success(t.regenerated);
   };
 
   const toggleActive = async (propertyId: string, link: GuestFormLink) => {
@@ -106,21 +111,21 @@ export default function GuestFormsPage() {
     setProperties(prev =>
       prev.map(p => p.id === propertyId ? { ...p, guestFormLink: data.link } : p)
     );
-    toast.success(data.link.isActive ? 'Link activat' : 'Link dezactivat');
+    toast.success(data.link.isActive ? t.activated : t.deactivated);
   };
 
   const exportCSV = (propertyId: string) => {
     window.location.href = `/api/properties/${propertyId}/submissions/export`;
   };
 
-  const dateStr = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: ro });
+  const dateStr = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: lang === 'en' ? enUS : ro });
 
   const selectedProperty = properties.find(p => p.id === selectedPropertyId);
 
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Fișe de cazare</h1>
+        <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
         <div className="space-y-4">
           {[1, 2].map(i => <div key={i} className="card animate-pulse h-24" />)}
         </div>
@@ -131,12 +136,12 @@ export default function GuestFormsPage() {
   if (properties.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Fișe de cazare</h1>
+        <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
         <div className="card text-center py-12">
           <FileText size={40} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 mb-4">Nu ai nicio proprietate încă.</p>
+          <p className="text-gray-500 mb-4">{t.noProperties}</p>
           <Link href="/dashboard/host/properties/new" className="btn-primary">
-            Adaugă proprietate
+            {t.addProperty}
           </Link>
         </div>
       </div>
@@ -146,9 +151,9 @@ export default function GuestFormsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Fișe de cazare</h1>
+        <h1 className="text-2xl font-bold">{t.title}</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Colectează datele oaspeților digital, conform legislației române. Trimite link-ul înainte de check-in.
+          {t.subtitle}
         </p>
       </div>
 
@@ -177,7 +182,7 @@ export default function GuestFormsPage() {
                         property.guestFormLink.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                       }`}
                     >
-                      {property.guestFormLink.isActive ? 'Activ' : 'Inactiv'}
+                      {property.guestFormLink.isActive ? t.active : t.inactive}
                     </span>
 
                     <button
@@ -185,7 +190,7 @@ export default function GuestFormsPage() {
                       className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
                     >
                       {copiedId === property.id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
-                      Copiază link
+                      {t.copyLink}
                     </button>
 
                     <a
@@ -194,7 +199,7 @@ export default function GuestFormsPage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
                     >
-                      <ExternalLink size={12} /> Previzualizare
+                      <ExternalLink size={12} /> {t.preview}
                     </a>
 
                     <button
@@ -204,14 +209,14 @@ export default function GuestFormsPage() {
                       {property.guestFormLink.isActive
                         ? <ToggleRight size={12} className="text-green-500" />
                         : <ToggleLeft size={12} />}
-                      {property.guestFormLink.isActive ? 'Dezactivează' : 'Activează'}
+                      {property.guestFormLink.isActive ? t.deactivate : t.activate}
                     </button>
 
                     <button
                       onClick={() => regenerateLink(property.id)}
                       className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 transition"
                     >
-                      <RefreshCw size={12} /> Regenerează
+                      <RefreshCw size={12} /> {t.regenerate}
                     </button>
                   </div>
                 ) : (
@@ -219,7 +224,7 @@ export default function GuestFormsPage() {
                     onClick={() => ensureLink(property.id)}
                     className="mt-2 flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition"
                   >
-                    <FileText size={14} /> Generează link
+                    <FileText size={14} /> {t.generateLink}
                   </button>
                 )}
               </div>
@@ -232,9 +237,9 @@ export default function GuestFormsPage() {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Fișe completate</h2>
+            <h2 className="text-lg font-semibold">{t.completedForms}</h2>
             {subTotal > 0 && (
-              <span className="text-sm text-gray-400">{subTotal} total</span>
+              <span className="text-sm text-gray-400">{subTotal} {t.total}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -254,7 +259,7 @@ export default function GuestFormsPage() {
                 onClick={() => exportCSV(selectedPropertyId)}
                 className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
               >
-                <Download size={14} /> Export CSV
+                <Download size={14} /> {t.exportCSV}
               </button>
             )}
           </div>
@@ -266,9 +271,9 @@ export default function GuestFormsPage() {
           </div>
         ) : submissions.length === 0 ? (
           <div className="card text-center py-10">
-            <p className="text-gray-400">Nu există fișe completate pentru această proprietate.</p>
+            <p className="text-gray-400">{t.empty}</p>
             <p className="text-sm text-gray-400 mt-1">
-              Trimite link-ul de mai sus oaspeților tăi înainte de check-in.
+              {t.emptyHint}
             </p>
           </div>
         ) : (
@@ -276,12 +281,12 @@ export default function GuestFormsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="pb-2 pr-4 font-medium">Oaspete</th>
-                  <th className="pb-2 pr-4 font-medium">Document</th>
-                  <th className="pb-2 pr-4 font-medium">Check-in</th>
-                  <th className="pb-2 pr-4 font-medium">Check-out</th>
-                  <th className="pb-2 pr-4 font-medium">Persoane</th>
-                  <th className="pb-2 font-medium">Înregistrat</th>
+                  <th className="pb-2 pr-4 font-medium">{t.colGuest}</th>
+                  <th className="pb-2 pr-4 font-medium">{t.colDocument}</th>
+                  <th className="pb-2 pr-4 font-medium">{t.colCheckIn}</th>
+                  <th className="pb-2 pr-4 font-medium">{t.colCheckOut}</th>
+                  <th className="pb-2 pr-4 font-medium">{t.colGuests}</th>
+                  <th className="pb-2 font-medium">{t.colSubmitted}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">

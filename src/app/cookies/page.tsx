@@ -1,14 +1,99 @@
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Politica de cookies – Nestly',
-};
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 export default function CookiePolicyPage() {
+  const lang = useLang();
+  const lastUpdated = dashboardT[lang].footer.lastUpdated;
+
+  if (lang === 'en') {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <h1 className="text-3xl font-bold mb-8">Cookie policy</h1>
+        <p className="text-sm text-gray-500 mb-8">{lastUpdated}</p>
+
+        <div className="prose prose-gray max-w-none space-y-6 text-sm leading-relaxed text-gray-700">
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">1. What are cookies?</h2>
+            <p>
+              Cookies are small text files stored on your device by your web browser when you visit a website.
+              They are widely used to make websites work correctly and to provide information to website owners.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Cookies we use</h2>
+            <p>Nestly uses only essential cookies required for the platform to function:</p>
+
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm border border-gray-200 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left px-4 py-2 border-b font-medium">Name</th>
+                    <th className="text-left px-4 py-2 border-b font-medium">Purpose</th>
+                    <th className="text-left px-4 py-2 border-b font-medium">Duration</th>
+                    <th className="text-left px-4 py-2 border-b font-medium">Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">nestly-token</code></td>
+                    <td className="px-4 py-2 border-b">User authentication (JWT session)</td>
+                    <td className="px-4 py-2 border-b">7 days</td>
+                    <td className="px-4 py-2 border-b">Essential</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">cookie-consent</code></td>
+                    <td className="px-4 py-2">Stores cookie consent (localStorage)</td>
+                    <td className="px-4 py-2">Unlimited</td>
+                    <td className="px-4 py-2">Essential</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">3. Third-party cookies</h2>
+            <p>
+              Currently, Nestly does not use any third-party cookies (analytics, advertising, social networks).
+              If this changes in the future, we will update this policy and request your consent.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">4. How to manage cookies</h2>
+            <p>
+              You can configure your browser to refuse or delete cookies. Please note that disabling the authentication
+              cookie will prevent you from using your account on the platform.
+            </p>
+            <p className="mt-2">Instructions for major browsers:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li><strong>Chrome:</strong> Settings &gt; Privacy and security &gt; Cookies</li>
+              <li><strong>Firefox:</strong> Settings &gt; Privacy &gt; Cookies</li>
+              <li><strong>Safari:</strong> Preferences &gt; Privacy &gt; Cookies</li>
+              <li><strong>Edge:</strong> Settings &gt; Privacy &gt; Cookies</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">5. Contact</h2>
+            <p>For questions about the cookies used on the platform, contact us at:</p>
+            <p className="mt-2">
+              <strong>ABT SOFTWARE HUB SRL</strong><br />
+              Email: contact@nestly.app
+            </p>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Politica de cookies</h1>
-      <p className="text-sm text-gray-500 mb-8">Ultima actualizare: 1 februarie 2026</p>
+      <p className="text-sm text-gray-500 mb-8">{lastUpdated}</p>
 
       <div className="prose prose-gray max-w-none space-y-6 text-sm leading-relaxed text-gray-700">
         <section>

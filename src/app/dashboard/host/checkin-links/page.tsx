@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Link2, Copy, RefreshCw, Check, ToggleLeft, ToggleRight, ExternalLink, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface CheckInLink {
   id: string;
@@ -19,6 +21,8 @@ interface PropertyWithLink {
 }
 
 export default function CheckInLinksPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].checkinLinks;
   const [properties, setProperties] = useState<PropertyWithLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -42,16 +46,16 @@ export default function CheckInLinksPage() {
   const copyLink = async (token: string, propertyId: string) => {
     await navigator.clipboard.writeText(publicUrl(token));
     setCopiedId(propertyId);
-    toast.success('Link copiat!');
+    toast.success(t.copied);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const regenerateLink = async (propertyId: string) => {
-    if (!confirm('Linkul vechi nu va mai funcționa. Ești sigur?')) return;
+    if (!confirm(t.regenerateConfirm)) return;
     const res = await fetch(`/api/properties/${propertyId}/checkin-link`, { method: 'POST' });
     const data = await res.json();
     setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, checkInLink: data.link } : p));
-    toast.success('Link regenerat cu succes');
+    toast.success(t.regeneratedSuccess);
   };
 
   const toggleActive = async (propertyId: string, link: CheckInLink) => {
@@ -62,13 +66,13 @@ export default function CheckInLinksPage() {
     });
     const data = await res.json();
     setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, checkInLink: data.link } : p));
-    toast.success(data.link.isActive ? 'Link activat' : 'Link dezactivat');
+    toast.success(data.link.isActive ? t.activated : t.deactivated);
   };
 
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Link-uri check-in</h1>
+        <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
         <div className="space-y-4">{[1, 2].map(i => <div key={i} className="card animate-pulse h-24" />)}</div>
       </div>
     );
@@ -77,11 +81,11 @@ export default function CheckInLinksPage() {
   if (properties.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Link-uri check-in</h1>
+        <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
         <div className="card text-center py-12">
           <Link2 size={40} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 mb-4">Nu ai nicio proprietate încă.</p>
-          <Link href="/dashboard/host/properties/new" className="btn-primary">Adaugă proprietate</Link>
+          <p className="text-gray-500 mb-4">{t.noProperties}</p>
+          <Link href="/dashboard/host/properties/new" className="btn-primary">{t.addProperty}</Link>
         </div>
       </div>
     );
@@ -90,9 +94,9 @@ export default function CheckInLinksPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Link-uri check-in</h1>
+        <h1 className="text-2xl font-bold">{t.title}</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Trimite oaspeților un ghid complet — coduri de acces, WiFi, instrucțiuni apartament, check-out și altele.
+          {t.subtitle}
         </p>
       </div>
 
@@ -112,34 +116,34 @@ export default function CheckInLinksPage() {
                 {property.checkInLink ? (
                   <div className="mt-2 flex items-center gap-2 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${property.checkInLink.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {property.checkInLink.isActive ? 'Activ' : 'Inactiv'}
+                      {property.checkInLink.isActive ? t.active : t.inactive}
                     </span>
 
                     <button onClick={() => copyLink(property.checkInLink!.token, property.id)} className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
                       {copiedId === property.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                      Copiază link
+                      {t.copyLink}
                     </button>
 
                     <a href={publicUrl(property.checkInLink.token)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
-                      <ExternalLink size={14} /> Previzualizare
+                      <ExternalLink size={14} /> {t.preview}
                     </a>
 
                     <Link href={`/dashboard/host/checkin-links/${property.id}`} className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-primary-200 text-primary-700 hover:bg-primary-50 transition">
-                      <Pencil size={14} /> Editează ghidul
+                      <Pencil size={14} /> {t.editGuide}
                     </Link>
 
                     <button onClick={() => toggleActive(property.id, property.checkInLink!)} className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
                       {property.checkInLink.isActive ? <ToggleRight size={14} className="text-green-500" /> : <ToggleLeft size={14} />}
-                      {property.checkInLink.isActive ? 'Dezactivează' : 'Activează'}
+                      {property.checkInLink.isActive ? t.deactivate : t.activate}
                     </button>
 
                     <button onClick={() => regenerateLink(property.id)} className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-50 transition">
-                      <RefreshCw size={14} /> Regenerează
+                      <RefreshCw size={14} /> {t.regenerate}
                     </button>
                   </div>
                 ) : (
                   <button onClick={() => ensureLink(property.id)} className="mt-2 flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition">
-                    <Link2 size={14} /> Generează link
+                    <Link2 size={14} /> {t.generateLink}
                   </button>
                 )}
               </div>

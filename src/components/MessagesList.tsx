@@ -7,12 +7,16 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/utils';
 import { MessageCircle } from 'lucide-react';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface Props {
   role: 'guest' | 'host';
 }
 
 export function MessagesList({ role }: Props) {
+  const lang = useLang();
+  const t = dashboardT[lang].messages;
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +27,7 @@ export function MessagesList({ role }: Props) {
     });
   }, [role]);
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading) return <p className="text-gray-500">{t.loading}</p>;
 
   const basePath = role === 'host' ? '/dashboard/host/bookings' : '/dashboard/guest/bookings';
 
@@ -31,8 +35,8 @@ export function MessagesList({ role }: Props) {
     return (
       <EmptyState
         icon={MessageCircle}
-        message="Nu ai conversații active."
-        action={role === 'guest' ? { label: 'Caută cazare', href: '/search' } : undefined}
+        message={t.empty}
+        action={role === 'guest' ? { label: t.findAccom, href: '/search' } : undefined}
       />
     );
   }
@@ -49,7 +53,7 @@ export function MessagesList({ role }: Props) {
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-gray-900 truncate">{b.property.title}</h3>
                 <p className="text-sm text-gray-500 truncate">
-                  {role === 'guest' ? `Gazdă: ${b.host.name}` : `Oaspete: ${b.guest.name}`} · {formatDate(b.startDate)} – {formatDate(b.endDate)}
+                  {role === 'guest' ? `${t.hostLabel}: ${b.host.name}` : `${t.guestLabel}: ${b.guest.name}`} · {formatDate(b.startDate)} – {formatDate(b.endDate)}
                 </p>
               </div>
               <StatusBadge status={b.status} />

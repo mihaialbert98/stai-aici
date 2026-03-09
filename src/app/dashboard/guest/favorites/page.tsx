@@ -5,8 +5,12 @@ import { PropertyCard } from '@/components/PropertyCard';
 import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { Heart } from 'lucide-react';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 export default function FavoritesPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].guestNav;
   const [properties, setProperties] = useState<any[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,12 +43,12 @@ export default function FavoritesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Favorite</h1>
+      <h1 className="text-2xl font-bold mb-6">{t.favorites}</h1>
 
       {loading ? (
         <PropertyGridSkeleton count={4} />
       ) : properties.length === 0 ? (
-        <EmptyState icon={Heart} message="Nu ai nicio proprietate salvată la favorite." action={{ label: 'Caută cazare', href: '/search' }} />
+        <EmptyState icon={Heart} message={t.favoritesEmpty} action={{ label: t.findAccom, href: '/search' }} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {properties.map(p => (

@@ -1,16 +1,21 @@
 import { getSession } from '@/lib/auth';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Clock } from 'lucide-react';
-
-const items = [
-  { href: '/dashboard/guest/profile', label: 'Profilul meu' },
-  { href: '/dashboard/guest/bookings', label: 'Rezervările mele' },
-  { href: '/dashboard/guest/messages', label: 'Mesaje' },
-  { href: '/dashboard/guest/settings', label: 'Setări' },
-];
+import { cookies } from 'next/headers';
+import type { Lang } from '@/lib/i18n';
+import { dashboardT } from '@/lib/i18n';
 
 export default async function GuestLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
+  const lang = (cookies().get('nestly-lang')?.value || 'ro') as Lang;
+  const t = dashboardT[lang].guestNav;
+
+  const items = [
+    { href: '/dashboard/guest/profile', label: t.profile },
+    { href: '/dashboard/guest/bookings', label: t.myBookings },
+    { href: '/dashboard/guest/messages', label: t.messages },
+    { href: '/dashboard/guest/settings', label: t.settings },
+  ];
 
   // Pure guest accounts see a "coming soon" screen — hosts who toggled to guest mode see the full dashboard
   if (session?.role === 'GUEST') {
@@ -20,15 +25,12 @@ export default async function GuestLayout({ children }: { children: React.ReactN
           <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-5">
             <Clock size={28} />
           </div>
-          <h1 className="text-2xl font-bold mb-3">În curând</h1>
-          <p className="text-gray-500 leading-relaxed">
-            Nestly este momentan o platformă pentru gazde. Funcționalitățile pentru oaspeți —
-            căutare, rezervări și recenzii — vor fi disponibile în curând.
-          </p>
+          <h1 className="text-2xl font-bold mb-3">{t.comingSoonTitle}</h1>
+          <p className="text-gray-500 leading-relaxed">{t.comingSoonDesc}</p>
         </div>
       </div>
     );
   }
 
-  return <DashboardLayout title="Contul meu" items={items}>{children}</DashboardLayout>;
+  return <DashboardLayout title={t.title} items={items}>{children}</DashboardLayout>;
 }

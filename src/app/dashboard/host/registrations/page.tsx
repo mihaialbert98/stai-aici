@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { FileText, Copy, Check, Download, Plus, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ro } from 'date-fns/locale';
+import { ro, enUS } from 'date-fns/locale';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface GuestForm {
   id: string;
@@ -27,6 +29,10 @@ interface FormRequest {
 }
 
 export default function RegistrationsPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].guestForms;
+  const dateFnsLocale = lang === 'ro' ? ro : enUS;
+
   const [formRequests, setFormRequests] = useState<FormRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -44,7 +50,7 @@ export default function RegistrationsPage() {
   const copyLink = async (id: string, token: string) => {
     await navigator.clipboard.writeText(publicUrl(token));
     setCopiedId(id);
-    toast.success('Link copiat!');
+    toast.success(t.copied);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -55,12 +61,12 @@ export default function RegistrationsPage() {
     a.click();
   };
 
-  const dateStr = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: ro });
+  const dateStr = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: dateFnsLocale });
 
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold mb-6">Fișe de cazare</h1>
+        <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
         <div className="space-y-4">
           {[1, 2, 3].map(i => <div key={i} className="card animate-pulse h-24" />)}
         </div>
@@ -72,22 +78,20 @@ export default function RegistrationsPage() {
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Fișe de cazare</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Formulare digitale pentru înregistrarea oaspeților conform legislației române.
-          </p>
+          <h1 className="text-2xl font-bold">{t.title}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t.registrationsSubtitle}</p>
         </div>
         <Link href="/dashboard/host/registrations/new" className="btn-primary flex items-center gap-1.5">
-          <Plus size={16} /> Fișă nouă
+          <Plus size={16} /> {t.newForm}
         </Link>
       </div>
 
       {formRequests.length === 0 ? (
         <div className="card text-center py-12">
           <FileText size={40} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500 mb-4">Nu ai nicio fișă de cazare creată încă.</p>
+          <p className="text-gray-500 mb-4">{t.emptyForms}</p>
           <Link href="/dashboard/host/registrations/new" className="btn-primary inline-flex items-center gap-1.5">
-            <Plus size={16} /> Creează prima fișă
+            <Plus size={16} /> {t.createFirst}
           </Link>
         </div>
       ) : (
@@ -112,7 +116,7 @@ export default function RegistrationsPage() {
                             : 'bg-gray-100 text-gray-500'
                         }`}
                       >
-                        {submitted}/{req.totalGuests} completate
+                        {t.completed(submitted, req.totalGuests)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 mt-0.5">
@@ -120,9 +124,9 @@ export default function RegistrationsPage() {
                         const first = req.guestForms.find(g => g.arrivalDate);
                         return first
                           ? `${dateStr(first.arrivalDate!)} → ${dateStr(first.departureDate!)}`
-                          : 'Date completate de oaspete';
+                          : t.datesFilledByGuest;
                       })()}
-                      <span className="ml-2 text-gray-400">· {req.totalGuests} oaspete{req.totalGuests !== 1 ? 'ți' : ''}</span>
+                      <span className="ml-2 text-gray-400">· {t.guestCount(req.totalGuests)}</span>
                     </p>
                   </div>
 
@@ -134,7 +138,7 @@ export default function RegistrationsPage() {
                         className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
                       >
                         {copiedId === req.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                        Copiază link
+                        {t.copyLink}
                       </button>
                       <a
                         href={publicUrl(req.publicToken)}
@@ -142,7 +146,7 @@ export default function RegistrationsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
                       >
-                        <ExternalLink size={14} /> Previzualizare
+                        <ExternalLink size={14} /> {t.preview}
                       </a>
                     </div>
                   )}
@@ -155,14 +159,14 @@ export default function RegistrationsPage() {
                       <div key={g.id} className="flex items-center justify-between gap-2">
                         <span className="text-sm text-gray-700">
                           <span className="text-gray-400 mr-2">#{g.guestIndex}</span>
-                          {g.fullName || 'Necunoscut'}
+                          {g.fullName || t.unknown}
                         </span>
                         {g.wordFilePath && (
                           <button
                             onClick={() => downloadDoc(req.id, g.id, g.fullName)}
                             className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
                           >
-                            <Download size={12} /> Descarcă .docx
+                            <Download size={12} /> {t.downloadDocx}
                           </button>
                         )}
                       </div>

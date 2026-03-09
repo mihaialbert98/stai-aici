@@ -1,18 +1,23 @@
 'use client';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
-
-const items = [
-  { href: '/dashboard/host', label: 'Panou principal' },
-  { href: '/dashboard/host/properties', label: 'Proprietăți' },
-  { href: '/dashboard/host/calendar', label: 'Calendar' },
-  { href: '/dashboard/host/bookings', label: 'Rezervări' },
-  { href: '/dashboard/host/checkin-links', label: 'Link-uri check-in' },
-  { href: '/dashboard/host/registrations', label: 'Fișe de cazare' },
-  { href: '/dashboard/host/messages', label: 'Mesaje' },
-  { href: '/dashboard/host/settings', label: 'Setări' },
-];
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 export default function HostLayout({ children }: { children: React.ReactNode }) {
-  return <DashboardLayout title="Gazdă" items={items}>{children}</DashboardLayout>;
+  const lang = useLang();
+  const t = dashboardT[lang];
+
+  const items = [
+    { href: '/dashboard/host', label: t.nav.overview },
+    { href: '/dashboard/host/properties', label: t.nav.properties },
+    { href: '/dashboard/host/calendar', label: t.nav.calendar },
+    { href: '/dashboard/host/bookings', label: t.nav.bookings },
+    { href: '/dashboard/host/checkin-links', label: t.nav.checkinLinks },
+    { href: '/dashboard/host/registrations', label: t.nav.guestForms },
+    { href: '/dashboard/host/messages', label: t.nav.messages },
+    { href: '/dashboard/host/settings', label: t.nav.settings },
+  ];
+
+  return <DashboardLayout title={t.nav.title} items={items}>{children}</DashboardLayout>;
 }

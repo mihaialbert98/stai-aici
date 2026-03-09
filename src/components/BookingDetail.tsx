@@ -8,7 +8,9 @@ import { formatRON, formatDate, nightsBetween } from '@/lib/utils';
 import { PropertyGuide } from '@/components/PropertyGuide';
 import { Star, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { ro } from 'date-fns/locale';
+import { ro, enUS } from 'date-fns/locale';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface Props {
   role: 'guest' | 'host';
@@ -16,6 +18,10 @@ interface Props {
 
 export function BookingDetail({ role }: Props) {
   const { id } = useParams();
+  const lang = useLang();
+  const t = dashboardT[lang].bookingDetail;
+  const dateFnsLocale = lang === 'ro' ? ro : enUS;
+
   const [booking, setBooking] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
 
@@ -62,7 +68,7 @@ export function BookingDetail({ role }: Props) {
       });
   }, [role, booking]);
 
-  if (!booking || !user) return <p className="text-gray-500">Se încarcă...</p>;
+  if (!booking || !user) return <p className="text-gray-500">{t.loading}</p>;
 
   const nights = nightsBetween(booking.startDate, booking.endDate);
   const prop = booking.property;
@@ -85,12 +91,12 @@ export function BookingDetail({ role }: Props) {
   };
 
   const handleCancel = async () => {
-    if (!confirm('Sigur vrei să anulezi rezervarea?')) return;
+    if (!confirm(t.cancelConfirm)) return;
     await updateStatus('CANCELLED');
   };
 
   const handleReview = async () => {
-    if (reviewRating < 1) { setReviewError('Selectează un rating'); return; }
+    if (reviewRating < 1) { setReviewError(t.ratingRequired); return; }
     setReviewSubmitting(true);
     setReviewError('');
     const res = await fetch('/api/reviews', {
@@ -105,7 +111,7 @@ export function BookingDetail({ role }: Props) {
   };
 
   const handleHostReview = async () => {
-    if (hostReviewRating < 1) { setHostReviewError('Selectează un rating'); return; }
+    if (hostReviewRating < 1) { setHostReviewError(t.ratingRequired); return; }
     setHostReviewSubmitting(true);
     setHostReviewError('');
     const res = await fetch('/api/host-reviews', {
@@ -152,15 +158,21 @@ export function BookingDetail({ role }: Props) {
       <textarea className="input w-full" rows={3} placeholder={placeholder} value={comment} onChange={e => setComment(e.target.value)} />
       {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
       <button onClick={onSubmit} disabled={submitting || rating < 1} className="btn-primary mt-3 disabled:opacity-50">
-        {submitting ? 'Se trimite...' : 'Trimite recenzia'}
+        {submitting ? t.submitting : t.submitReview}
       </button>
     </div>
   );
 
+  const policyLabel = prop.cancellationPolicy === 'STRICT'
+    ? t.policyStrict
+    : prop.cancellationPolicy === 'MODERATE'
+    ? t.policyModerate
+    : t.policyFlexible;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{role === 'guest' ? 'Detalii rezervare' : 'Rezervare'}</h1>
+        <h1 className="text-2xl font-bold">{role === 'guest' ? t.titleGuest : t.titleHost}</h1>
         <StatusBadge status={booking.status} />
       </div>
 
@@ -170,14 +182,14 @@ export function BookingDetail({ role }: Props) {
           <p className="text-sm text-gray-500 mb-4">{prop.city} · {prop.address}</p>
         )}
         {role === 'host' && (
-          <p className="text-sm text-gray-500 mb-4">Oaspete: {booking.guest.name} ({booking.guest.email})</p>
+          <p className="text-sm text-gray-500 mb-4">{t.guestInfo(booking.guest.name, booking.guest.email)}</p>
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div><span className="text-gray-500">Check-in</span><p className="font-medium">{formatDate(booking.startDate)}</p></div>
           <div><span className="text-gray-500">Check-out</span><p className="font-medium">{formatDate(booking.endDate)}</p></div>
-          <div><span className="text-gray-500">Nopți</span><p className="font-medium">{nights}</p></div>
-          <div><span className="text-gray-500">Total</span><p className="font-medium text-primary-600">{formatRON(booking.totalPrice)}</p></div>
+          <div><span className="text-gray-500">{t.nights}</span><p className="font-medium">{nights}</p></div>
+          <div><span className="text-gray-500">{t.total}</span><p className="font-medium text-primary-600">{formatRON(booking.totalPrice)}</p></div>
         </div>
 
         {/* Guest: cancel pending or accepted */}
@@ -185,18 +197,18 @@ export function BookingDetail({ role }: Props) {
           <div className="mt-4">
             {booking.status === 'ACCEPTED' && prop.cancellationPolicy && (
               <p className="text-xs text-gray-500 mb-2">
-                Politica de anulare: {prop.cancellationPolicy === 'STRICT' ? 'Strictă (7 zile înainte)' : prop.cancellationPolicy === 'MODERATE' ? 'Moderată (5 zile înainte)' : 'Flexibilă (24h înainte)'}
+                {t.cancellationPolicy}: {policyLabel}
               </p>
             )}
-            <button onClick={handleCancel} className="btn-danger">Anulează rezervarea</button>
+            <button onClick={handleCancel} className="btn-danger">{t.cancelBooking}</button>
           </div>
         )}
 
         {/* Host: accept/reject pending */}
         {role === 'host' && booking.status === 'PENDING' && (
           <div className="flex gap-2 mt-4">
-            <button onClick={() => updateStatus('ACCEPTED')} className="btn-primary">Acceptă</button>
-            <button onClick={() => updateStatus('REJECTED')} className="btn-danger">Refuză</button>
+            <button onClick={() => updateStatus('ACCEPTED')} className="btn-primary">{t.accept}</button>
+            <button onClick={() => updateStatus('REJECTED')} className="btn-danger">{t.reject}</button>
           </div>
         )}
       </div>
@@ -205,7 +217,7 @@ export function BookingDetail({ role }: Props) {
       {role === 'host' && (
         <div className="card">
           <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <User size={18} /> Profilul oaspetelui
+            <User size={18} /> {t.guestProfile}
           </h2>
           <p className="font-medium">{booking.guest.name}</p>
           {guestReviews.length > 0 ? (
@@ -213,7 +225,7 @@ export function BookingDetail({ role }: Props) {
               <div className="flex items-center gap-2 mt-2 mb-3">
                 {renderStars(Math.round(guestAvgRating || 0))}
                 <span className="text-sm text-gray-500">
-                  {guestAvgRating?.toFixed(1)} din {guestReviews.length} {guestReviews.length === 1 ? 'recenzie' : 'recenzii'} de la gazde
+                  {t.guestReviewCount(guestAvgRating?.toFixed(1) ?? '0', guestReviews.length)}
                 </span>
               </div>
               <div className="space-y-3 border-t border-gray-100 pt-3">
@@ -222,7 +234,7 @@ export function BookingDetail({ role }: Props) {
                     <div className="flex items-center gap-2 mb-0.5">
                       {renderStars(r.rating, 14)}
                       <span className="text-gray-400 text-xs">
-                        {r.host?.name} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: ro })}
+                        {r.host?.name} · {format(new Date(r.createdAt), 'd MMM yyyy', { locale: dateFnsLocale })}
                       </span>
                     </div>
                     {r.comment && <p className="text-gray-600">{r.comment}</p>}
@@ -231,7 +243,7 @@ export function BookingDetail({ role }: Props) {
               </div>
             </>
           ) : (
-            <p className="text-sm text-gray-500 mt-1">Acest oaspete nu are încă recenzii de la gazde.</p>
+            <p className="text-sm text-gray-500 mt-1">{t.noGuestReviews}</p>
           )}
         </div>
       )}
@@ -244,7 +256,7 @@ export function BookingDetail({ role }: Props) {
       {/* Guest review of property — visible to both */}
       {booking.review && (
         <div className="card">
-          <h2 className="text-lg font-semibold mb-2">{role === 'guest' ? 'Recenzia ta' : 'Recenzie oaspete despre proprietate'}</h2>
+          <h2 className="text-lg font-semibold mb-2">{role === 'guest' ? t.yourReview : t.guestPropertyReview}</h2>
           {renderStars(booking.review.rating)}
           {booking.review.comment && <p className="text-sm text-gray-700 mt-2">{booking.review.comment}</p>}
         </div>
@@ -253,13 +265,13 @@ export function BookingDetail({ role }: Props) {
       {reviewDone && (
         <div className="card text-center py-4">
           <Star size={32} className="fill-yellow-400 text-yellow-400 mx-auto mb-2" />
-          <p className="font-medium text-green-700">Mulțumim pentru recenzie!</p>
+          <p className="font-medium text-green-700">{t.thankYouReview}</p>
         </div>
       )}
 
       {canReview && renderReviewForm(
-        'Lasă o recenzie',
-        'Scrie câteva cuvinte despre experiența ta (opțional)',
+        t.leaveReview,
+        t.reviewPlaceholder,
         reviewRating, setReviewRating,
         reviewHover, setReviewHover,
         reviewComment, setReviewComment,
@@ -269,7 +281,7 @@ export function BookingDetail({ role }: Props) {
       {/* Host review of guest — only visible to host */}
       {role === 'host' && booking.hostReview && (
         <div className="card">
-          <h2 className="text-lg font-semibold mb-2">Recenzia ta despre oaspete</h2>
+          <h2 className="text-lg font-semibold mb-2">{t.yourGuestReview}</h2>
           {renderStars(booking.hostReview.rating)}
           {booking.hostReview.comment && <p className="text-sm text-gray-700 mt-2">{booking.hostReview.comment}</p>}
         </div>
@@ -278,13 +290,13 @@ export function BookingDetail({ role }: Props) {
       {hostReviewDone && (
         <div className="card text-center py-4">
           <Star size={32} className="fill-yellow-400 text-yellow-400 mx-auto mb-2" />
-          <p className="font-medium text-green-700">Mulțumim pentru recenzie!</p>
+          <p className="font-medium text-green-700">{t.thankYouReview}</p>
         </div>
       )}
 
       {canHostReview && renderReviewForm(
-        'Recenzează oaspetele',
-        'Cum a fost experiența cu acest oaspete? (opțional)',
+        t.reviewGuest,
+        t.guestReviewPlaceholder,
         hostReviewRating, setHostReviewRating,
         hostReviewHover, setHostReviewHover,
         hostReviewComment, setHostReviewComment,
@@ -293,7 +305,7 @@ export function BookingDetail({ role }: Props) {
 
       {/* Chat */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Mesaje</h2>
+        <h2 className="text-lg font-semibold mb-3">{t.messages}</h2>
         <ChatBox bookingId={booking.id} currentUserId={user.userId} />
       </div>
     </div>

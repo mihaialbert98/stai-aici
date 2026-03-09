@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import styles from './ChatBox.module.scss';
 import { format } from 'date-fns';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface Message {
   id: string;
@@ -36,6 +38,8 @@ const POLL_FAST = 1500;
 const POLL_SLOW = 10000;
 
 export function ChatBox({ bookingId, currentUserId }: Props) {
+  const lang = useLang();
+  const t = dashboardT[lang].bookingDetail;
   const [messages, setMessages] = useState<Message[]>([]);
   const [optimistic, setOptimistic] = useState<OptimisticMessage[]>([]);
   const [text, setText] = useState('');
@@ -143,12 +147,12 @@ export function ChatBox({ bookingId, currentUserId }: Props) {
               {!isPending && (
                 <p className={styles.senderName}>
                   {m.sender.name}
-                  {isSupport && <span className={styles.supportLabel}> — Suport</span>}
+                  {isSupport && <span className={styles.supportLabel}> — {t.chatSupport}</span>}
                 </p>
               )}
               <p>{m.content}</p>
               <p className={styles.time}>
-                {isPending ? 'Se trimite...' : format(new Date(m.createdAt), 'HH:mm, d MMM')}
+                {isPending ? t.chatSending : format(new Date(m.createdAt), 'HH:mm, d MMM')}
               </p>
             </div>
           );
@@ -160,9 +164,9 @@ export function ChatBox({ bookingId, currentUserId }: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder="Scrie un mesaj..."
+          placeholder={t.chatPlaceholder}
         />
-        <button onClick={send} disabled={sending} className={styles.sendBtn}>Trimite</button>
+        <button onClick={send} disabled={sending} className={styles.sendBtn}>{t.chatSend}</button>
       </div>
     </div>
   );

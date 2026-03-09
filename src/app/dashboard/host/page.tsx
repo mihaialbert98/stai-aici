@@ -13,7 +13,10 @@ import {
   addMonths, subMonths, addYears, subYears, format,
 } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { SingleDatePicker } from '@/components/SingleDatePicker';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 type Period = 'month' | 'year' | 'custom';
 
@@ -25,6 +28,10 @@ function toDateStr(d: Date): string {
 }
 
 export default function HostDashboard() {
+  const lang = useLang();
+  const t = dashboardT[lang].overview;
+  const dateLocale = lang === 'en' ? enUS : ro;
+
   const [stats, setStats] = useState<any>(null);
   const [period, setPeriod] = useState<Period>('month');
   const [refDate, setRefDate] = useState(new Date());
@@ -106,10 +113,10 @@ export default function HostDashboard() {
   };
 
   const getPeriodLabel = () => {
-    if (period === 'month') return format(refDate, 'MMMM yyyy', { locale: ro });
+    if (period === 'month') return format(refDate, 'MMMM yyyy', { locale: dateLocale });
     if (period === 'year') return format(refDate, 'yyyy');
     if (customFrom && customTo) {
-      return `${format(new Date(customFrom), 'd MMM yyyy', { locale: ro })} – ${format(new Date(customTo), 'd MMM yyyy', { locale: ro })}`;
+      return `${format(new Date(customFrom), 'd MMM yyyy', { locale: dateLocale })} – ${format(new Date(customTo), 'd MMM yyyy', { locale: dateLocale })}`;
     }
     return '';
   };
@@ -124,20 +131,20 @@ export default function HostDashboard() {
   };
 
   const propertyLabel = selectedPropertyIds.size === 0
-    ? 'Toate proprietățile'
+    ? t.allProperties
     : selectedPropertyIds.size === 1
-      ? properties.find(p => p.id === Array.from(selectedPropertyIds)[0])?.title || '1 proprietate'
-      : `${selectedPropertyIds.size} proprietăți`;
+      ? properties.find(p => p.id === Array.from(selectedPropertyIds)[0])?.title || t.properties(1)
+      : t.properties(selectedPropertyIds.size);
 
   const singlePropertyId = selectedPropertyIds.size === 1 ? Array.from(selectedPropertyIds)[0] : null;
 
   const cards: { label: string; value: any; icon: any; color: string; bg: string; link?: string }[] = stats ? [
-    { label: 'Rezervări', value: stats.totalBookings, icon: CalendarDays, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Nopți rezervate', value: stats.totalNights, icon: Moon, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Venit', value: formatRON(stats.totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Rata de ocupare', value: `${stats.occupancyRate}%`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Rating mediu', value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50', link: stats.reviewCount > 0 ? (singlePropertyId ? `/dashboard/host/properties/${singlePropertyId}/reviews` : `/dashboard/host/reviews${selectedPropertyIds.size > 0 ? `?propertyIds=${Array.from(selectedPropertyIds).join(',')}` : ''}`) : undefined },
-    { label: 'Cereri în așteptare', value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50', link: stats.pendingCount > 0 ? '/dashboard/host/bookings' : undefined },
+    { label: t.bookings, value: stats.totalBookings, icon: CalendarDays, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: t.nights, value: stats.totalNights, icon: Moon, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: t.revenue, value: formatRON(stats.totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: t.occupancy, value: `${stats.occupancyRate}%`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: t.avgRating, value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50', link: stats.reviewCount > 0 ? (singlePropertyId ? `/dashboard/host/properties/${singlePropertyId}/reviews` : `/dashboard/host/reviews${selectedPropertyIds.size > 0 ? `?propertyIds=${Array.from(selectedPropertyIds).join(',')}` : ''}`) : undefined },
+    { label: t.pending, value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50', link: stats.pendingCount > 0 ? '/dashboard/host/bookings' : undefined },
   ] : [];
 
   return (
@@ -145,7 +152,7 @@ export default function HostDashboard() {
       {/* Header row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Panou principal</h1>
+          <h1 className="text-2xl font-bold">{t.title}</h1>
           {stats && (
             <p className="text-sm text-gray-500 mt-1 capitalize flex items-center gap-1">
               <BarChart3 size={14} /> {getPeriodLabel()}
@@ -171,7 +178,7 @@ export default function HostDashboard() {
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              {p === 'month' ? 'Lună' : p === 'year' ? 'An' : 'Personalizat'}
+              {p === 'month' ? t.month : p === 'year' ? t.year : t.custom}
             </button>
           ))}
 
@@ -202,7 +209,7 @@ export default function HostDashboard() {
                   selectedPropertyIds.size === 0 ? 'text-primary-600 font-medium' : 'text-gray-700'
                 }`}
               >
-                Toate proprietățile
+                {t.allProperties}
                 {selectedPropertyIds.size === 0 && <Check size={14} />}
               </div>
               {properties.map(p => {
@@ -230,19 +237,19 @@ export default function HostDashboard() {
         <div className="card mb-6">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
             <div className="flex-1 sm:flex-none">
-              <label className="label">De la</label>
-              <SingleDatePicker value={customFrom} onChange={setCustomFrom} placeholder="Data de început" />
+              <label className="label">{t.from}</label>
+              <SingleDatePicker value={customFrom} onChange={setCustomFrom} placeholder={t.dateFrom} />
             </div>
             <div className="flex-1 sm:flex-none">
-              <label className="label">Până la</label>
-              <SingleDatePicker value={customTo} onChange={setCustomTo} placeholder="Data de sfârșit" />
+              <label className="label">{t.to}</label>
+              <SingleDatePicker value={customTo} onChange={setCustomTo} placeholder={t.dateTo} />
             </div>
             <button
               onClick={fetchStats}
               disabled={!customFrom || !customTo}
               className="btn-primary disabled:opacity-50 h-[42px]"
             >
-              Aplică
+              {t.apply}
             </button>
           </div>
         </div>
@@ -285,47 +292,19 @@ export default function HostDashboard() {
 
       {stats?.pendingCount > 0 && (
         <Link href="/dashboard/host/bookings" className="btn-primary">
-          Vezi cererile în așteptare ({stats.pendingCount})
+          {t.viewPending(stats.pendingCount)}
         </Link>
       )}
 
       {/* Quick actions */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Acțiuni rapide</h2>
+        <h2 className="text-lg font-semibold mb-4">{t.quickActions}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            {
-              href: '/dashboard/host/properties/new',
-              icon: Plus,
-              label: 'Adaugă proprietate',
-              desc: 'Creează o proprietate nouă',
-              color: 'text-blue-600',
-              bg: 'bg-blue-50',
-            },
-            {
-              href: '/dashboard/host/calendar',
-              icon: RefreshCw,
-              label: 'Sincronizare iCal',
-              desc: 'Conectează Airbnb și Booking.com',
-              color: 'text-green-600',
-              bg: 'bg-green-50',
-            },
-            {
-              href: '/dashboard/host/checkin-links',
-              icon: Link2,
-              label: 'Link-uri check-in',
-              desc: 'Trimite instrucțiuni oaspeților',
-              color: 'text-purple-600',
-              bg: 'bg-purple-50',
-            },
-            {
-              href: '/dashboard/host/guest-forms',
-              icon: FileText,
-              label: 'Fișe de cazare',
-              desc: 'Colectează date digital',
-              color: 'text-orange-600',
-              bg: 'bg-orange-50',
-            },
+            { href: '/dashboard/host/properties/new', icon: Plus, label: t.addProperty, desc: t.addPropertyDesc, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { href: '/dashboard/host/calendar', icon: RefreshCw, label: t.icalSync, desc: t.icalSyncDesc, color: 'text-green-600', bg: 'bg-green-50' },
+            { href: '/dashboard/host/checkin-links', icon: Link2, label: t.checkinLinks, desc: t.checkinLinksDesc, color: 'text-purple-600', bg: 'bg-purple-50' },
+            { href: '/dashboard/host/guest-forms', icon: FileText, label: t.guestForms, desc: t.guestFormsDesc, color: 'text-orange-600', bg: 'bg-orange-50' },
           ].map(({ href, icon: Icon, label, desc, color, bg }) => (
             <Link
               key={href}

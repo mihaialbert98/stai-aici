@@ -5,10 +5,12 @@ import {
   format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
   getDay, isToday, parseISO, isSameDay, isBefore, isAfter, isWithinInterval,
 } from 'date-fns';
-import { ro } from 'date-fns/locale';
+import { ro, enUS } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X, Lock, Unlock, RefreshCw, Link2, Trash2, Copy, Plus, DollarSign, Loader2 } from 'lucide-react';
 import { formatRON } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 interface PeriodPricing {
   id: string;
@@ -40,17 +42,15 @@ const PROPERTY_COLORS = [
   { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-800', pill: 'bg-cyan-200 text-cyan-900 border-cyan-400' },
 ];
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'În așteptare',
-  ACCEPTED: 'Acceptată',
-};
-
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   ACCEPTED: 'bg-green-100 text-green-800',
 };
 
 export default function HostCalendarPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].calendar;
+  const dateFnsLocale = lang === 'ro' ? ro : enUS;
   const [properties, setProperties] = useState<any[]>([]);
   const [activePropId, setActivePropId] = useState<string>('all');
   const [bookings, setBookings] = useState<BookingData[]>([]);
@@ -208,17 +208,17 @@ export default function HostCalendarPage() {
 
     // Prevent clicking on synced dates
     if (syncedDates[activePropId]?.[dateStr]) {
-      setConflictMsg(`Această dată este blocată automat de pe ${syncedDates[activePropId][dateStr]}. Nu trebuie să o blochezi și pe Nestly — sincronizarea se ocupă de asta. Gestionează disponibilitatea de pe platforma externă sau șterge sincronizarea.`);
+      setConflictMsg(t.syncedDateConflict(syncedDates[activePropId][dateStr]));
       return;
     }
 
     const booking = getBookingForDate(dateStr, activePropId);
     if (booking) {
       const guestName = booking.guest.name;
-      const start = format(parseISO(booking.startDate), 'd MMM', { locale: ro });
-      const end = format(parseISO(booking.endDate), 'd MMM', { locale: ro });
-      const statusLabel = booking.status === 'ACCEPTED' ? 'acceptată' : 'în așteptare';
-      setConflictMsg(`Nu poți bloca ${format(parseISO(dateStr), 'd MMMM', { locale: ro })} — există o rezervare ${statusLabel} de la ${guestName} (${start} – ${end}). Anulează rezervarea pentru a putea bloca această perioadă.`);
+      const start = format(parseISO(booking.startDate), 'd MMM', { locale: dateFnsLocale });
+      const end = format(parseISO(booking.endDate), 'd MMM', { locale: dateFnsLocale });
+      const statusLabel = booking.status === 'ACCEPTED' ? t.statusAcceptedLabel : t.statusPendingLabel;
+      setConflictMsg(t.bookedDateConflict(format(parseISO(dateStr), 'd MMMM', { locale: dateFnsLocale }), statusLabel, guestName, `${start} – ${end}`));
       return;
     }
 
@@ -232,10 +232,9 @@ export default function HostCalendarPage() {
         .map(d => getBookingForDate(d, activePropId))
         .find(b => !!b);
       if (conflicting) {
-        const guestName = conflicting.guest.name;
-        const start = format(parseISO(conflicting.startDate), 'd MMM', { locale: ro });
-        const end = format(parseISO(conflicting.endDate), 'd MMM', { locale: ro });
-        setConflictMsg(`Perioada selectată include o rezervare de la ${guestName} (${start} – ${end}). Anulează rezervarea pentru a putea bloca toată perioada.`);
+        const start = format(parseISO(conflicting.startDate), 'd MMM', { locale: dateFnsLocale });
+        const end = format(parseISO(conflicting.endDate), 'd MMM', { locale: dateFnsLocale });
+        setConflictMsg(t.rangeConflict(conflicting.guest.name, `${start} – ${end}`));
         clearSelection();
         return;
       }
@@ -270,7 +269,7 @@ export default function HostCalendarPage() {
 
     // Auto-generate name if not provided
     const periodName = priceForm.name.trim() ||
-      `${format(parseISO(startDate), 'd MMM', { locale: ro })} - ${format(parseISO(endDate), 'd MMM', { locale: ro })}`;
+      `${format(parseISO(startDate), 'd MMM', { locale: dateFnsLocale })} - ${format(parseISO(endDate), 'd MMM', { locale: dateFnsLocale })}`;
 
     setSavingPrice(true);
     try {
@@ -287,7 +286,7 @@ export default function HostCalendarPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Eroare la salvare');
+        toast.error(data.error || t.saveError);
         setSavingPrice(false);
         return;
       }
@@ -298,10 +297,10 @@ export default function HostCalendarPage() {
         [activePropId]: [...(prev[activePropId] || []), data.periodPricing],
       }));
 
-      toast.success(`Preț setat pentru ${dates.length} zile`);
+      toast.success(t.priceSetSuccess(dates.length));
       clearSelection();
     } catch {
-      toast.error('Eroare la salvare');
+      toast.error(t.saveError);
     }
     setSavingPrice(false);
   };
@@ -313,7 +312,7 @@ export default function HostCalendarPage() {
     // Double-check: reject if any date has a booking
     const conflicting = dates.find(d => !!getBookingForDate(d, activePropId));
     if (conflicting) {
-      setConflictMsg('Nu poți bloca o perioadă care include rezervări. Anulează rezervările mai întâi.');
+      setConflictMsg(t.cannotBlock);
       clearSelection();
       return;
     }
@@ -332,7 +331,7 @@ export default function HostCalendarPage() {
         : propBlocked.filter(d => !dates.includes(d));
       return { ...prev, [activePropId]: updated };
     });
-    toast.success(block ? `${dates.length} zile blocate.` : `${dates.length} zile deblocate.`);
+    toast.success(block ? t.blockedSuccess(dates.length) : t.unblockedSuccess(dates.length));
     clearSelection();
     setBlocking(false);
   };
@@ -401,7 +400,7 @@ export default function HostCalendarPage() {
     setTooltip({ booking, x: pillRect.left - rect.left, y: pillRect.bottom - rect.top + 4 });
   };
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading) return <p className="text-gray-500">{t.loading}</p>;
 
   const totalRows = Math.ceil((startPad + days.length) / 7);
   const previewDates = getPreviewDates();
@@ -412,10 +411,10 @@ export default function HostCalendarPage() {
 
   return (
     <div className="pb-24">
-      <h1 className="text-2xl font-bold mb-6">Calendar disponibilitate</h1>
+      <h1 className="text-2xl font-bold mb-6">{t.title}</h1>
 
       {properties.length === 0 ? (
-        <p className="text-gray-500">Nu ai proprietăți.</p>
+        <p className="text-gray-500">{t.noProperties}</p>
       ) : (
         <>
           {/* Property selector */}
@@ -434,11 +433,11 @@ export default function HostCalendarPage() {
                   <span className={`w-3 h-3 rounded-full flex-shrink-0 ${getPropertyColor(activePropId).text.replace('text-', 'bg-')}`} />
                 )}
                 <span className="truncate">
-                  {isAllView ? 'Toate proprietățile' : activeProp?.title}
+                  {isAllView ? t.allProperties : activeProp?.title}
                 </span>
                 {!isAllView && blockedCount > 0 && (
                   <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-                    {blockedCount} blocate
+                    {t.blockedCount(blockedCount)}
                   </span>
                 )}
               </div>
@@ -452,8 +451,8 @@ export default function HostCalendarPage() {
                     className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 ${isAllView ? 'font-semibold bg-gray-50' : ''}`}
                   >
                     <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
-                    Toate proprietățile
-                    <span className="text-xs text-gray-400 ml-auto">vizualizare</span>
+                    {t.allProperties}
+                    <span className="text-xs text-gray-400 ml-auto">{t.viewOnly}</span>
                   </button>
                 )}
                 {properties.length > 1 && <div className="border-t border-gray-100 my-1" />}
@@ -471,7 +470,7 @@ export default function HostCalendarPage() {
                       <span className="truncate">{p.title}</span>
                       {propBlockedCount > 0 && (
                         <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium ml-auto flex-shrink-0">
-                          {propBlockedCount} blocate
+                          {t.blockedCount(propBlockedCount)}
                         </span>
                       )}
                     </button>
@@ -486,12 +485,12 @@ export default function HostCalendarPage() {
             {!isAllView ? (
               <p className="text-sm text-gray-500">
                 <Lock size={13} className="inline mr-1 -mt-0.5" />
-                Click pe o dată sau selectează o perioadă pentru a bloca zile sau seta prețuri personalizate.
-                {blockedCount > 0 && <span className="text-red-500 ml-1">({blockedCount} zile blocate)</span>}
+                {t.instructions}
+                {blockedCount > 0 && <span className="text-red-500 ml-1">{t.blockedDaysHint(blockedCount)}</span>}
               </p>
             ) : (
               <p className="text-sm text-gray-500">
-                Vizualizare generală. Selectează o proprietate pentru a gestiona disponibilitatea și prețurile.
+                {t.overviewInstructions}
               </p>
             )}
             {conflictMsg && (
@@ -511,7 +510,7 @@ export default function HostCalendarPage() {
               <button onClick={() => { setCurrentMonth(m => addMonths(m, -1)); clearSelection(); }} className="p-2 hover:bg-gray-100 rounded-lg">
                 <ChevronLeft size={22} />
               </button>
-              <h3 className="text-lg font-semibold capitalize">{format(currentMonth, 'LLLL yyyy', { locale: ro })}</h3>
+              <h3 className="text-lg font-semibold capitalize">{format(currentMonth, 'LLLL yyyy', { locale: dateFnsLocale })}</h3>
               <button onClick={() => { setCurrentMonth(m => addMonths(m, 1)); clearSelection(); }} className="p-2 hover:bg-gray-100 rounded-lg">
                 <ChevronRight size={22} />
               </button>
@@ -519,15 +518,7 @@ export default function HostCalendarPage() {
 
             {/* Day headers */}
             <div className="grid grid-cols-7 gap-0 text-center text-xs md:text-sm font-medium text-gray-500 mb-1 border-b border-gray-200 pb-2">
-              {[
-                { short: 'Lu', full: 'Luni' },
-                { short: 'Ma', full: 'Marți' },
-                { short: 'Mi', full: 'Miercuri' },
-                { short: 'Jo', full: 'Joi' },
-                { short: 'Vi', full: 'Vineri' },
-                { short: 'Sâ', full: 'Sâmbătă' },
-                { short: 'Du', full: 'Duminică' },
-              ].map(d => (
+              {t.dayHeaders.map(d => (
                 <span key={d.short}>
                   <span className="md:hidden">{d.short}</span>
                   <span className="hidden md:inline">{d.full}</span>
@@ -595,7 +586,7 @@ export default function HostCalendarPage() {
                       {/* Blocked indicator */}
                       {isBlockedHere && (
                         <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-semibold ${isSynced ? 'text-violet-600' : 'text-red-400'}`}>
-                          {isSynced ? `⬤ ${syncSource}` : 'blocat'}
+                          {isSynced ? `⬤ ${syncSource}` : t.blockedLabel}
                         </span>
                       )}
                       {/* In "all" view, show which properties have this date blocked */}
@@ -771,23 +762,23 @@ export default function HostCalendarPage() {
                     </button>
                   </div>
                   <div className="space-y-2 text-sm">
-                    <p><span className="text-gray-500">Oaspete:</span> {tooltip.booking.guest.name}</p>
-                    <p><span className="text-gray-500">Perioada:</span> {format(parseISO(tooltip.booking.startDate), 'd MMM', { locale: ro })} – {format(parseISO(tooltip.booking.endDate), 'd MMM yyyy', { locale: ro })}</p>
-                    <p><span className="text-gray-500">Oaspeți:</span> {tooltip.booking.guests}</p>
-                    <p><span className="text-gray-500">Total:</span> {formatRON(tooltip.booking.totalPrice)}</p>
+                    <p><span className="text-gray-500">{t.tooltipGuest}</span> {tooltip.booking.guest.name}</p>
+                    <p><span className="text-gray-500">{t.tooltipPeriod}</span> {format(parseISO(tooltip.booking.startDate), 'd MMM', { locale: dateFnsLocale })} – {format(parseISO(tooltip.booking.endDate), 'd MMM yyyy', { locale: dateFnsLocale })}</p>
+                    <p><span className="text-gray-500">{t.tooltipGuests}</span> {tooltip.booking.guests}</p>
+                    <p><span className="text-gray-500">{t.tooltipTotal}</span> {formatRON(tooltip.booking.totalPrice)}</p>
                     <p>
-                      <span className="text-gray-500">Status: </span>
+                      <span className="text-gray-500">{t.tooltipStatus} </span>
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[tooltip.booking.status] || ''}`}>
-                        {STATUS_LABELS[tooltip.booking.status] || tooltip.booking.status}
+                        {t.statusLabels[tooltip.booking.status] || tooltip.booking.status}
                       </span>
                     </p>
                   </div>
                   <div className="flex gap-2 mt-4">
                     <a href={`/dashboard/host/bookings/${tooltip.booking.id}`} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
-                      <ExternalLink size={14} /> Detalii
+                      <ExternalLink size={14} /> {t.tooltipDetails}
                     </a>
                     <a href={`/dashboard/host/bookings/${tooltip.booking.id}#messages`} className="btn-outline text-xs px-3 py-1.5 flex items-center gap-1">
-                      <MessageSquare size={14} /> Mesaje
+                      <MessageSquare size={14} /> {t.tooltipMessages}
                     </a>
                   </div>
                 </div>
@@ -804,7 +795,7 @@ export default function HostCalendarPage() {
                   }}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <p className="text-xs font-medium text-gray-500">Blocat pentru:</p>
+                    <p className="text-xs font-medium text-gray-500">{t.blockedFor}</p>
                     <button onClick={() => setBlockedTooltip(null)} className="text-gray-400 hover:text-gray-600 -mt-0.5 -mr-1">
                       <X size={14} />
                     </button>
@@ -826,7 +817,7 @@ export default function HostCalendarPage() {
                   }}
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-semibold text-sm">Alte rezervări</h4>
+                    <h4 className="font-semibold text-sm">{t.otherBookings}</h4>
                     <button onClick={() => setOverflowTooltip(null)} className="text-gray-400 hover:text-gray-600">
                       <X size={16} />
                     </button>
@@ -841,11 +832,11 @@ export default function HostCalendarPage() {
                         <div className="min-w-0">
                           <p className="font-medium truncate">{b.guest.name}</p>
                           <p className="text-xs text-gray-500 truncate">
-                            {format(parseISO(b.startDate), 'd MMM', { locale: ro })} – {format(parseISO(b.endDate), 'd MMM', { locale: ro })} · {b.property.title}
+                            {format(parseISO(b.startDate), 'd MMM', { locale: dateFnsLocale })} – {format(parseISO(b.endDate), 'd MMM', { locale: dateFnsLocale })} · {b.property.title}
                           </p>
                         </div>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ml-2 ${STATUS_STYLES[b.status] || ''}`}>
-                          {STATUS_LABELS[b.status] || b.status}
+                          {t.statusLabels[b.status] || b.status}
                         </span>
                       </a>
                     ))}
@@ -856,14 +847,14 @@ export default function HostCalendarPage() {
 
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Blocat</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-100 border border-violet-300" /> Sincronizat extern</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> Azi</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> {t.legendBlocked}</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-100 border border-violet-300" /> {t.legendSynced}</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> {t.legendToday}</span>
               {!isAllView && (
-                <span className="flex items-center gap-1"><span className="text-emerald-600 font-medium">123</span> Preț personalizat</span>
+                <span className="flex items-center gap-1"><span className="text-emerald-600 font-medium">123</span> {t.legendCustomPrice}</span>
               )}
               {!isAllView && rangeStart && (
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200" /> Selecție</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200" /> {t.legendSelection}</span>
               )}
               {isAllView && properties.map((p, idx) => {
                 const color = PROPERTY_COLORS[idx % PROPERTY_COLORS.length];
@@ -882,13 +873,13 @@ export default function HostCalendarPage() {
             <div className="card mt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-semibold flex items-center gap-2">
-                  <RefreshCw size={16} /> Sincronizare calendar
+                  <RefreshCw size={16} /> {t.syncTitle}
                 </h3>
               </div>
 
               {/* Export URL */}
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-500 mb-1">Link-ul calendarului tău (copiază-l în Booking.com / Airbnb):</p>
+                <p className="text-xs text-gray-500 mb-1">{t.exportLinkDesc}</p>
                 <div className="flex items-center gap-2">
                   <input
                     readOnly
@@ -898,11 +889,11 @@ export default function HostCalendarPage() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/api/properties/${activePropId}/calendar.ics`);
-                      toast.success('Link copiat!');
+                      toast.success(t.linkCopied);
                     }}
                     className="btn-secondary text-xs px-3 py-2 flex items-center gap-1"
                   >
-                    <Copy size={13} /> Copiază
+                    <Copy size={13} /> {t.copy}
                   </button>
                 </div>
               </div>
@@ -910,7 +901,7 @@ export default function HostCalendarPage() {
               {/* Existing syncs */}
               {(calendarSyncs[activePropId] || []).length > 0 && (
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs font-medium text-gray-500">Calendare externe conectate:</p>
+                  <p className="text-xs font-medium text-gray-500">{t.connectedCalendars}</p>
                   {(calendarSyncs[activePropId] || []).map((sync: any) => (
                     <div key={sync.id} className="flex items-center gap-3 p-2.5 bg-violet-50 border border-violet-200 rounded-lg text-sm">
                       <Link2 size={14} className="text-violet-600 flex-shrink-0" />
@@ -918,7 +909,7 @@ export default function HostCalendarPage() {
                         <span className="font-medium capitalize">{sync.platform}</span>
                         <p className="text-xs text-gray-500 truncate">{sync.icalUrl}</p>
                         {sync.lastSynced && (
-                          <p className="text-[10px] text-gray-400">Ultima sincronizare: {format(new Date(sync.lastSynced), 'd MMM HH:mm', { locale: ro })}</p>
+                          <p className="text-[10px] text-gray-400">{t.lastSynced} {format(new Date(sync.lastSynced), 'd MMM HH:mm', { locale: dateFnsLocale })}</p>
                         )}
                       </div>
                       <button
@@ -951,18 +942,18 @@ export default function HostCalendarPage() {
                                 if (bd.source) newSynced[format(new Date(bd.date), 'yyyy-MM-dd')] = bd.source;
                               });
                               setSyncedDates(prev => ({ ...prev, [activePropId]: newSynced }));
-                              toast.success(`${sync.platform} sincronizat — ${data.dates} zile blocate.`);
+                              toast.success(t.syncSuccess(sync.platform, data.dates));
                             } else {
-                              toast.error(data.error || 'Eroare la sincronizare');
+                              toast.error(data.error || t.syncError);
                             }
                           } catch {
-                            toast.error('Eroare la sincronizare');
+                            toast.error(t.syncError);
                           }
                           setSyncingId(null);
                         }}
                         disabled={syncingId === sync.id}
                         className="text-violet-500 hover:text-violet-700 flex-shrink-0 p-1"
-                        title="Sincronizează acum"
+                        title={t.syncNow}
                       >
                         <RefreshCw size={14} className={syncingId === sync.id ? 'animate-spin' : ''} />
                       </button>
@@ -989,7 +980,7 @@ export default function HostCalendarPage() {
                             const propBlocked = (prev[activePropId] || []).filter(d => syncedDates[activePropId]?.[d] !== sync.platform);
                             return { ...prev, [activePropId]: propBlocked };
                           });
-                          toast.success(`Calendar ${sync.platform} deconectat.`);
+                          toast.success(t.syncDisconnected(sync.platform));
                         }}
                         className="text-red-400 hover:text-red-600 flex-shrink-0 p-1"
                         title="Șterge"
@@ -1006,15 +997,15 @@ export default function HostCalendarPage() {
                 <div className="p-3 bg-gray-50 rounded-lg space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">Platformă</label>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">{t.platform}</label>
                       <select value={syncPlatform} onChange={e => setSyncPlatform(e.target.value)} className="input text-sm">
                         <option value="booking">Booking.com</option>
                         <option value="airbnb">Airbnb</option>
-                        <option value="other">Altă platformă</option>
+                        <option value="other">{t.otherPlatform}</option>
                       </select>
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="text-xs font-medium text-gray-600 mb-1 block">URL calendar iCal</label>
+                      <label className="text-xs font-medium text-gray-600 mb-1 block">{t.icalUrl}</label>
                       <input
                         value={syncUrl}
                         onChange={e => setSyncUrl(e.target.value)}
@@ -1040,23 +1031,23 @@ export default function HostCalendarPage() {
                           }));
                           setSyncUrl('');
                           setShowSyncForm(false);
-                          toast.success(`Calendar ${syncPlatform} conectat! Sincronizarea va rula automat.`);
+                          toast.success(t.syncConnected(syncPlatform));
                         } else {
-                          toast.error(data.error || 'Eroare la adăugare');
+                          toast.error(data.error || t.addError);
                         }
                       }}
                       className="btn-primary text-xs px-4 py-2"
                     >
-                      Adaugă
+                      {t.add}
                     </button>
                     <button onClick={() => { setShowSyncForm(false); setSyncUrl(''); }} className="btn-secondary text-xs px-4 py-2">
-                      Anulează
+                      {t.cancel}
                     </button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => setShowSyncForm(true)} className="btn-secondary text-sm flex items-center gap-2">
-                  <Plus size={14} /> Adaugă calendar extern
+                  <Plus size={14} /> {t.addExternalCalendar}
                 </button>
               )}
             </div>
@@ -1069,25 +1060,25 @@ export default function HostCalendarPage() {
                 <div className="text-sm min-w-0">
                   <p className="font-medium truncate">{activeProp?.title}</p>
                   <p className="text-gray-500 text-xs">
-                    {rangeCount} {rangeCount === 1 ? 'zi selectată' : 'zile selectate'}
-                    {!rangeEnd && rangeStart && ' — click altă dată pentru perioadă'}
+                    {t.daysSelected(rangeCount)}
+                    {!rangeEnd && rangeStart && ` ${t.clickForRange}`}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={openPriceModal}
                     className="px-3 py-2 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition flex items-center gap-1.5">
-                    <DollarSign size={13} /> Setează preț
+                    <DollarSign size={13} /> {t.setPrice}
                   </button>
                   {!allBlocked && (
                     <button onClick={() => confirmBlock(true)} disabled={blocking}
                       className="btn-primary text-xs px-3 py-2 flex items-center gap-1.5">
-                      <Lock size={13} /> Blochează
+                      <Lock size={13} /> {t.block}
                     </button>
                   )}
                   {hasAnyBlocked() && (
                     <button onClick={() => confirmBlock(false)} disabled={blocking}
                       className="px-3 py-2 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-100 transition flex items-center gap-1.5">
-                      <Unlock size={13} /> Deblochează
+                      <Unlock size={13} /> {t.unblock}
                     </button>
                   )}
                   <button onClick={clearSelection}
@@ -1104,32 +1095,32 @@ export default function HostCalendarPage() {
             <div className="fixed bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:max-w-md bg-white border-t md:border md:rounded-xl shadow-xl p-4 z-50">
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-sm">Setează preț pentru perioadă</h4>
+                  <h4 className="font-semibold text-sm">{t.priceModalTitle}</h4>
                   <button onClick={() => setShowPriceModal(false)} className="text-gray-400 hover:text-gray-600">
                     <X size={16} />
                   </button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  {format(parseISO(rangeStart), 'd MMM', { locale: ro })}
-                  {rangeEnd && rangeEnd !== rangeStart && ` — ${format(parseISO(rangeEnd), 'd MMM yyyy', { locale: ro })}`}
-                  {!rangeEnd && ` — ${format(parseISO(rangeStart), 'yyyy', { locale: ro })}`}
-                  {' '}({rangeCount} {rangeCount === 1 ? 'zi' : 'zile'})
+                  {format(parseISO(rangeStart), 'd MMM', { locale: dateFnsLocale })}
+                  {rangeEnd && rangeEnd !== rangeStart && ` — ${format(parseISO(rangeEnd), 'd MMM yyyy', { locale: dateFnsLocale })}`}
+                  {!rangeEnd && ` — ${format(parseISO(rangeStart), 'yyyy', { locale: dateFnsLocale })}`}
+                  {' '}({rangeCount} {rangeCount === 1 ? t.dayUnit : t.daysUnit})
                 </p>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Nume perioadă (opțional)</label>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">{t.periodNameLabel}</label>
                   <input
                     type="text"
                     className="input text-sm"
-                    placeholder="ex. Sărbători de iarnă (se generează automat dacă lași gol)"
+                    placeholder={t.periodNamePh}
                     value={priceForm.name}
                     onChange={e => setPriceForm(f => ({ ...f, name: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Preț per noapte (RON)</label>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">{t.pricePerNightLabel}</label>
                   <input
                     type="number"
                     className="input text-sm"
@@ -1139,7 +1130,7 @@ export default function HostCalendarPage() {
                     min={1}
                   />
                   <p className="text-[10px] text-gray-400 mt-1">
-                    Preț standard: {formatRON(activeProp?.pricePerNight || 0)}/noapte
+                    {t.standardPrice(formatRON(activeProp?.pricePerNight || 0))}
                   </p>
                 </div>
               </div>
@@ -1152,11 +1143,11 @@ export default function HostCalendarPage() {
                 >
                   {savingPrice ? (
                     <>
-                      <Loader2 size={13} className="animate-spin" /> Se salvează...
+                      <Loader2 size={13} className="animate-spin" /> {t.saving}
                     </>
                   ) : (
                     <>
-                      <DollarSign size={13} /> Salvează
+                      <DollarSign size={13} /> {t.save}
                     </>
                   )}
                 </button>
@@ -1164,7 +1155,7 @@ export default function HostCalendarPage() {
                   onClick={() => setShowPriceModal(false)}
                   className="btn-secondary text-xs px-4 py-2"
                 >
-                  Anulează
+                  {t.cancel}
                 </button>
               </div>
             </div>

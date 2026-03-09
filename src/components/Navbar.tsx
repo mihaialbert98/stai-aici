@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { NestlyLogo } from '@/components/NestlyLogo';
+import { setLangCookie } from '@/lib/i18n';
+import { useLang, dispatchLangChange } from '@/lib/useLang';
 import styles from './Navbar.module.scss';
 
 interface User {
@@ -19,9 +21,17 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const lang = useLang();
   const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  const toggleLang = () => {
+    const next = lang === 'ro' ? 'en' : 'ro';
+    setLangCookie(next);
+    dispatchLangChange(next);
+    router.refresh(); // refresh server components (landing page etc.)
+  };
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => setUser(d.user || null));
@@ -72,8 +82,14 @@ export function Navbar() {
           <Link href="/" className={styles.logo}><NestlyLogo /></Link>
         </div>
 
-        {/* Right desktop: bell + profile dropdown */}
+        {/* Right desktop: lang toggle + bell + profile dropdown */}
         <div className={styles.desktopRight}>
+          <button
+            onClick={toggleLang}
+            className="text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
+          >
+            {lang === 'ro' ? 'EN' : 'RO'}
+          </button>
           {user ? (
             <>
               <NotificationBell />
@@ -133,6 +149,14 @@ export function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className={styles.mobileMenu}>
+          <div className="px-4 pt-3 pb-1">
+            <button
+              onClick={toggleLang}
+              className="text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
+            >
+              {lang === 'ro' ? 'EN' : 'RO'}
+            </button>
+          </div>
           {user ? (
             <>
               <div className={styles.mobileHeader}>

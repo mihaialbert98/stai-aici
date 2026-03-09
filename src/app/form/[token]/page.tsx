@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { FileText, CheckCircle, Calendar } from 'lucide-react';
+import { formT, setLangCookie } from '@/lib/i18n';
+import { useLang, dispatchLangChange } from '@/lib/useLang';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { NestlyLogo } from '@/components/NestlyLogo';
 
 interface Props {
   params: { token: string };
@@ -21,6 +25,14 @@ type FormData = {
 };
 
 export default function GuestFormPage({ params }: Props) {
+  const lang = useLang();
+  const t = formT[lang];
+
+  const setLang = (l: typeof lang) => {
+    setLangCookie(l);
+    dispatchLangChange(l);
+  };
+
   const [property, setProperty] = useState<{ title: string; city: string } | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -57,7 +69,7 @@ export default function GuestFormPage({ params }: Props) {
     e.preventDefault();
     setError('');
     if (!form.gdprConsent) {
-      setError('Trebuie să accepți politica de confidențialitate pentru a continua.');
+      setError(t.gdprError);
       return;
     }
     setSubmitting(true);
@@ -68,7 +80,7 @@ export default function GuestFormPage({ params }: Props) {
         body: JSON.stringify({ ...form, numberOfGuests: Number(form.numberOfGuests) }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Eroare la trimitere'); return; }
+      if (!res.ok) { setError(data.error || t.genericError); return; }
       setConfirmationId(data.confirmationId);
       setSubmitted(true);
     } finally {
@@ -81,8 +93,8 @@ export default function GuestFormPage({ params }: Props) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <FileText size={48} className="mx-auto mb-4 text-gray-300" />
-          <h1 className="text-xl font-semibold mb-2">Link invalid sau expirat</h1>
-          <p className="text-gray-500">Contactează gazda pentru un link nou.</p>
+          <h1 className="text-xl font-semibold mb-2">{t.notFound}</h1>
+          <p className="text-gray-500">{t.notFoundDesc}</p>
         </div>
       </div>
     );
@@ -93,11 +105,9 @@ export default function GuestFormPage({ params }: Props) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
           <CheckCircle size={48} className="mx-auto mb-4 text-green-500" />
-          <h1 className="text-2xl font-bold mb-2">Datele au fost transmise cu succes</h1>
-          <p className="text-gray-500 mb-4">
-            Fișa de cazare pentru <strong>{property?.title}</strong> a fost înregistrată.
-          </p>
-          <p className="text-xs text-gray-400">ID confirmare: {confirmationId}</p>
+          <h1 className="text-2xl font-bold mb-2">{t.successTitle}</h1>
+          <p className="text-gray-500 mb-4">{t.successDesc(property?.title ?? '')}</p>
+          <p className="text-xs text-gray-400">{t.confirmationId}: {confirmationId}</p>
         </div>
       </div>
     );
@@ -108,8 +118,11 @@ export default function GuestFormPage({ params }: Props) {
       <div className="max-w-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
+          <div className="flex justify-end mb-3">
+            <LanguageToggle current={lang} onChange={setLang} />
+          </div>
           <FileText size={36} className="mx-auto mb-3 text-primary-500" />
-          <h1 className="text-2xl font-bold">Fișă de cazare</h1>
+          <h1 className="text-2xl font-bold">{t.title}</h1>
           {property && (
             <p className="text-gray-500 mt-1">
               {property.title} — {property.city}
@@ -120,10 +133,10 @@ export default function GuestFormPage({ params }: Props) {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-5">
           {/* Personal data */}
           <div>
-            <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-gray-400">Date personale</h2>
+            <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-gray-400">{t.sectionPersonal}</h2>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Nume *</label>
+                <label className="label">{t.lastName} *</label>
                 <input
                   className="input"
                   required
@@ -133,7 +146,7 @@ export default function GuestFormPage({ params }: Props) {
                 />
               </div>
               <div>
-                <label className="label">Prenume *</label>
+                <label className="label">{t.firstName} *</label>
                 <input
                   className="input"
                   required
@@ -145,7 +158,7 @@ export default function GuestFormPage({ params }: Props) {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Data nașterii *</label>
+                <label className="label">{t.dateOfBirth} *</label>
                 <div className="relative">
                   <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
@@ -158,13 +171,13 @@ export default function GuestFormPage({ params }: Props) {
                 </div>
               </div>
               <div>
-                <label className="label">Cetățenie *</label>
+                <label className="label">{t.citizenship} *</label>
                 <input
                   className="input"
                   required
                   value={form.citizenship}
                   onChange={e => set('citizenship', e.target.value)}
-                  placeholder="Română"
+                  placeholder={t.citizenshipPlaceholder}
                 />
               </div>
             </div>
@@ -172,22 +185,22 @@ export default function GuestFormPage({ params }: Props) {
 
           {/* Document */}
           <div>
-            <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-gray-400">Document de identitate</h2>
+            <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-gray-400">{t.sectionDocument}</h2>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Tip document *</label>
+                <label className="label">{t.documentType} *</label>
                 <select
                   className="input"
                   value={form.documentType}
                   onChange={e => set('documentType', e.target.value)}
                 >
-                  <option value="CI">Carte de identitate</option>
-                  <option value="Pasaport">Pașaport</option>
-                  <option value="Permis de sedere">Permis de ședere</option>
+                  <option value="CI">{t.docCI}</option>
+                  <option value="Pasaport">{t.docPassport}</option>
+                  <option value="Permis de sedere">{t.docPermit}</option>
                 </select>
               </div>
               <div>
-                <label className="label">Serie și număr *</label>
+                <label className="label">{t.documentNumber} *</label>
                 <input
                   className="input"
                   required
@@ -201,10 +214,10 @@ export default function GuestFormPage({ params }: Props) {
 
           {/* Stay details */}
           <div>
-            <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-gray-400">Detalii ședere</h2>
+            <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-gray-400">{t.sectionStay}</h2>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Data check-in *</label>
+                <label className="label">{t.checkIn} *</label>
                 <div className="relative">
                   <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
@@ -217,7 +230,7 @@ export default function GuestFormPage({ params }: Props) {
                 </div>
               </div>
               <div>
-                <label className="label">Data check-out *</label>
+                <label className="label">{t.checkOut} *</label>
                 <div className="relative">
                   <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
@@ -231,7 +244,7 @@ export default function GuestFormPage({ params }: Props) {
               </div>
             </div>
             <div className="mt-3">
-              <label className="label">Număr persoane cazate *</label>
+              <label className="label">{t.numberOfGuests} *</label>
               <input
                 type="number"
                 min={1}
@@ -254,11 +267,11 @@ export default function GuestFormPage({ params }: Props) {
                 onChange={e => set('gdprConsent', e.target.checked)}
               />
               <span className="text-sm text-gray-600">
-                Am citit și sunt de acord cu{' '}
+                {t.gdprText}{' '}
                 <a href="/politica-confidentialitate" target="_blank" className="text-primary-600 hover:underline">
-                  politica de confidențialitate
+                  {t.gdprLink}
                 </a>
-                . Datele mele vor fi stocate conform legislației române privind cazarea (5 ani) și nu vor fi utilizate în alte scopuri.
+                {t.gdprDesc}
               </span>
             </label>
           </div>
@@ -272,16 +285,13 @@ export default function GuestFormPage({ params }: Props) {
             disabled={submitting}
             className="btn-primary w-full disabled:opacity-50"
           >
-            {submitting ? 'Se trimite…' : 'Trimite fișa de cazare'}
+            {submitting ? t.submitting : t.submit}
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Powered by{' '}
-          <a href="/" className="hover:underline">
-            Stai Aici
-          </a>
-        </p>
+        <div className="flex justify-center mt-6">
+          <NestlyLogo className="opacity-30 text-gray-500" />
+        </div>
       </div>
     </div>
   );

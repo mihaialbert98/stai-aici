@@ -4,8 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { PropertyForm } from '@/components/PropertyForm';
 import { PeriodPricingManager } from '@/components/PeriodPricingManager';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 export default function EditPropertyPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].properties;
   const { id } = useParams();
   const [property, setProperty] = useState<any>(null);
 
@@ -13,11 +17,11 @@ export default function EditPropertyPage() {
     fetch(`/api/properties/${id}`).then(r => r.json()).then(d => setProperty(d.property));
   }, [id]);
 
-  if (!property) return <p className="text-gray-500">Se încarcă...</p>;
+  if (!property) return <p className="text-gray-500">{t.loading}</p>;
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Editează proprietate</h1>
+      <h1 className="text-2xl font-bold mb-6">{t.editTitle}</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <PropertyForm initialData={property} propertyId={id as string} />

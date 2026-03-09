@@ -6,8 +6,12 @@ import Image from 'next/image';
 import { formatRON } from '@/lib/utils';
 import { ActiveBadge } from '@/components/ActiveBadge';
 import { Plus, Edit, Users, Star, MessageSquare } from 'lucide-react';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 
 export default function HostPropertiesPage() {
+  const lang = useLang();
+  const t = dashboardT[lang].properties;
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,21 +28,21 @@ export default function HostPropertiesPage() {
     });
   }, []);
 
-  if (loading) return <p className="text-gray-500">Se încarcă...</p>;
+  if (loading) return <p className="text-gray-500">{t.loading}</p>;
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold">Proprietățile mele</h1>
+        <h1 className="text-2xl font-bold">{t.title}</h1>
         <Link href="/dashboard/host/properties/new" className="btn-primary flex items-center gap-2 w-fit">
-          <Plus size={16} /> Adaugă proprietate
+          <Plus size={16} /> {t.addProperty}
         </Link>
       </div>
 
       {properties.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500 mb-4">Nu ai nicio proprietate listată.</p>
-          <Link href="/dashboard/host/properties/new" className="btn-primary">Adaugă prima proprietate</Link>
+          <p className="text-gray-500 mb-4">{t.noProperties}</p>
+          <Link href="/dashboard/host/properties/new" className="btn-primary">{t.addFirst}</Link>
         </div>
       ) : (
         <div className="space-y-4">
@@ -51,7 +55,7 @@ export default function HostPropertiesPage() {
                 <h3 className="font-semibold">{p.title}</h3>
                 <p className="text-sm text-gray-500">{p.city}</p>
                 <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
-                  <span className="text-primary-600 font-medium">{formatRON(p.pricePerNight)} / noapte</span>
+                  <span className="text-primary-600 font-medium">{formatRON(p.pricePerNight)} {t.perNight}</span>
                   <span className="flex items-center gap-1 text-gray-500"><Users size={14} /> {p.maxGuests}</span>
                   <ActiveBadge isActive={p.isActive} />
                   {p.reviewCount > 0 ? (
@@ -59,17 +63,17 @@ export default function HostPropertiesPage() {
                       <Star size={14} className="fill-yellow-500 text-yellow-500" /> {p.avgRating} ({p.reviewCount})
                     </Link>
                   ) : (
-                    <span className="flex items-center gap-1 text-gray-400"><Star size={14} /> Fără recenzii</span>
+                    <span className="flex items-center gap-1 text-gray-400"><Star size={14} /> {t.noReviews}</span>
                   )}
                 </div>
               </div>
               <div className="flex flex-col gap-2 self-start sm:self-center">
                 <Link href={`/dashboard/host/properties/${p.id}/edit`} className="btn-secondary flex items-center gap-1 w-fit">
-                  <Edit size={14} /> Editează
+                  <Edit size={14} /> {t.edit}
                 </Link>
                 {p.reviewCount > 0 && (
                   <Link href={`/dashboard/host/properties/${p.id}/reviews`} className="btn-secondary flex items-center gap-1 w-fit text-xs">
-                    <MessageSquare size={14} /> Recenzii
+                    <MessageSquare size={14} /> {t.reviews}
                   </Link>
                 )}
               </div>
