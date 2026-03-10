@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { PropertyForm } from '@/components/PropertyForm';
-import { PeriodPricingManager } from '@/components/PeriodPricingManager';
+// TODO: uncomment when period pricing is enabled
+// import { PeriodPricingManager } from '@/components/PeriodPricingManager';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 
@@ -22,6 +23,7 @@ export default function EditPropertyPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{t.editTitle}</h1>
+      {/* TODO: restore grid layout when period pricing is enabled
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <PropertyForm initialData={property} propertyId={id as string} />
@@ -40,6 +42,8 @@ export default function EditPropertyPage() {
           />
         </div>
       </div>
+      */}
+      <PropertyForm initialData={property} propertyId={id as string} />
     </div>
   );
 }

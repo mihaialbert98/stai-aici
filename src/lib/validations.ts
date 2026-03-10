@@ -30,6 +30,12 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   OTHER: 'Altele',
 };
 
+// Minimal schema used when first creating a property (title + optional image)
+export const createPropertySchema = z.object({
+  title: cleanStr(2, 'Minim 2 caractere'),
+  imageUrls: z.array(z.string().url()).optional(),
+});
+
 export const propertySchema = z.object({
   title: cleanStr(5, 'Minim 5 caractere'),
   description: cleanStr(20, 'Minim 20 caractere'),

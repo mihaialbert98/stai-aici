@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { formatRON } from '@/lib/utils';
-import { ActiveBadge } from '@/components/ActiveBadge';
-import { Plus, Edit, Users, Star, MessageSquare } from 'lucide-react';
+// TODO: uncomment when pricing/reviews are enabled
+// import { formatRON } from '@/lib/utils';
+// import { ActiveBadge } from '@/components/ActiveBadge';
+// import { Users, Star, MessageSquare } from 'lucide-react';
+import { Plus, Edit } from 'lucide-react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 
@@ -16,11 +18,7 @@ export default function HostPropertiesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Use search API filtered for current host (server will apply host filter via properties owned)
-    // Actually, we need a host-specific endpoint. For now, fetch all and the host's properties
-    // will be shown via the host properties API
     fetch('/api/properties?limit=100').then(r => r.json()).then(async d => {
-      // Fetch user to filter
       const me = await fetch('/api/auth/me').then(r => r.json());
       const myProps = (d.properties || []).filter((p: any) => p.hostId === me.user?.userId);
       setProperties(myProps);
@@ -47,13 +45,14 @@ export default function HostPropertiesPage() {
       ) : (
         <div className="space-y-4">
           {properties.map(p => (
-            <div key={p.id} className="card flex flex-col sm:flex-row gap-4">
+            <div key={p.id} className="card flex flex-col sm:flex-row gap-4 items-center">
               <div className="w-full sm:w-32 h-40 sm:h-24 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 relative">
                 {p.images?.[0] && <Image src={p.images[0].url} alt={p.title} fill sizes="(max-width: 640px) 100vw, 128px" className="object-cover" />}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold">{p.title}</h3>
-                <p className="text-sm text-gray-500">{p.city}</p>
+                {p.city && <p className="text-sm text-gray-500">{p.city}</p>}
+                {/* TODO: uncomment when pricing/reviews are enabled
                 <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
                   <span className="text-primary-600 font-medium">{formatRON(p.pricePerNight)} {t.perNight}</span>
                   <span className="flex items-center gap-1 text-gray-500"><Users size={14} /> {p.maxGuests}</span>
@@ -66,16 +65,19 @@ export default function HostPropertiesPage() {
                     <span className="flex items-center gap-1 text-gray-400"><Star size={14} /> {t.noReviews}</span>
                   )}
                 </div>
+                */}
               </div>
-              <div className="flex flex-col gap-2 self-start sm:self-center">
+              <div className="flex flex-col gap-2">
                 <Link href={`/dashboard/host/properties/${p.id}/edit`} className="btn-secondary flex items-center gap-1 w-fit">
                   <Edit size={14} /> {t.edit}
                 </Link>
+                {/* TODO: uncomment when reviews are enabled
                 {p.reviewCount > 0 && (
                   <Link href={`/dashboard/host/properties/${p.id}/reviews`} className="btn-secondary flex items-center gap-1 w-fit text-xs">
                     <MessageSquare size={14} /> {t.reviews}
                   </Link>
                 )}
+                */}
               </div>
             </div>
           ))}

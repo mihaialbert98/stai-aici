@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { propertySchema } from '@/lib/validations';
+import { propertySchema, createPropertySchema } from '@/lib/validations';
 import { removeDiacritics } from '@/lib/utils';
 import { ROMANIAN_CITIES } from '@/lib/cities';
 import { logger } from '@/lib/logger';
@@ -106,16 +106,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const data = propertySchema.parse(body);
-    const { amenityIds, imageUrls, ...propertyData } = data;
+    const data = createPropertySchema.parse(body);
+    const { imageUrls, ...rest } = data;
 
     const property = await prisma.property.create({
       data: {
-        ...propertyData,
+        title: rest.title,
+        description: '',
+        city: '',
+        address: '',
+        pricePerNight: 0,
+        maxGuests: 1,
         hostId: session.userId,
-        amenities: amenityIds?.length
-          ? { create: amenityIds.map((id) => ({ amenityId: id })) }
-          : undefined,
         images: imageUrls?.length
           ? { create: imageUrls.map((url, i) => ({ url, order: i })) }
           : undefined,

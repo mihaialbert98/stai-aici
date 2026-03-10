@@ -1,9 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+// TODO: uncomment when amenities are enabled
+// import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, X, GripVertical, ImageIcon, Loader2 } from 'lucide-react';
-import { PROPERTY_TYPES, PROPERTY_TYPE_LABELS, PropertyType } from '@/lib/validations';
+import { Upload, X, Loader2 } from 'lucide-react';
+// TODO: uncomment when full form fields are enabled
+// import { Upload, X, GripVertical, ImageIcon, Loader2 } from 'lucide-react';
+import { PropertyType } from '@/lib/validations';
+// TODO: uncomment when full form fields are enabled
+// import { PROPERTY_TYPES, PROPERTY_TYPE_LABELS, PropertyType } from '@/lib/validations';
 
 interface Props {
   initialData?: any;
@@ -13,7 +19,8 @@ interface Props {
 export function PropertyForm({ initialData, propertyId }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [amenities, setAmenities] = useState<any[]>([]);
+  // TODO: uncomment when amenities are enabled
+  // const [amenities, setAmenities] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -37,17 +44,19 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     imageUrls: initialData?.images?.map((i: any) => i.url) || [] as string[],
   });
 
-  useEffect(() => {
-    fetch('/api/amenities').then(r => r.json()).then(d => setAmenities(d.amenities || []));
-  }, []);
+  // TODO: uncomment when amenities are enabled
+  // useEffect(() => {
+  //   fetch('/api/amenities').then(r => r.json()).then(d => setAmenities(d.amenities || []));
+  // }, []);
 
   const update = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
 
-  const toggleAmenity = (id: string) => {
-    update('amenityIds', form.amenityIds.includes(id)
-      ? form.amenityIds.filter((a: string) => a !== id)
-      : [...form.amenityIds, id]);
-  };
+  // TODO: uncomment when amenities are enabled
+  // const toggleAmenity = (id: string) => {
+  //   update('amenityIds', form.amenityIds.includes(id)
+  //     ? form.amenityIds.filter((a: string) => a !== id)
+  //     : [...form.amenityIds, id]);
+  // };
 
   const uploadFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -79,7 +88,6 @@ export function PropertyForm({ initialData, propertyId }: Props) {
 
   const removeImage = async (idx: number) => {
     const url = form.imageUrls[idx];
-    // Delete from blob storage (fire and forget for URLs that are blob URLs)
     if (url.includes('vercel-storage.com') || url.includes('blob.vercel-storage.com')) {
       fetch('/api/upload', {
         method: 'DELETE',
@@ -150,6 +158,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
         <input className="input" placeholder="ex. Apartament modern în centrul Brașovului" value={form.title} onChange={e => update('title', e.target.value)} required />
       </div>
 
+      {/* TODO: uncomment when full property details are enabled
       <div>
         <label className="label">Descriere</label>
         <textarea className="input min-h-[120px]" placeholder="Descrieți proprietatea, ce o face specială, ce facilități oferă..." value={form.description} onChange={e => update('description', e.target.value)} required />
@@ -185,7 +194,6 @@ export function PropertyForm({ initialData, propertyId }: Props) {
         </div>
       </div>
 
-      {/* Extra Guest Pricing */}
       <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
         <h3 className="font-medium text-gray-900 mb-3">Taxă oaspeți suplimentari (opțional)</h3>
         <p className="text-sm text-gray-500 mb-4">
@@ -256,19 +264,18 @@ export function PropertyForm({ initialData, propertyId }: Props) {
           ))}
         </div>
       </div>
+      */}
 
       {/* Image Upload Section */}
       <div>
         <label className="label">Imagini</label>
 
-        {/* Image previews grid */}
         {form.imageUrls.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             {form.imageUrls.map((url: string, i: number) => (
               <div key={`${url}-${i}`} className="relative group rounded-lg overflow-hidden border border-gray-200 bg-gray-100 aspect-[4/3]">
                 <img src={url} alt={`Imagine ${i + 1}`} className="w-full h-full object-cover" />
 
-                {/* Overlay controls */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-start justify-between p-1.5 opacity-0 group-hover:opacity-100">
                   <div className="flex flex-col gap-1">
                     {i > 0 && (
@@ -290,7 +297,6 @@ export function PropertyForm({ initialData, propertyId }: Props) {
                   </button>
                 </div>
 
-                {/* First image badge */}
                 {i === 0 && (
                   <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded">
                     Copertă
@@ -301,7 +307,6 @@ export function PropertyForm({ initialData, propertyId }: Props) {
           </div>
         )}
 
-        {/* Drop zone */}
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
