@@ -17,9 +17,9 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Platform description</h2>
             <p>
-              Nestly is an online platform intermediating between hosts offering accommodation and guests seeking
+              StayViara is an online platform intermediating between hosts offering accommodation and guests seeking
               accommodation in Romania. The platform is operated by <strong>ABT SOFTWARE HUB SRL</strong>.
-              Nestly acts solely as an intermediary and is not a party to the accommodation contract between the host and the guest.
+              StayViara acts solely as an intermediary and is not a party to the accommodation contract between the host and the guest.
             </p>
           </section>
 
@@ -63,7 +63,7 @@ export default function TermsPage() {
               conditions are set by each host individually.
             </p>
             <p className="mt-2">
-              Payment is made directly between the guest and the host; Nestly is not involved in the financial transaction.
+              Payment is made directly between the guest and the host; StayViara is not involved in the financial transaction.
             </p>
           </section>
 
@@ -79,7 +79,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Limitation of liability</h2>
             <p>
-              Nestly acts as an intermediary and does not guarantee the quality of accommodation, the accuracy of
+              StayViara acts as an intermediary and does not guarantee the quality of accommodation, the accuracy of
               information provided by hosts, or the availability of properties. We are not responsible for:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
@@ -93,7 +93,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Intellectual property</h2>
             <p>
-              The content of the Nestly platform (design, source code, text, logo) is the property of ABT SOFTWARE HUB SRL
+              The content of the StayViara platform (design, source code, text, logo) is the property of ABT SOFTWARE HUB SRL
               and is protected by copyright law. Property photographs belong to the hosts who uploaded them and are used with their consent.
             </p>
           </section>
@@ -118,7 +118,7 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Contact</h2>
             <p>
               <strong>ABT SOFTWARE HUB SRL</strong><br />
-              Email: contact@nestly.app
+              Email: contact@stayviara.com
             </p>
           </section>
         </div>
@@ -135,9 +135,9 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Descrierea platformei</h2>
           <p>
-            Nestly este o platforma online de intermediere intre gazde care ofera cazare si oaspeti care cauta
+            StayViara este o platforma online de intermediere intre gazde care ofera cazare si oaspeti care cauta
             cazare in Romania. Platforma este operata de <strong>ABT SOFTWARE HUB SRL</strong>.
-            Nestly actioneaza exclusiv ca intermediar si nu este parte in contractul de cazare dintre gazda si oaspete.
+            StayViara actioneaza exclusiv ca intermediar si nu este parte in contractul de cazare dintre gazda si oaspete.
           </p>
         </section>
 
@@ -181,7 +181,7 @@ export default function TermsPage() {
             specifice de anulare sunt stabilite de fiecare gazda in parte.
           </p>
           <p className="mt-2">
-            Plata se face direct intre oaspete si gazda, Nestly nefiind implicat in tranzactia financiara.
+            Plata se face direct intre oaspete si gazda, StayViara nefiind implicat in tranzactia financiara.
           </p>
         </section>
 
@@ -197,7 +197,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Limitarea raspunderii</h2>
           <p>
-            Nestly actioneaza ca intermediar si nu garanteaza calitatea cazarii, acuratetea informatiilor
+            StayViara actioneaza ca intermediar si nu garanteaza calitatea cazarii, acuratetea informatiilor
             furnizate de gazde sau disponibilitatea proprietatilor. Nu suntem responsabili pentru:
           </p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
@@ -211,7 +211,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Proprietate intelectuala</h2>
           <p>
-            Continutul platformei Nestly (design, cod sursa, texte, logo) este proprietatea ABT SOFTWARE HUB SRL
+            Continutul platformei StayViara (design, cod sursa, texte, logo) este proprietatea ABT SOFTWARE HUB SRL
             si este protejat de legislatia privind drepturile de autor. Fotografiile proprietatilor apartin gazdelor
             care le-au incarcat si sunt utilizate cu acordul acestora.
           </p>
@@ -237,7 +237,7 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Contact</h2>
           <p>
             <strong>ABT SOFTWARE HUB SRL</strong><br />
-            Email: contact@nestly.app
+            Email: contact@stayviara.com
           </p>
         </section>
       </div>

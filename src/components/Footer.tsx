@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { NestlyLogo } from '@/components/NestlyLogo';
+import { StayViaraLogo } from '@/components/StayViaraLogo';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 
@@ -16,7 +16,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <Link href="/" className="text-primary-700 inline-block">
-              <NestlyLogo />
+              <StayViaraLogo />
             </Link>
             <p className="text-sm text-gray-500 mt-2">{t.tagline}</p>
           </div>
@@ -46,7 +46,7 @@ export function Footer() {
           {/* Copyright */}
           <div className="md:text-right">
             <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} Nestly. {t.allRightsReserved}
+              &copy; {new Date().getFullYear()} StayViara. {t.allRightsReserved}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               {t.madeBy} <span className="font-medium text-gray-500">ABT SOFTWARE HUB SRL</span>

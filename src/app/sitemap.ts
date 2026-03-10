@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nestly.app';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stayviara.com';
 
   const properties = await prisma.property.findMany({
     where: { isActive: true },

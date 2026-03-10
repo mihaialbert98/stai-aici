@@ -5,7 +5,7 @@ import { FileText, CheckCircle, Calendar } from 'lucide-react';
 import { formT, setLangCookie } from '@/lib/i18n';
 import { useLang, dispatchLangChange } from '@/lib/useLang';
 import { LanguageToggle } from '@/components/LanguageToggle';
-import { NestlyLogo } from '@/components/NestlyLogo';
+import { StayViaraLogo } from '@/components/StayViaraLogo';
 
 interface Props {
   params: { token: string };
@@ -290,7 +290,7 @@ export default function GuestFormPage({ params }: Props) {
         </form>
 
         <div className="flex justify-center mt-6">
-          <NestlyLogo className="opacity-30 text-gray-500" />
+          <StayViaraLogo className="opacity-30 text-gray-500" />
         </div>
       </div>
     </div>

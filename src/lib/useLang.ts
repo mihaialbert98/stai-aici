@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Lang } from './i18n';
 import { getLangCookie } from './i18n';
 
-const LANG_EVENT = 'nestly-lang-change';
+const LANG_EVENT = 'stayviara-lang-change';
 
 /** Dispatch this after writing the cookie so all useLang() hooks update. */
 export function dispatchLangChange(lang: Lang) {

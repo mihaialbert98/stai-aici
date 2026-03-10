@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X, LayoutDashboard, LogOut, ChevronDown } from 'lucide-react';
-import { NestlyLogo } from '@/components/NestlyLogo';
+import { StayViaraLogo } from '@/components/StayViaraLogo';
 import { setLangCookie } from '@/lib/i18n';
 import { useLang, dispatchLangChange } from '@/lib/useLang';
 import styles from './Navbar.module.scss';
@@ -78,7 +78,7 @@ export function Navbar() {
       <div className={styles.container}>
         {/* Left: logo */}
         <div className={styles.leftSection}>
-          <Link href="/" className={styles.logo}><NestlyLogo /></Link>
+          <Link href="/" className={styles.logo}><StayViaraLogo /></Link>
         </div>
 
         {/* Right desktop: lang toggle + bell + profile dropdown */}

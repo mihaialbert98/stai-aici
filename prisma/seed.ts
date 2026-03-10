@@ -25,7 +25,7 @@ async function main() {
 
   // Users
   const admin = await prisma.user.create({
-    data: { email: 'admin@nestly.app', passwordHash: hash, name: 'Admin Nestly', role: Role.ADMIN, emailVerified: true },
+    data: { email: 'admin@stayviara.com', passwordHash: hash, name: 'Admin StayViara', role: Role.ADMIN, emailVerified: true },
   });
   const host1 = await prisma.user.create({
     data: { email: 'maria@example.com', passwordHash: hash, name: 'Maria Popescu', role: Role.HOST, phone: '0722000001', emailVerified: true },
@@ -169,7 +169,7 @@ async function main() {
 
   console.log('Seed complete!');
   console.log('Demo accounts (all passwords: password123):');
-  console.log('  Admin: admin@nestly.app');
+  console.log('  Admin: admin@stayviara.com');
   console.log('  Host:  maria@example.com / ion@example.com');
   console.log('  Guest: andrei@example.com / elena@example.com');
 }

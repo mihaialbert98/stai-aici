@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Who we are</h2>
             <p>
-              The Nestly platform is operated by <strong>ABT SOFTWARE HUB SRL</strong> (hereinafter referred to as &quot;the Controller&quot;).
+              The StayViara platform is operated by <strong>ABT SOFTWARE HUB SRL</strong> (hereinafter referred to as &quot;the Controller&quot;).
               Protecting your personal data is a priority for us. This policy describes how we collect, use and protect your data
               in accordance with the General Data Protection Regulation (GDPR) — Regulation (EU) 2016/679.
             </p>
@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Cookies</h2>
             <p>
-              We use one essential session cookie (<code className="text-xs bg-gray-100 px-1 py-0.5 rounded">nestly-token</code>) required
+              We use one essential session cookie (<code className="text-xs bg-gray-100 px-1 py-0.5 rounded">stayviara-token</code>) required
               for authentication on the platform. For full details, see our <a href="/cookies" className="text-primary-600 underline">Cookie Policy</a>.
             </p>
           </section>
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
             <p>For any questions or requests regarding your personal data, you can contact us at:</p>
             <p className="mt-2">
               <strong>ABT SOFTWARE HUB SRL</strong><br />
-              Email: contact@nestly.app
+              Email: contact@stayviara.com
             </p>
           </section>
         </div>
@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Cine suntem</h2>
           <p>
-            Platforma Nestly este operata de <strong>ABT SOFTWARE HUB SRL</strong> (denumita in continuare &quot;Operatorul&quot;).
+            Platforma StayViara este operata de <strong>ABT SOFTWARE HUB SRL</strong> (denumita in continuare &quot;Operatorul&quot;).
             Protejarea datelor dumneavoastra cu caracter personal este o prioritate pentru noi. Aceasta politica descrie modul in care
             colectam, utilizam si protejam datele dumneavoastra in conformitate cu Regulamentul General privind Protectia Datelor (GDPR)
             — Regulamentul (UE) 2016/679.
@@ -196,7 +196,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Cookie-uri</h2>
           <p>
-            Folosim un cookie esential de sesiune (<code className="text-xs bg-gray-100 px-1 py-0.5 rounded">nestly-token</code>) necesar
+            Folosim un cookie esential de sesiune (<code className="text-xs bg-gray-100 px-1 py-0.5 rounded">stayviara-token</code>) necesar
             pentru autentificarea pe platforma. Pentru detalii complete, consultati <a href="/cookies" className="text-primary-600 underline">Politica de cookies</a>.
           </p>
         </section>
@@ -208,7 +208,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <p className="mt-2">
             <strong>ABT SOFTWARE HUB SRL</strong><br />
-            Email: contact@nestly.app
+            Email: contact@stayviara.com
           </p>
         </section>
       </div>

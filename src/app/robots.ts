@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://nestly.app';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://stayviara.com';
 
   return {
     rules: [

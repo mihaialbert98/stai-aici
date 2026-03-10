@@ -5,7 +5,7 @@ import {
   Home, ShieldCheck, LogOut, Phone, Video, MessageCircle,
 } from 'lucide-react';
 import { CopyButton } from '@/components/CopyButton';
-import { NestlyLogo } from '@/components/NestlyLogo';
+import { StayViaraLogo } from '@/components/StayViaraLogo';
 import { cookies } from 'next/headers';
 import { LanguageToggleLinks } from '@/components/LanguageToggle';
 import type { Lang } from '@/lib/i18n';
@@ -48,7 +48,7 @@ function Row({ label, value, copy }: { label: string; value: string; copy?: bool
 }
 
 export default async function CheckInPage({ params, searchParams }: Props) {
-  const cookieLang = cookies().get('nestly-lang')?.value;
+  const cookieLang = cookies().get('stayviara-lang')?.value;
   const lang: Lang = searchParams.lang === 'en' ? 'en'
     : searchParams.lang === 'ro' ? 'ro'
     : cookieLang === 'en' ? 'en'
@@ -253,7 +253,7 @@ export default async function CheckInPage({ params, searchParams }: Props) {
 
         {/* Footer */}
         <div className="flex justify-center pt-2 pb-4">
-          <NestlyLogo className="opacity-30" />
+          <StayViaraLogo className="opacity-30" />
         </div>
 
       </div>

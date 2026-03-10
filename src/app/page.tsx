@@ -24,7 +24,7 @@ export default async function HomePage() {
     redirect(dest);
   }
 
-  const langCookie = cookies().get('nestly-lang')?.value;
+  const langCookie = cookies().get('stayviara-lang')?.value;
   const lang: Lang = langCookie === 'en' ? 'en' : 'ro';
   const t = landingT[lang];
 
