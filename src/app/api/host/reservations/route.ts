@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { differenceInDays } from 'date-fns';
+import { BookingStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,10 +35,10 @@ export async function GET(req: NextRequest) {
     } : {};
 
     // Determine which booking statuses to include
-    const bookingStatuses =
-      status === 'accepted' ? ['ACCEPTED'] :
-      status === 'pending' ? ['PENDING'] :
-      ['ACCEPTED', 'PENDING', 'CANCELLED', 'REJECTED'];
+    const bookingStatuses: BookingStatus[] =
+      status === 'accepted' ? [BookingStatus.ACCEPTED] :
+      status === 'pending' ? [BookingStatus.PENDING] :
+      [BookingStatus.ACCEPTED, BookingStatus.PENDING, BookingStatus.CANCELLED, BookingStatus.REJECTED];
 
     const [bookings, manuals] = await Promise.all([
       type !== 'manual' ? prisma.booking.findMany({
