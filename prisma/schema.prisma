@@ -109,6 +109,7 @@ model Property {
   reviews        Review[]
   favorites      Favorite[]
   calendarSyncs  CalendarSync[]
+  syncedReservations SyncedReservation[]
   periodPricings PeriodPricing[]
   checkInLink    CheckInLink?
   guestFormLink  GuestFormLink?
@@ -400,6 +401,27 @@ model FormRequest {
 
   @@index([hostId])
   @@index([propertyId])
+}
+
+model SyncedReservation {
+  id         String   @id @default(cuid())
+  propertyId String
+  source     String   // "airbnb", "booking", etc.
+  checkIn    DateTime // first blocked night (inclusive)
+  checkOut   DateTime // last blocked night (inclusive)
+  isBlock       Boolean  @default(false) // true = owner block, false = actual reservation (auto-detected)
+  isBlockManual Boolean? // null = use auto-detected isBlock; true/false = host manually overrode
+  summary    String?  // raw SUMMARY from iCal event
+  guestName  String?
+  revenue    Float    @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([propertyId, source])
 }
 
 model ManualReservation {

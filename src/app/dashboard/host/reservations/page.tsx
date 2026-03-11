@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { format, startOfDay } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import {
-  CalendarDays, TrendingUp, Filter, Plus, ExternalLink, ChevronDown, ChevronUp, Pencil, X, Trash2,
+  CalendarDays, TrendingUp, Filter, Plus, ExternalLink, ChevronDown, ChevronUp, Pencil, X, Trash2, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/lib/useLang';
@@ -17,7 +17,7 @@ type StatusFilter = 'all' | 'accepted' | 'pending';
 
 type Reservation = {
   id: string;
-  type: 'platform' | 'manual';
+  type: 'platform' | 'manual' | 'synced';
   propertyId: string;
   propertyTitle: string;
   guestName: string;
@@ -31,6 +31,7 @@ type Reservation = {
   notes: string | null;
   bookingId: string | null;
   blockCalendar?: boolean;
+  isBlockManual?: boolean | null;
 };
 
 type EditForm = {
@@ -48,6 +49,8 @@ const STATUS_STYLE: Record<string, string> = {
   CANCELLED:'bg-gray-100 text-gray-500',
   REJECTED: 'bg-red-100 text-red-600',
   MANUAL:   'bg-blue-100 text-blue-700',
+  SYNCED:   'bg-violet-100 text-violet-700',
+  BLOCKED:  'bg-gray-100 text-gray-500',
 };
 
 export default function ReservationsPage() {
@@ -75,6 +78,10 @@ export default function ReservationsPage() {
   const [editForm, setEditForm] = useState<EditForm>({ guestName: '', checkIn: '', checkOut: '', revenue: '', source: '', notes: '' });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingEdit, setDeletingEdit] = useState(false);
+
+  const [editingSynced, setEditingSynced] = useState<Reservation | null>(null);
+  const [editSyncedForm, setEditSyncedForm] = useState({ guestName: '', revenue: '', notes: '', isBlockManual: null as boolean | null });
+  const [savingSyncedEdit, setSavingSyncedEdit] = useState(false);
 
   useEffect(() => {
     fetch('/api/host/properties').then(r => r.json()).then(d => setProperties(d.properties || []));
@@ -169,6 +176,32 @@ export default function ReservationsPage() {
     }
   };
 
+  const openEditSynced = (r: Reservation) => {
+    setEditSyncedForm({ guestName: r.guestName === '—' ? '' : r.guestName, revenue: String(r.revenue), notes: r.notes || '', isBlockManual: r.isBlockManual ?? null });
+    setEditingSynced(r);
+  };
+
+  const saveSyncedEdit = async () => {
+    if (!editingSynced) return;
+    setSavingSyncedEdit(true);
+    try {
+      await fetch(`/api/host/synced-reservations/${editingSynced.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestName: editSyncedForm.guestName || null,
+          revenue: parseFloat(editSyncedForm.revenue) || 0,
+          notes: editSyncedForm.notes || null,
+          isBlockManual: editSyncedForm.isBlockManual,
+        }),
+      });
+      setEditingSynced(null);
+      fetchReservations();
+    } finally {
+      setSavingSyncedEdit(false);
+    }
+  };
+
   const statusLabel = (status: string) => {
     const map: Record<string, string> = {
       ACCEPTED: t.statusAccepted,
@@ -176,6 +209,8 @@ export default function ReservationsPage() {
       CANCELLED: t.statusCancelled,
       REJECTED: t.statusRejected,
       MANUAL: t.statusManual,
+      SYNCED:   lang === 'ro' ? 'Sincronizat' : 'Synced',
+      BLOCKED:  lang === 'ro' ? 'Blocat' : 'Blocked',
     };
     return map[status] || status;
   };
@@ -345,9 +380,17 @@ export default function ReservationsPage() {
                   <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
                     r.type === 'platform'
                       ? 'bg-primary-50 text-primary-700'
+                      : r.type === 'synced'
+                      ? (r.status === 'BLOCKED' ? 'bg-gray-100 text-gray-500' : 'bg-violet-50 text-violet-700')
                       : 'bg-amber-50 text-amber-700'
                   }`}>
-                    {r.type === 'platform' ? t.typePlatform : t.typeManual}
+                    {r.type === 'platform'
+                      ? t.typePlatform
+                      : r.type === 'synced'
+                      ? (r.status === 'BLOCKED'
+                          ? (lang === 'ro' ? 'Blocat extern' : 'External block')
+                          : (lang === 'ro' ? 'Sincronizat' : 'Synced'))
+                      : t.typeManual}
                   </span>
                 </div>
 
@@ -390,6 +433,14 @@ export default function ReservationsPage() {
                       >
                         <Pencil size={15} />
                       </button>
+                    ) : r.type === 'synced' ? (
+                      <button
+                        onClick={() => openEditSynced(r)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-violet-600 transition"
+                        title={lang === 'ro' ? 'Editează' : 'Edit'}
+                      >
+                        <Pencil size={15} />
+                      </button>
                     ) : r.bookingId ? (
                       <Link
                         href={`/dashboard/host/bookings/${r.bookingId}`}
@@ -404,6 +455,90 @@ export default function ReservationsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Edit synced reservation modal — limited fields, no delete */}
+      {editingSynced && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="font-semibold text-lg">{lang === 'ro' ? 'Rezervare sincronizată' : 'Synced reservation'}</h2>
+                <p className="text-xs text-gray-500 mt-0.5 capitalize">{editingSynced.source}</p>
+              </div>
+              <button onClick={() => setEditingSynced(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-3">
+              {/* Read-only dates */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg text-sm">
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">{tm.checkIn}</p>
+                  <p className="font-medium">{format(new Date(editingSynced.checkIn), 'd MMM yyyy', { locale: dateLocale })}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">{tm.checkOut}</p>
+                  <p className="font-medium">{format(new Date(editingSynced.checkOut), 'd MMM yyyy', { locale: dateLocale })}</p>
+                </div>
+              </div>
+              <div>
+                <label className="label">{tm.guestName}</label>
+                <input className="input" placeholder={tm.guestNamePlaceholder} value={editSyncedForm.guestName}
+                  onChange={e => setEditSyncedForm(f => ({ ...f, guestName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">{tm.revenue}</label>
+                <input type="number" className="input" min="0" step="0.01" value={editSyncedForm.revenue}
+                  onChange={e => setEditSyncedForm(f => ({ ...f, revenue: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label">{tm.notes}</label>
+                <textarea className="input resize-none" rows={2} placeholder={tm.notesPlaceholder} value={editSyncedForm.notes}
+                  onChange={e => setEditSyncedForm(f => ({ ...f, notes: e.target.value }))} />
+              </div>
+              {/* Block / Reservation toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">{lang === 'ro' ? 'Tip eveniment' : 'Event type'}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{lang === 'ro' ? 'Suprascrie detectarea automată' : 'Override automatic detection'}</p>
+                </div>
+                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+                  <button
+                    onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: false }))}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${editSyncedForm.isBlockManual === false ? 'bg-violet-100 text-violet-700' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {lang === 'ro' ? 'Rezervare' : 'Reservation'}
+                  </button>
+                  <button
+                    onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: true }))}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${editSyncedForm.isBlockManual === true ? 'bg-gray-200 text-gray-700' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {lang === 'ro' ? 'Blocat' : 'Block'}
+                  </button>
+                  {editSyncedForm.isBlockManual !== null && (
+                    <button
+                      onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: null }))}
+                      className="px-2 py-1 text-xs text-gray-400 hover:text-gray-600"
+                      title={lang === 'ro' ? 'Resetează la automat' : 'Reset to automatic'}
+                    >↺</button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">
+                {lang === 'ro'
+                  ? 'Datele și sursa sunt controlate de calendarul sincronizat.'
+                  : 'Dates and source are controlled by the synced calendar.'}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 px-6 pb-5 pt-2">
+              <button onClick={() => setEditingSynced(null)} className="btn-outline text-sm px-4 py-2">{tm.cancel}</button>
+              <button onClick={saveSyncedEdit} disabled={savingSyncedEdit} className="btn-primary text-sm px-4 py-2 disabled:opacity-50 flex items-center gap-2">
+                {savingSyncedEdit ? <><Loader2 size={14} className="animate-spin" />{tm.saving}</> : tm.save}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, addDays } from 'date-fns';
 import { BookingStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +40,18 @@ export async function GET(req: NextRequest) {
       status === 'pending' ? [BookingStatus.PENDING] :
       [BookingStatus.ACCEPTED, BookingStatus.PENDING, BookingStatus.CANCELLED, BookingStatus.REJECTED];
 
-    const [bookings, manuals] = await Promise.all([
+    // Fetch host's property IDs for synced reservation query
+    const hostProperties = type !== 'platform' ? await prisma.property.findMany({
+      where: { hostId: session.userId, isActive: true },
+      select: { id: true },
+    }) : [];
+    const hostPropertyIds = hostProperties.map(p => p.id);
+
+    const syncedPropertyFilter = propertyIds
+      ? { in: propertyIds.split(',').filter(id => hostPropertyIds.includes(id)) }
+      : hostPropertyIds.length > 0 ? { in: hostPropertyIds } : undefined;
+
+    const [bookings, manuals, synced] = await Promise.all([
       type !== 'manual' ? prisma.booking.findMany({
         where: {
           hostId: session.userId,
@@ -60,6 +71,17 @@ export async function GET(req: NextRequest) {
         where: {
           hostId: session.userId,
           ...(propertyFilter ? { propertyId: propertyFilter } : {}),
+          ...(manualDateFilter.checkIn ? { checkIn: manualDateFilter.checkIn } : {}),
+          ...(manualDateFilter.checkOut ? { checkOut: manualDateFilter.checkOut } : {}),
+        },
+        include: { property: { select: { id: true, title: true } } },
+        orderBy: { checkIn: 'asc' },
+      }) : Promise.resolve([]),
+
+      // Synced reservations (from iCal) — shown when type is 'all' or 'manual'
+      type !== 'platform' && syncedPropertyFilter ? prisma.syncedReservation.findMany({
+        where: {
+          propertyId: syncedPropertyFilter,
           ...(manualDateFilter.checkIn ? { checkIn: manualDateFilter.checkIn } : {}),
           ...(manualDateFilter.checkOut ? { checkOut: manualDateFilter.checkOut } : {}),
         },
@@ -102,11 +124,30 @@ export async function GET(req: NextRequest) {
         bookingId: null,
         blockCalendar: r.blockCalendar,
       })),
+      ...synced.map(r => ({
+        id: r.id,
+        type: 'synced' as const,
+        propertyId: r.propertyId,
+        propertyTitle: r.property.title,
+        guestName: r.guestName || '—',
+        guestEmail: null,
+        checkIn: r.checkIn.toISOString(),
+        // SyncedReservation.checkOut stores the last night (inclusive); add 1 day to get the checkout day for display
+        checkOut: addDays(r.checkOut, 1).toISOString(),
+        nights: differenceInDays(r.checkOut, r.checkIn) + 1,
+        revenue: r.revenue,
+        source: r.source,
+        status: r.isBlock ? 'BLOCKED' : 'SYNCED',
+        notes: r.notes,
+        bookingId: null,
+        isBlock: r.isBlock,
+        isBlockManual: r.isBlockManual,
+      })),
     ].sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
 
     const totalRevenue = result
-      .filter(r => r.status === 'ACCEPTED' || r.status === 'MANUAL')
-      .reduce((sum, r) => sum + r.revenue, 0);
+      .filter(r => r.status === 'ACCEPTED' || r.status === 'MANUAL' || r.status === 'SYNCED')
+      .reduce((sum, r) => sum + (r.revenue ?? 0), 0);
 
     return NextResponse.json({ reservations: result, totalRevenue });
   } catch (err) {

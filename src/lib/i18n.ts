@@ -171,6 +171,14 @@ export const dashboardT = {
       newTitle: 'Adaugă proprietate', editTitle: 'Editează proprietate',
       perNight: '/ noapte', noReviews: 'Fără recenzii', edit: 'Editează', reviews: 'Recenzii',
     },
+    propertyForm: {
+      title: 'Titlu', titlePlaceholder: 'ex. Apartament modern în centrul Brașovului',
+      images: 'Imagini', cover: 'Copertă',
+      uploading: 'Se încarcă imaginile...', clickToSelect: 'Click pentru a selecta',
+      dragHere: 'sau trage imaginile aici', fileHint: 'JPEG, PNG, WebP — max. 5MB per imagine',
+      uploadError: 'Eroare la încărcarea imaginilor',
+      saving: 'Se salvează...', save: 'Salvează modificările', create: 'Creează proprietate',
+    },
     bookings: {
       title: 'Rezervări',
       myBookings: 'Rezervările mele',
@@ -552,6 +560,14 @@ export const dashboardT = {
       addFirst: 'Add your first property', addProperty: 'Add property',
       newTitle: 'Add property', editTitle: 'Edit property',
       perNight: '/ night', noReviews: 'No reviews', edit: 'Edit', reviews: 'Reviews',
+    },
+    propertyForm: {
+      title: 'Title', titlePlaceholder: 'e.g. Modern apartment in the city centre',
+      images: 'Images', cover: 'Cover',
+      uploading: 'Uploading images...', clickToSelect: 'Click to select',
+      dragHere: 'or drag images here', fileHint: 'JPEG, PNG, WebP — max. 5MB per image',
+      uploadError: 'Error uploading images',
+      saving: 'Saving...', save: 'Save changes', create: 'Create property',
     },
     bookings: {
       title: 'Bookings',

@@ -65,5 +65,27 @@ export async function GET(_req: NextRequest) {
     orderBy: { checkIn: 'asc' },
   });
 
-  return NextResponse.json({ properties, bookings, manualReservations });
+  // Fetch synced reservations (from iCal) — shown as pills with limited edit
+  const propertyIds = properties.map(p => p.id);
+  const syncedReservations = propertyIds.length > 0
+    ? await prisma.syncedReservation.findMany({
+        where: { propertyId: { in: propertyIds } },
+        select: {
+          id: true,
+          propertyId: true,
+          source: true,
+          checkIn: true,
+          checkOut: true,
+          guestName: true,
+          revenue: true,
+          notes: true,
+          isBlock: true,
+          isBlockManual: true,
+          summary: true,
+        },
+        orderBy: { checkIn: 'asc' },
+      })
+    : [];
+
+  return NextResponse.json({ properties, bookings, manualReservations, syncedReservations });
 }

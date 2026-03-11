@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from 'react';
 // TODO: uncomment when amenities are enabled
 // import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLang } from '@/lib/useLang';
+import { dashboardT } from '@/lib/i18n';
 import { Upload, X, Loader2 } from 'lucide-react';
 // TODO: uncomment when full form fields are enabled
 // import { Upload, X, GripVertical, ImageIcon, Loader2 } from 'lucide-react';
@@ -18,6 +20,8 @@ interface Props {
 
 export function PropertyForm({ initialData, propertyId }: Props) {
   const router = useRouter();
+  const lang = useLang();
+  const t = dashboardT[lang].propertyForm;
   const fileInputRef = useRef<HTMLInputElement>(null);
   // TODO: uncomment when amenities are enabled
   // const [amenities, setAmenities] = useState<any[]>([]);
@@ -81,7 +85,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
       const newUrls = data.images.map((img: { url: string }) => img.url);
       update('imageUrls', [...form.imageUrls, ...newUrls]);
     } catch {
-      setError('Eroare la încărcarea imaginilor');
+      setError(t.uploadError);
     }
     setUploading(false);
   }, [form.imageUrls]);
@@ -154,8 +158,8 @@ export function PropertyForm({ initialData, propertyId }: Props) {
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
       <div>
-        <label className="label">Titlu</label>
-        <input className="input" placeholder="ex. Apartament modern în centrul Brașovului" value={form.title} onChange={e => update('title', e.target.value)} required />
+        <label className="label">{t.title}</label>
+        <input className="input" placeholder={t.titlePlaceholder} value={form.title} onChange={e => update('title', e.target.value)} required />
       </div>
 
       {/* TODO: uncomment when full property details are enabled
@@ -268,7 +272,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
 
       {/* Image Upload Section */}
       <div>
-        <label className="label">Imagini</label>
+        <label className="label">{t.images}</label>
 
         {form.imageUrls.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
@@ -299,7 +303,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
 
                 {i === 0 && (
                   <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded">
-                    Copertă
+                    {t.cover}
                   </span>
                 )}
               </div>
@@ -318,15 +322,15 @@ export function PropertyForm({ initialData, propertyId }: Props) {
           {uploading ? (
             <div className="flex flex-col items-center gap-2 text-gray-500">
               <Loader2 size={28} className="animate-spin text-primary-500" />
-              <p className="text-sm">Se încarcă imaginile...</p>
+              <p className="text-sm">{t.uploading}</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-gray-500">
               <Upload size={28} className="text-gray-400" />
               <p className="text-sm">
-                <span className="text-primary-600 font-medium">Click pentru a selecta</span> sau trage imaginile aici
+                <span className="text-primary-600 font-medium">{t.clickToSelect}</span> {t.dragHere}
               </p>
-              <p className="text-xs text-gray-400">JPEG, PNG, WebP — max. 5MB per imagine</p>
+              <p className="text-xs text-gray-400">{t.fileHint}</p>
             </div>
           )}
         </div>
@@ -347,7 +351,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
       </div>
 
       <button type="submit" className="btn-primary" disabled={saving || uploading}>
-        {saving ? 'Se salvează...' : propertyId ? 'Salvează modificările' : 'Creează proprietate'}
+        {saving ? t.saving : propertyId ? t.save : t.create}
       </button>
     </form>
   );

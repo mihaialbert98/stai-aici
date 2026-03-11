@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
+  format, addDays, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
   getDay, isToday, parseISO, isSameDay, isBefore, isAfter, isWithinInterval,
 } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
@@ -30,6 +30,20 @@ interface ManualReservationData {
   source: string | null;
   notes: string | null;
   blockCalendar: boolean;
+}
+
+interface SyncedReservationData {
+  id: string;
+  propertyId: string;
+  source: string;
+  checkIn: string;
+  checkOut: string;
+  guestName: string | null;
+  revenue: number;
+  notes: string | null;
+  isBlock: boolean;
+  isBlockManual: boolean | null;
+  summary: string | null;
 }
 
 interface BookingData {
@@ -67,10 +81,14 @@ export default function HostCalendarPage() {
   const [activePropId, setActivePropId] = useState<string>('all');
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [manualReservations, setManualReservations] = useState<ManualReservationData[]>([]);
+  const [syncedReservations, setSyncedReservations] = useState<SyncedReservationData[]>([]);
   const [manualBlockedDates, setManualBlockedDates] = useState<Record<string, Set<string>>>({});
   const [editingManual, setEditingManual] = useState<ManualReservationData | null>(null);
   const [editManualForm, setEditManualForm] = useState({ guestName: '', checkIn: '', checkOut: '', revenue: '', source: '', notes: '' });
   const [savingManualEdit, setSavingManualEdit] = useState(false);
+  const [editingSynced, setEditingSynced] = useState<SyncedReservationData | null>(null);
+  const [editSyncedForm, setEditSyncedForm] = useState({ guestName: '', revenue: '', notes: '', isBlockManual: null as boolean | null });
+  const [savingSyncedEdit, setSavingSyncedEdit] = useState(false);
   const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -105,7 +123,7 @@ export default function HostCalendarPage() {
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualForm, setManualForm] = useState({
     propertyId: '', guestName: '', checkIn: '', checkOut: '',
-    revenue: '', source: '', notes: '',
+    revenue: '', source: '', notes: '', blockCalendar: true,
   });
   const [savingManual, setSavingManual] = useState(false);
   const tm = dashboardT[lang].manualReservation;
@@ -148,6 +166,11 @@ export default function HostCalendarPage() {
       ...mr,
       checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
       checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
+    })));
+    setSyncedReservations((data.syncedReservations || []).map((sr: any) => ({
+      ...sr,
+      checkIn: format(new Date(sr.checkIn), 'yyyy-MM-dd'),
+      checkOut: format(new Date(sr.checkOut), 'yyyy-MM-dd'),
     })));
   };
 
@@ -195,6 +218,11 @@ export default function HostCalendarPage() {
         ...mr,
         checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
         checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
+      })));
+      setSyncedReservations((data.syncedReservations || []).map((sr: any) => ({
+        ...sr,
+        checkIn: format(new Date(sr.checkIn), 'yyyy-MM-dd'),
+        checkOut: format(new Date(sr.checkOut), 'yyyy-MM-dd'),
       })));
       setCalendarSyncs(syncsMap);
       setPeriodPricings(pricingsMap);
@@ -486,6 +514,62 @@ export default function HostCalendarPage() {
     return rows;
   };
 
+  const getSyncedPillInfo = (sr: SyncedReservationData) => {
+    const start = parseISO(sr.checkIn);
+    const end = parseISO(sr.checkOut);
+    const clampedStart = isBefore(start, monthStart) ? monthStart : start;
+    const clampedEnd = isAfter(end, monthEnd) ? monthEnd : end;
+    if (isAfter(clampedStart, monthEnd) || isBefore(clampedEnd, monthStart)) return [];
+    const startIdx = startPad + days.findIndex(d => isSameDay(d, clampedStart));
+    const endIdx = startPad + days.findIndex(d => isSameDay(d, clampedEnd));
+    if (startIdx < 0 || endIdx < 0 || endIdx < startIdx) return [];
+    const rows: { row: number; colStart: number; colEnd: number }[] = [];
+    let currentCol = startIdx;
+    while (currentCol <= endIdx) {
+      const rowNum = Math.floor(currentCol / 7);
+      const rowEnd = Math.min(endIdx, (rowNum + 1) * 7 - 1);
+      rows.push({ row: rowNum, colStart: currentCol % 7, colEnd: rowEnd % 7 });
+      currentCol = (rowNum + 1) * 7;
+    }
+    return rows;
+  };
+
+  const openEditSynced = (sr: SyncedReservationData, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditSyncedForm({
+      guestName: sr.guestName || '',
+      revenue: String(sr.revenue),
+      notes: sr.notes || '',
+      isBlockManual: sr.isBlockManual,
+    });
+    setEditingSynced(sr);
+  };
+
+
+  const saveSyncedEdit = async () => {
+    if (!editingSynced) return;
+    setSavingSyncedEdit(true);
+    try {
+      await fetch(`/api/host/synced-reservations/${editingSynced.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestName: editSyncedForm.guestName || null,
+          revenue: parseFloat(editSyncedForm.revenue) || 0,
+          notes: editSyncedForm.notes || null,
+          isBlockManual: editSyncedForm.isBlockManual,
+        }),
+      });
+      setEditingSynced(null);
+      await refreshCalendarData();
+      toast.success(lang === 'ro' ? 'Rezervare actualizată' : 'Reservation updated');
+    } catch {
+      toast.error(lang === 'ro' ? 'Eroare la salvare' : 'Error saving');
+    } finally {
+      setSavingSyncedEdit(false);
+    }
+  };
+
   const openEditManual = (mr: ManualReservationData, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditManualForm({
@@ -550,7 +634,7 @@ export default function HostCalendarPage() {
     setManualForm({
       propertyId: !isAllView ? activePropId : (properties[0]?.id || ''),
       guestName: '', checkIn: '', checkOut: '',
-      revenue: '', source: '', notes: '',
+      revenue: '', source: '', notes: '', blockCalendar: true,
     });
     setShowManualModal(true);
   };
@@ -562,7 +646,7 @@ export default function HostCalendarPage() {
       const res = await fetch('/api/host/manual-reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...manualForm, blockCalendar: true }),
+        body: JSON.stringify({ ...manualForm }),
       });
       if (!res.ok) throw new Error();
       // Always refresh calendar data to update pills and blocked dates
@@ -720,6 +804,7 @@ export default function HostCalendarPage() {
                   const isBlockedHere = propBlocked.includes(dateStr);
                   const isManualBlocked = !isAllView && (manualBlockedDates[activePropId]?.has(dateStr) ?? false);
                   const syncSource = !isAllView ? syncedDates[activePropId]?.[dateStr] : null;
+                  // All dates from external calendars are shown as pills — never red cells
                   const isSynced = !!syncSource;
                   // True when the date is blocked ONLY by a manual reservation (no other block type)
                   const isOnlyManualBlocked = isManualBlocked && !isSynced;
@@ -741,11 +826,10 @@ export default function HostCalendarPage() {
                       className={`h-20 md:h-28 border-b border-r border-gray-100 p-0.5 md:p-1 text-right relative transition-colors
                         ${!isAllView && canClick ? 'cursor-pointer hover:bg-gray-50' : ''}
                         ${isToday(day) && !isInPreview && !isBlockedHere ? 'bg-primary-50' : ''}
-                        ${isSynced && !isInPreview ? 'bg-violet-100 border-violet-300' : ''}
                         ${(isBlockedHere || isBlockedAny) && !isSynced && !isInPreview && !isOnlyManualBlocked ? 'bg-red-50' : ''}
                         ${isInPreview && !isBlockedHere ? 'bg-indigo-50' : ''}
                         ${isInPreview && isBlockedHere ? 'bg-red-100' : ''}
-                        ${(hasAcceptedBooking || isSynced || isManualBlocked) && !isAllView ? 'cursor-not-allowed' : ''}
+                        ${(hasAcceptedBooking || isSynced || isManualBlocked) && !isAllView ? 'cursor-default' : ''}
                       `}
                     >
                       <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 text-xs md:text-sm rounded-full z-[1] relative ${
@@ -756,7 +840,7 @@ export default function HostCalendarPage() {
                       }`}>
                         {format(day, 'd')}
                       </span>
-                      {/* Price display (only when single property selected) */}
+                      {/* TODO: uncomment when per-day pricing display is enabled
                       {!isAllView && !isBlockedHere && (() => {
                         const priceInfo = getPriceForDate(dateStr, activePropId);
                         if (!priceInfo) return null;
@@ -769,10 +853,11 @@ export default function HostCalendarPage() {
                           </span>
                         );
                       })()}
-                      {/* Blocked indicator — not shown for manual reservation days (shown as pills) */}
-                      {isBlockedHere && !isOnlyManualBlocked && (
-                        <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-semibold ${isSynced ? 'text-violet-600' : 'text-red-400'}`}>
-                          {isSynced ? `⬤ ${syncSource}` : t.blockedLabel}
+                      */}
+                      {/* Blocked indicator — not shown for manual reservation days or synced days (shown as pills) */}
+                      {isBlockedHere && !isOnlyManualBlocked && !isSynced && (
+                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-red-400">
+                          {t.blockedLabel}
                         </span>
                       )}
                       {/* In "all" view, show which properties have this date blocked */}
@@ -873,6 +958,10 @@ export default function HostCalendarPage() {
                   if (!isAllView && mr.propertyId !== activePropId) return false;
                   return !(isAfter(parseISO(mr.checkIn), monthEnd) || isBefore(parseISO(mr.checkOut), monthStart));
                 });
+                const visibleSynced = syncedReservations.filter(sr => {
+                  if (!isAllView && sr.propertyId !== activePropId) return false;
+                  return !(isAfter(parseISO(sr.checkIn), monthEnd) || isBefore(parseISO(sr.checkOut), monthStart));
+                });
                 // Track max stackIndex per cell to stack manuals on top
                 const cellMaxStack: Map<string, number> = new Map();
                 pillSegments.forEach(seg => {
@@ -891,6 +980,23 @@ export default function HostCalendarPage() {
                     }
                     const stackIndex = maxExisting + 1;
                     manualPillSegments.push({ mr, pr, ri, stackIndex });
+                    for (let c = pr.colStart; c <= pr.colEnd; c++) {
+                      const key = `${pr.row}-${c}`;
+                      cellMaxStack.set(key, Math.max(cellMaxStack.get(key) ?? -1, stackIndex));
+                    }
+                  });
+                });
+
+                const syncedPillSegments: { sr: SyncedReservationData; pr: { row: number; colStart: number; colEnd: number }; ri: number; stackIndex: number }[] = [];
+                visibleSynced.forEach(sr => {
+                  const pillRows = getSyncedPillInfo(sr);
+                  pillRows.forEach((pr, ri) => {
+                    let maxExisting = -1;
+                    for (let c = pr.colStart; c <= pr.colEnd; c++) {
+                      maxExisting = Math.max(maxExisting, cellMaxStack.get(`${pr.row}-${c}`) ?? -1);
+                    }
+                    const stackIndex = maxExisting + 1;
+                    syncedPillSegments.push({ sr, pr, ri, stackIndex });
                     for (let c = pr.colStart; c <= pr.colEnd; c++) {
                       const key = `${pr.row}-${c}`;
                       cellMaxStack.set(key, Math.max(cellMaxStack.get(key) ?? -1, stackIndex));
@@ -974,6 +1080,32 @@ export default function HostCalendarPage() {
                         >
                           {isMobile ? label.split(' ')[0] : label}
                           {!isMobile && isAllView && ` · ${properties.find(p => p.id === seg.mr.propertyId)?.title || ''}`}
+                        </div>
+                      );
+                    })}
+
+                    {syncedPillSegments.filter(seg => seg.stackIndex < maxSlots).map(seg => {
+                      const top = (seg.pr.row * cellH) + pillOffset + seg.stackIndex * (pillH + pillGap);
+                      const left = `${(seg.pr.colStart / 7) * 100}%`;
+                      const width = `${((seg.pr.colEnd - seg.pr.colStart + 1) / 7) * 100}%`;
+                      const propTitle = isAllView ? properties.find(p => p.id === seg.sr.propertyId)?.title || '' : '';
+                      const isBlock = seg.sr.isBlock;
+                      const blockLabel = lang === 'ro' ? `Blocat · ${seg.sr.source}` : `Blocked · ${seg.sr.source}`;
+                      const label = seg.sr.guestName || (isBlock ? blockLabel : seg.sr.source);
+                      const pillClass = isBlock
+                        ? 'absolute bg-gray-100 text-gray-500 border border-gray-300 border-dashed rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity'
+                        : 'absolute bg-violet-200 text-violet-900 border border-violet-400 rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity';
+                      return (
+                        <div
+                          key={`synced-${seg.sr.id}-${seg.ri}`}
+                          data-pill
+                          onClick={(e) => openEditSynced(seg.sr, e)}
+                          className={`absolute ${pillClass}`}
+                          style={{ top: `${top}px`, left, width, height: `${pillH}px`, zIndex: 10 + seg.stackIndex }}
+                          title={`${label}${propTitle ? ` · ${propTitle}` : ''}`}
+                        >
+                          {isMobile ? label.split(' ')[0] : label}
+                          {!isMobile && isAllView && ` · ${propTitle}`}
                         </div>
                       );
                     })}
@@ -1084,11 +1216,14 @@ export default function HostCalendarPage() {
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> {t.legendBlocked}</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-100 border border-violet-300" /> {t.legendSynced}</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-200 border border-violet-400" /> {t.legendSynced}</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 border border-gray-300 border-dashed" style={{borderStyle:'dashed'}} /> {lang === 'ro' ? 'Blocat extern' : 'External block'}</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> {t.legendToday}</span>
+              {/* TODO: re-add custom price legend when per-day pricing display is available to users
               {!isAllView && (
                 <span className="flex items-center gap-1"><span className="text-emerald-600 font-medium">123</span> {t.legendCustomPrice}</span>
               )}
+              */}
               {!isAllView && rangeStart && (
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200" /> {t.legendSelection}</span>
               )}
@@ -1159,25 +1294,7 @@ export default function HostCalendarPage() {
                             });
                             const data = await res.json();
                             if (res.ok) {
-                              // Update lastSynced in local state
-                              setCalendarSyncs(prev => ({
-                                ...prev,
-                                [activePropId]: (prev[activePropId] || []).map((s: any) =>
-                                  s.id === sync.id ? { ...s, lastSynced: data.lastSynced } : s
-                                ),
-                              }));
-                              // Refresh blocked dates from server
-                              const pd = await fetch(`/api/properties/${activePropId}`).then(r => r.json());
-                              const dates = pd.property?.blockedDates || [];
-                              setBlockedDates(prev => ({
-                                ...prev,
-                                [activePropId]: dates.map((bd: any) => format(new Date(bd.date), 'yyyy-MM-dd')),
-                              }));
-                              const newSynced: Record<string, string> = {};
-                              dates.forEach((bd: any) => {
-                                if (bd.source) newSynced[format(new Date(bd.date), 'yyyy-MM-dd')] = bd.source;
-                              });
-                              setSyncedDates(prev => ({ ...prev, [activePropId]: newSynced }));
+                              await refreshCalendarData();
                               toast.success(t.syncSuccess(sync.platform, data.dates));
                             } else {
                               toast.error(data.error || t.syncError);
@@ -1301,9 +1418,26 @@ export default function HostCalendarPage() {
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
+                  {/* TODO: uncomment when period pricing is enabled
                   <button onClick={openPriceModal}
                     className="px-3 py-2 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition flex items-center gap-1.5">
                     <DollarSign size={13} /> {t.setPrice}
+                  </button>
+                  */}
+                  <button onClick={() => {
+                    const end = rangeEnd || rangeStart;
+                    const [start, finish] = isBefore(parseISO(rangeStart!), parseISO(end!))
+                      ? [rangeStart!, end!]
+                      : [end!, rangeStart!];
+                    setManualForm({
+                      propertyId: activePropId || (properties[0]?.id || ''),
+                      guestName: '', checkIn: start, checkOut: finish,
+                      revenue: '', source: '', notes: '', blockCalendar: false,
+                    });
+                    setShowManualModal(true);
+                  }}
+                    className="px-3 py-2 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-300 rounded-lg hover:bg-blue-100 transition flex items-center gap-1.5">
+                    <Plus size={13} /> {lang === 'ro' ? 'Rezervare manuală' : 'Manual reservation'}
                   </button>
                   {!allBlocked && (
                     <button onClick={() => confirmBlock(true)} disabled={blocking}
@@ -1465,6 +1599,111 @@ export default function HostCalendarPage() {
                 {savingManual ? tm.saving : tm.save}
               </button>
               <button onClick={() => setShowManualModal(false)} className="btn-secondary">{tm.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit synced reservation modal (read-only dates/source, editable guest/revenue/notes) */}
+      {editingSynced && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div>
+                <h3 className="font-semibold text-base">
+                  {lang === 'ro' ? 'Rezervare sincronizată' : 'Synced reservation'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5 capitalize">{editingSynced.source}</p>
+              </div>
+              <button onClick={() => setEditingSynced(null)} className="text-gray-400 hover:text-gray-600 p-1">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Read-only dates */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">{tm.checkIn}</p>
+                  <p className="text-sm font-medium">{format(parseISO(editingSynced.checkIn), 'd MMM yyyy', { locale: dateFnsLocale })}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">{tm.checkOut}</p>
+                  <p className="text-sm font-medium">{format(addDays(parseISO(editingSynced.checkOut), 1), 'd MMM yyyy', { locale: dateFnsLocale })}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.guestName}</label>
+                  <input className="input" placeholder={tm.guestNamePlaceholder} value={editSyncedForm.guestName}
+                    onChange={e => setEditSyncedForm(f => ({ ...f, guestName: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.revenue}</label>
+                  <input type="number" min="0" step="0.01" className="input" placeholder="0.00"
+                    value={editSyncedForm.revenue} onChange={e => setEditSyncedForm(f => ({ ...f, revenue: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">{tm.notes}</label>
+                  <textarea className="input min-h-[60px] resize-none" placeholder={tm.notesPlaceholder}
+                    value={editSyncedForm.notes} onChange={e => setEditSyncedForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
+              </div>
+              {/* Block / Reservation toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">
+                    {lang === 'ro' ? 'Tip eveniment' : 'Event type'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {lang === 'ro'
+                      ? 'Suprascrie detectarea automată'
+                      : 'Override automatic detection'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1">
+                  <button
+                    onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: false }))}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      editSyncedForm.isBlockManual === false
+                        ? 'bg-violet-100 text-violet-700'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {lang === 'ro' ? 'Rezervare' : 'Reservation'}
+                  </button>
+                  <button
+                    onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: true }))}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      editSyncedForm.isBlockManual === true
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {lang === 'ro' ? 'Blocat' : 'Block'}
+                  </button>
+                  {editSyncedForm.isBlockManual !== null && (
+                    <button
+                      onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: null }))}
+                      className="px-2 py-1 text-xs text-gray-400 hover:text-gray-600"
+                      title={lang === 'ro' ? 'Resetează la automat' : 'Reset to automatic'}
+                    >
+                      ↺
+                    </button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">
+                {lang === 'ro'
+                  ? 'Datele și sursa sunt controlate de calendarul sincronizat și nu pot fi modificate.'
+                  : 'Dates and source are controlled by the synced calendar and cannot be changed.'}
+              </p>
+            </div>
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-100">
+              <button onClick={() => setEditingSynced(null)} className="btn-secondary">{tm.cancel}</button>
+              <button onClick={saveSyncedEdit} disabled={savingSyncedEdit}
+                className="btn-primary disabled:opacity-50 flex items-center gap-2">
+                {savingSyncedEdit ? <><Loader2 size={14} className="animate-spin" /> {tm.saving}</> : tm.save}
+              </button>
             </div>
           </div>
         </div>
