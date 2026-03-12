@@ -15,6 +15,7 @@ export default function HostLayout({ children }: { children: React.ReactNode }) 
     { href: '/dashboard/host/reservations', label: t.nav.reservations },
     { href: '/dashboard/host/checkin-links', label: t.nav.checkinLinks },
     { href: '/dashboard/host/registrations', label: t.nav.guestForms },
+    { href: '/dashboard/host/tasks', label: t.nav.tasks },
     { href: '/dashboard/host/settings', label: t.nav.settings },
   ];
 

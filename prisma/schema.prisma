@@ -116,6 +116,7 @@ model Property {
   guestSubmissions GuestSubmission[]
   formRequests   FormRequest[]
   manualReservations ManualReservation[]
+  tasks              PropertyTask[]
 
   @@index([city])
   @@index([hostId])
@@ -475,4 +476,16 @@ model GuestForm {
 
   @@unique([formRequestId, guestIndex])
   @@index([formRequestId])
+}
+
+model PropertyTask {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title      String
+  done       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([propertyId])
 }
