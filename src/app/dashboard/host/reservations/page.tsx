@@ -12,8 +12,8 @@ import { dashboardT } from '@/lib/i18n';
 import { formatRON } from '@/lib/utils';
 
 type TimeFilter = 'upcoming' | 'past' | 'all' | 'custom';
-type TypeFilter = 'all' | 'platform' | 'manual';
-type StatusFilter = 'all' | 'accepted' | 'pending';
+// 'all' | 'manual' | 'synced' | 'synced:[source]' (e.g. 'synced:airbnb')
+type TypeFilter = string;
 
 type Reservation = {
   id: string;
@@ -70,13 +70,19 @@ export default function ReservationsPage() {
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+
+  const [platforms, setPlatforms] = useState<{ source: string; color: string }[]>([]);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
 
   const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
   const [selectedPropId, setSelectedPropId] = useState('');
@@ -102,6 +108,9 @@ export default function ReservationsPage() {
       if (propDropdownRef.current && !propDropdownRef.current.contains(e.target as Node)) {
         setPropOpen(false);
       }
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
+        setTypeOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -122,21 +131,34 @@ export default function ReservationsPage() {
     }
 
     if (selectedPropId) params.set('propertyIds', selectedPropId);
-    if (typeFilter !== 'all') params.set('type', typeFilter);
-    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (typeFilter.startsWith('synced:')) {
+      params.set('type', 'synced');
+      params.set('source', typeFilter.slice('synced:'.length));
+    } else if (typeFilter !== 'all') {
+      params.set('type', typeFilter);
+    }
+    params.set('page', String(page));
 
     try {
       const data = await fetch(`/api/host/reservations?${params}`).then(r => r.json());
       setReservations(data.reservations || []);
       setTotalRevenue(data.totalRevenue || 0);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
+      if (data.platforms) setPlatforms(data.platforms);
     } finally {
       setLoading(false);
     }
-  }, [timeFilter, typeFilter, statusFilter, selectedPropId, customFrom, customTo]);
+  }, [timeFilter, typeFilter, selectedPropId, customFrom, customTo, page]);
 
   useEffect(() => {
     if (timeFilter !== 'custom') fetchReservations();
-  }, [timeFilter, typeFilter, statusFilter, selectedPropId]);
+  }, [timeFilter, typeFilter, selectedPropId, page]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [timeFilter, typeFilter, selectedPropId, customFrom, customTo]);
 
   const openEdit = (r: Reservation) => {
     setEditForm({
@@ -263,40 +285,47 @@ export default function ReservationsPage() {
             </div>
           </div>
 
-          {/* Type filter */}
-          <div>
+          {/* Type / platform filter dropdown */}
+          <div className="relative" ref={typeDropdownRef}>
             <p className="text-xs font-medium text-gray-500 mb-1.5">{lang === 'ro' ? 'Tip' : 'Type'}</p>
-            <div className="flex gap-1">
-              {(['all', 'platform', 'manual'] as TypeFilter[]).map(tf => (
-                <button
-                  key={tf}
-                  onClick={() => setTypeFilter(tf)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    typeFilter === tf ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {tf === 'all' ? t.allTypes : tf === 'platform' ? t.platform : t.manual}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Status filter */}
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">{t.statusLabel}</p>
-            <div className="flex gap-1">
-              {(['all', 'accepted', 'pending'] as StatusFilter[]).map(sf => (
-                <button
-                  key={sf}
-                  onClick={() => setStatusFilter(sf)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    statusFilter === sf ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {sf === 'all' ? t.allStatuses : sf === 'accepted' ? t.accepted : t.pending}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setTypeOpen(o => !o)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition min-w-[160px]"
+            >
+              <span className="flex-1 text-left truncate">
+                {typeFilter === 'all'
+                  ? (lang === 'ro' ? 'Toate rezervările' : 'All reservations')
+                  : typeFilter === 'manual'
+                  ? (lang === 'ro' ? 'Rezervări manuale' : 'Manual reservations')
+                  : typeFilter === 'synced'
+                  ? (lang === 'ro' ? 'Externe (toate)' : 'External (all)')
+                  : typeFilter.startsWith('synced:')
+                  ? typeFilter.slice('synced:'.length)
+                  : typeFilter}
+              </span>
+              {typeOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {typeOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-20 w-56">
+                {[
+                  { value: 'all', label: lang === 'ro' ? 'Toate rezervările' : 'All reservations' },
+                  { value: 'manual', label: lang === 'ro' ? 'Rezervări manuale' : 'Manual reservations' },
+                  { value: 'synced', label: lang === 'ro' ? 'Externe (toate)' : 'External (all)' },
+                  ...platforms.map(p => ({ value: `synced:${p.source}`, label: p.source, color: p.color })),
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setTypeFilter(opt.value); setTypeOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 flex items-center gap-2 ${typeFilter === opt.value ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
+                  >
+                    {'color' in opt && opt.color && (
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />
+                    )}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Property filter */}
@@ -356,7 +385,7 @@ export default function ReservationsPage() {
         <div className="flex gap-6 mb-4 px-1">
           <div className="flex items-center gap-2 text-sm">
             <CalendarDays size={15} className="text-gray-400" />
-            <span className="font-semibold">{reservations.length}</span>
+            <span className="font-semibold">{total}</span>
             <span className="text-gray-500">{t.totalBookings}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -379,8 +408,7 @@ export default function ReservationsPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {reservations.map(r => {
-            return (
+          {reservations.map(r => (
               <div
                 key={r.id}
                 className="card flex flex-col sm:flex-row sm:items-center gap-3"
@@ -469,8 +497,49 @@ export default function ReservationsPage() {
                   </div>
                 </div>
               </div>
-            );
-          })}
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            {lang === 'ro' ? '← Anterior' : '← Prev'}
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+            .reduce<(number | '…')[]>((acc, p, idx, arr) => {
+              if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('…');
+              acc.push(p);
+              return acc;
+            }, [])
+            .map((p, idx) =>
+              p === '…' ? (
+                <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm select-none">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p as number)}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
+                    page === p ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            {lang === 'ro' ? 'Următor →' : 'Next →'}
+          </button>
         </div>
       )}
 

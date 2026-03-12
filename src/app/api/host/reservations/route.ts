@@ -17,8 +17,12 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     const propertyIds = searchParams.get('propertyIds');
-    const type = searchParams.get('type') || 'all'; // 'all' | 'platform' | 'manual'
-    const status = searchParams.get('status') || 'all'; // 'all' | 'accepted' | 'pending'
+    // type: 'all' | 'platform' | 'manual' | 'synced'
+    const type = searchParams.get('type') || 'all';
+    // source: filter synced reservations by platform source (e.g. 'airbnb')
+    const sourceFilter = searchParams.get('source') || null;
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const pageSize = 20;
 
     const propertyFilter = propertyIds ? { in: propertyIds.split(',') } : undefined;
     const fromDate = from ? new Date(from) : undefined;
@@ -34,32 +38,34 @@ export async function GET(req: NextRequest) {
       checkOut: fromDate ? { gte: fromDate } : undefined,
     } : {};
 
-    // Determine which booking statuses to include
-    const bookingStatuses: BookingStatus[] =
-      status === 'accepted' ? [BookingStatus.ACCEPTED] :
-      status === 'pending' ? [BookingStatus.PENDING] :
-      [BookingStatus.ACCEPTED, BookingStatus.PENDING, BookingStatus.CANCELLED, BookingStatus.REJECTED];
+    const bookingStatuses: BookingStatus[] = [
+      BookingStatus.ACCEPTED, BookingStatus.PENDING, BookingStatus.CANCELLED, BookingStatus.REJECTED,
+    ];
 
-    // Fetch host's property IDs for synced reservation query
-    const hostProperties = type !== 'platform' ? await prisma.property.findMany({
+    // Always fetch host properties (needed for synced queries and platforms list)
+    const hostProperties = await prisma.property.findMany({
       where: { hostId: session.userId, isActive: true },
       select: { id: true },
-    }) : [];
+    });
     const hostPropertyIds = hostProperties.map(p => p.id);
 
     const syncedPropertyFilter = propertyIds
       ? { in: propertyIds.split(',').filter(id => hostPropertyIds.includes(id)) }
       : hostPropertyIds.length > 0 ? { in: hostPropertyIds } : undefined;
 
-    // Fetch calendar sync colors for synced reservations
+    // Fetch calendar sync colors + build platforms list for UI
     const calendarSyncs = hostPropertyIds.length > 0 ? await prisma.calendarSync.findMany({
       where: { propertyId: { in: hostPropertyIds } },
       select: { propertyId: true, platform: true, color: true },
     }) : [];
     const syncColorMap = new Map(calendarSyncs.map(s => [`${s.propertyId}:${s.platform}`, s.color]));
 
+    const showBookings = type === 'all' || type === 'platform';
+    const showManuals  = type === 'all' || type === 'manual';
+    const showSynced   = type === 'all' || type === 'synced';
+
     const [bookings, manuals, synced] = await Promise.all([
-      type !== 'manual' ? prisma.booking.findMany({
+      showBookings ? prisma.booking.findMany({
         where: {
           hostId: session.userId,
           status: { in: bookingStatuses },
@@ -74,7 +80,7 @@ export async function GET(req: NextRequest) {
         orderBy: { startDate: 'asc' },
       }) : Promise.resolve([]),
 
-      type !== 'platform' ? prisma.manualReservation.findMany({
+      showManuals ? prisma.manualReservation.findMany({
         where: {
           hostId: session.userId,
           ...(propertyFilter ? { propertyId: propertyFilter } : {}),
@@ -85,10 +91,10 @@ export async function GET(req: NextRequest) {
         orderBy: { checkIn: 'asc' },
       }) : Promise.resolve([]),
 
-      // Synced reservations (from iCal) — shown when type is 'all' or 'manual'
-      type !== 'platform' && syncedPropertyFilter ? prisma.syncedReservation.findMany({
+      showSynced && syncedPropertyFilter ? prisma.syncedReservation.findMany({
         where: {
           propertyId: syncedPropertyFilter,
+          ...(sourceFilter ? { source: sourceFilter } : {}),
           ...(manualDateFilter.checkIn ? { checkIn: manualDateFilter.checkIn } : {}),
           ...(manualDateFilter.checkOut ? { checkOut: manualDateFilter.checkOut } : {}),
         },
@@ -153,11 +159,22 @@ export async function GET(req: NextRequest) {
       })),
     ].sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
 
+    const total = result.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const paginated = result.slice((safePage - 1) * pageSize, safePage * pageSize);
+
     const totalRevenue = result
       .filter(r => r.status === 'ACCEPTED' || r.status === 'MANUAL' || r.status === 'SYNCED')
       .reduce((sum, r) => sum + (r.revenue ?? 0), 0);
 
-    return NextResponse.json({ reservations: result, totalRevenue });
+    // Unique platforms for the dropdown (deduplicated by source name)
+    const seen = new Set<string>();
+    const platforms = calendarSyncs
+      .filter(cs => { if (seen.has(cs.platform)) return false; seen.add(cs.platform); return true; })
+      .map(cs => ({ source: cs.platform, color: cs.color }));
+
+    return NextResponse.json({ reservations: paginated, totalRevenue, platforms, total, page: safePage, pageSize, totalPages });
   } catch (err) {
     console.error('[reservations]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -4,9 +4,11 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { formatRON } from '@/lib/utils';
 import {
-  CalendarDays, Moon, DollarSign, Clock, TrendingUp, Star,
+  CalendarDays, Moon, DollarSign, TrendingUp,
   BarChart3, ChevronLeft, ChevronRight, ChevronDown, Check,
   RefreshCw, Link2, FileText, Plus,
+  // TODO: re-add Star and Clock when ratings and guest reservations are enabled
+  // Star, Clock,
 } from 'lucide-react';
 import {
   startOfMonth, endOfMonth, startOfYear, endOfYear,
@@ -143,8 +145,10 @@ export default function HostDashboard() {
     { label: t.nights, value: stats.totalNights, icon: Moon, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: t.revenue, value: formatRON(stats.totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
     { label: t.occupancy, value: `${stats.occupancyRate}%`, icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: t.avgRating, value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-    { label: t.pending, value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50' },
+    // TODO: re-enable when guest ratings are available in the app
+    // { label: t.avgRating, value: stats.avgRating != null ? `${stats.avgRating} (${stats.reviewCount})` : '–', icon: Star, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    // TODO: re-enable when guest-facing reservation booking is available in the app
+    // { label: t.pending, value: stats.pendingCount, icon: Clock, color: 'text-red-600', bg: 'bg-red-50' },
   ] : [];
 
   return (
@@ -258,7 +262,7 @@ export default function HostDashboard() {
       {/* Stat cards */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card animate-pulse min-h-[120px]">
               <div className="bg-gray-200 h-10 w-10 rounded-lg mb-3" />
               <div className="bg-gray-200 h-7 w-20 rounded mb-1" />
