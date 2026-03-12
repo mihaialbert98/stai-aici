@@ -51,6 +51,13 @@ export async function GET(req: NextRequest) {
       ? { in: propertyIds.split(',').filter(id => hostPropertyIds.includes(id)) }
       : hostPropertyIds.length > 0 ? { in: hostPropertyIds } : undefined;
 
+    // Fetch calendar sync colors for synced reservations
+    const calendarSyncs = hostPropertyIds.length > 0 ? await prisma.calendarSync.findMany({
+      where: { propertyId: { in: hostPropertyIds } },
+      select: { propertyId: true, platform: true, color: true },
+    }) : [];
+    const syncColorMap = new Map(calendarSyncs.map(s => [`${s.propertyId}:${s.platform}`, s.color]));
+
     const [bookings, manuals, synced] = await Promise.all([
       type !== 'manual' ? prisma.booking.findMany({
         where: {
@@ -142,6 +149,7 @@ export async function GET(req: NextRequest) {
         bookingId: null,
         isBlock: r.isBlock,
         isBlockManual: r.isBlockManual,
+        color: syncColorMap.get(`${r.propertyId}:${r.source}`) || '#6366f1',
       })),
     ].sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
 

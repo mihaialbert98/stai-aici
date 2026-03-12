@@ -376,6 +376,7 @@ model CalendarSync {
   propertyId String
   platform   String    // "booking", "airbnb", "other"
   icalUrl    String
+  color      String    @default("#6366f1")
   lastSynced DateTime?
   createdAt  DateTime  @default(now())
 

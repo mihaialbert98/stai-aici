@@ -213,16 +213,48 @@ export async function POST(
     return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
   }
 
-  const { platform, icalUrl } = await req.json();
+  const { platform, icalUrl, color } = await req.json();
   if (!platform || !icalUrl) {
     return NextResponse.json({ error: 'Platforma și URL-ul sunt necesare' }, { status: 400 });
   }
 
+  // Auto-assign a color from the palette based on how many syncs already exist
+  const PALETTE = ['#ef4444','#f97316','#f59e0b','#10b981','#06b6d4','#6366f1','#8b5cf6','#ec4899','#64748b'];
+  const existingCount = await prisma.calendarSync.count({ where: { propertyId: params.id } });
+  const assignedColor = color || PALETTE[existingCount % PALETTE.length];
+
   const sync = await prisma.calendarSync.create({
-    data: { propertyId: params.id, platform, icalUrl },
+    data: { propertyId: params.id, platform, icalUrl, color: assignedColor },
   });
 
   return NextResponse.json({ sync }, { status: 201 });
+}
+
+// PUT — update calendar sync settings (color, etc.)
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Neautorizat' }, { status: 401 });
+
+  const { syncId, color } = await req.json();
+  if (!syncId) return NextResponse.json({ error: 'syncId necesar' }, { status: 400 });
+
+  const sync = await prisma.calendarSync.findUnique({
+    where: { id: syncId },
+    include: { property: { select: { hostId: true } } },
+  });
+  if (!sync || sync.property.hostId !== session.userId) {
+    return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
+  }
+
+  const updated = await prisma.calendarSync.update({
+    where: { id: syncId },
+    data: { ...(color && { color }) },
+  });
+
+  return NextResponse.json({ sync: updated });
 }
 
 // DELETE — remove a calendar sync and its blocked dates

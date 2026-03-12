@@ -32,6 +32,7 @@ type Reservation = {
   bookingId: string | null;
   blockCalendar?: boolean;
   isBlockManual?: boolean | null;
+  color?: string;
 };
 
 type EditForm = {
@@ -42,6 +43,14 @@ type EditForm = {
   source: string;
   notes: string;
 };
+
+function hexToRgba(hex: string | undefined | null, alpha: number): string {
+  const safe = (hex && /^#[0-9a-f]{6}$/i.test(hex)) ? hex : '#6366f1';
+  const r = parseInt(safe.slice(1, 3), 16);
+  const g = parseInt(safe.slice(3, 5), 16);
+  const b = parseInt(safe.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 const STATUS_STYLE: Record<string, string> = {
   ACCEPTED: 'bg-green-100 text-green-700',
@@ -82,6 +91,7 @@ export default function ReservationsPage() {
   const [editingSynced, setEditingSynced] = useState<Reservation | null>(null);
   const [editSyncedForm, setEditSyncedForm] = useState({ guestName: '', revenue: '', notes: '', isBlockManual: null as boolean | null });
   const [savingSyncedEdit, setSavingSyncedEdit] = useState(false);
+  const [showSyncedBlockWarn, setShowSyncedBlockWarn] = useState(false);
 
   useEffect(() => {
     fetch('/api/host/properties').then(r => r.json()).then(d => setProperties(d.properties || []));
@@ -190,7 +200,7 @@ export default function ReservationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           guestName: editSyncedForm.guestName || null,
-          revenue: parseFloat(editSyncedForm.revenue) || 0,
+          revenue: editSyncedForm.isBlockManual === true ? 0 : (parseFloat(editSyncedForm.revenue) || 0),
           notes: editSyncedForm.notes || null,
           isBlockManual: editSyncedForm.isBlockManual,
         }),
@@ -374,6 +384,10 @@ export default function ReservationsPage() {
               <div
                 key={r.id}
                 className="card flex flex-col sm:flex-row sm:items-center gap-3"
+                style={r.type === 'synced' && r.color ? {
+                  backgroundColor: hexToRgba(r.color, 0.06),
+                  borderLeft: `3px solid ${r.color}`,
+                } : undefined}
               >
                 {/* Type badge */}
                 <div className="flex-shrink-0">
@@ -419,7 +433,9 @@ export default function ReservationsPage() {
                 {/* Right side — always same width */}
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="text-right min-w-[90px]">
-                    <p className="font-bold text-green-600">{formatRON(r.revenue)}</p>
+                    {r.status !== 'BLOCKED' && (
+                      <p className="font-bold text-green-600">{formatRON(r.revenue)}</p>
+                    )}
                     <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLE[r.status] || 'bg-gray-100 text-gray-500'}`}>
                       {statusLabel(r.status)}
                     </span>
@@ -488,11 +504,13 @@ export default function ReservationsPage() {
                 <input className="input" placeholder={tm.guestNamePlaceholder} value={editSyncedForm.guestName}
                   onChange={e => setEditSyncedForm(f => ({ ...f, guestName: e.target.value }))} />
               </div>
-              <div>
-                <label className="label">{tm.revenue}</label>
-                <input type="number" className="input" min="0" step="0.01" value={editSyncedForm.revenue}
-                  onChange={e => setEditSyncedForm(f => ({ ...f, revenue: e.target.value }))} />
-              </div>
+              {editSyncedForm.isBlockManual !== true && (
+                <div>
+                  <label className="label">{tm.revenue}</label>
+                  <input type="number" className="input" min="0" step="0.01" value={editSyncedForm.revenue}
+                    onChange={e => setEditSyncedForm(f => ({ ...f, revenue: e.target.value }))} />
+                </div>
+              )}
               <div>
                 <label className="label">{tm.notes}</label>
                 <textarea className="input resize-none" rows={2} placeholder={tm.notesPlaceholder} value={editSyncedForm.notes}
@@ -512,7 +530,13 @@ export default function ReservationsPage() {
                     {lang === 'ro' ? 'Rezervare' : 'Reservation'}
                   </button>
                   <button
-                    onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: true }))}
+                    onClick={() => {
+                      if (parseFloat(editSyncedForm.revenue) > 0) {
+                        setShowSyncedBlockWarn(true);
+                      } else {
+                        setEditSyncedForm(f => ({ ...f, isBlockManual: true }));
+                      }
+                    }}
                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${editSyncedForm.isBlockManual === true ? 'bg-gray-200 text-gray-700' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     {lang === 'ro' ? 'Blocat' : 'Block'}
@@ -536,6 +560,36 @@ export default function ReservationsPage() {
               <button onClick={() => setEditingSynced(null)} className="btn-outline text-sm px-4 py-2">{tm.cancel}</button>
               <button onClick={saveSyncedEdit} disabled={savingSyncedEdit} className="btn-primary text-sm px-4 py-2 disabled:opacity-50 flex items-center gap-2">
                 {savingSyncedEdit ? <><Loader2 size={14} className="animate-spin" />{tm.saving}</> : tm.save}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revenue removal warning modal */}
+      {showSyncedBlockWarn && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="font-semibold text-lg mb-2">
+              {lang === 'ro' ? 'Elimini venitul?' : 'Remove revenue?'}
+            </h3>
+            <p className="text-sm text-gray-600 mb-5">
+              {lang === 'ro'
+                ? `Dacă marchezi aceste date ca blocate, venitul de ${formatRON(parseFloat(editSyncedForm.revenue))} va fi eliminat și nu va fi inclus în rapoarte.`
+                : `Marking this as blocked will remove the revenue of ${formatRON(parseFloat(editSyncedForm.revenue))} and exclude it from reports.`}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowSyncedBlockWarn(false)} className="btn-outline text-sm px-4 py-2">
+                {tm.cancel}
+              </button>
+              <button
+                onClick={() => {
+                  setEditSyncedForm(f => ({ ...f, isBlockManual: true, revenue: '0' }));
+                  setShowSyncedBlockWarn(false);
+                }}
+                className="btn-primary text-sm px-4 py-2"
+              >
+                {lang === 'ro' ? 'Confirmă' : 'Confirm'}
               </button>
             </div>
           </div>

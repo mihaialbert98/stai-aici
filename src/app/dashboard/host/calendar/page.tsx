@@ -68,6 +68,16 @@ const PROPERTY_COLORS = [
   { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-800', pill: 'bg-cyan-200 text-cyan-900 border-cyan-400' },
 ];
 
+const SYNC_COLOR_PALETTE = ['#ef4444','#f97316','#f59e0b','#10b981','#06b6d4','#6366f1','#8b5cf6','#ec4899','#64748b'];
+
+function hexToRgba(hex: string | undefined | null, alpha: number): string {
+  const safe = (hex && /^#[0-9a-f]{6}$/i.test(hex)) ? hex : '#6366f1';
+  const r = parseInt(safe.slice(1, 3), 16);
+  const g = parseInt(safe.slice(3, 5), 16);
+  const b = parseInt(safe.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   ACCEPTED: 'bg-green-100 text-green-800',
@@ -88,6 +98,7 @@ export default function HostCalendarPage() {
   const [savingManualEdit, setSavingManualEdit] = useState(false);
   const [editingSynced, setEditingSynced] = useState<SyncedReservationData | null>(null);
   const [editSyncedForm, setEditSyncedForm] = useState({ guestName: '', revenue: '', notes: '', isBlockManual: null as boolean | null });
+  const [showSyncedBlockWarn, setShowSyncedBlockWarn] = useState(false);
   const [savingSyncedEdit, setSavingSyncedEdit] = useState(false);
   const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -111,6 +122,7 @@ export default function HostCalendarPage() {
   const [showSyncForm, setShowSyncForm] = useState(false);
   const [syncPlatform, setSyncPlatform] = useState('booking');
   const [syncUrl, setSyncUrl] = useState('');
+  const [syncColor, setSyncColor] = useState('#6366f1');
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
   // Period pricing state
@@ -260,6 +272,11 @@ export default function HostCalendarPage() {
     const idx = properties.findIndex(p => p.id === propertyId);
     return PROPERTY_COLORS[idx % PROPERTY_COLORS.length];
   };
+
+  const getSyncColor = useCallback((propertyId: string, source: string): string => {
+    const sync = (calendarSyncs[propertyId] || []).find((s: any) => s.platform === source);
+    return sync?.color || '#6366f1';
+  }, [calendarSyncs]);
 
   const getBookingForDate = useCallback((dateStr: string, propId: string) => {
     return bookings.find(b => {
@@ -555,7 +572,7 @@ export default function HostCalendarPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           guestName: editSyncedForm.guestName || null,
-          revenue: parseFloat(editSyncedForm.revenue) || 0,
+          revenue: editSyncedForm.isBlockManual === true ? 0 : (parseFloat(editSyncedForm.revenue) || 0),
           notes: editSyncedForm.notes || null,
           isBlockManual: editSyncedForm.isBlockManual,
         }),
@@ -1092,16 +1109,18 @@ export default function HostCalendarPage() {
                       const isBlock = seg.sr.isBlock;
                       const blockLabel = lang === 'ro' ? `Blocat · ${seg.sr.source}` : `Blocked · ${seg.sr.source}`;
                       const label = seg.sr.guestName || (isBlock ? blockLabel : seg.sr.source);
-                      const pillClass = isBlock
-                        ? 'absolute bg-gray-100 text-gray-500 border border-gray-300 border-dashed rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity'
-                        : 'absolute bg-violet-200 text-violet-900 border border-violet-400 rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity';
+                      const syncColor = getSyncColor(seg.sr.propertyId, seg.sr.source || '');
+                      const pillColorStyle = isBlock
+                        ? { backgroundColor: hexToRgba(syncColor, 0.1), borderColor: hexToRgba(syncColor, 0.45), color: syncColor, borderStyle: 'dashed' as const }
+                        : { backgroundColor: hexToRgba(syncColor, 0.2), borderColor: syncColor, color: syncColor };
+                      const pillClass = 'absolute border rounded-md px-1 md:px-2 py-0 md:py-0.5 text-[10px] md:text-xs font-medium truncate cursor-pointer hover:opacity-80 transition-opacity';
                       return (
                         <div
                           key={`synced-${seg.sr.id}-${seg.ri}`}
                           data-pill
                           onClick={(e) => openEditSynced(seg.sr, e)}
-                          className={`absolute ${pillClass}`}
-                          style={{ top: `${top}px`, left, width, height: `${pillH}px`, zIndex: 10 + seg.stackIndex }}
+                          className={pillClass}
+                          style={{ top: `${top}px`, left, width, height: `${pillH}px`, zIndex: 10 + seg.stackIndex, ...pillColorStyle }}
                           title={`${label}${propTitle ? ` · ${propTitle}` : ''}`}
                         >
                           {isMobile ? label.split(' ')[0] : label}
@@ -1216,8 +1235,21 @@ export default function HostCalendarPage() {
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> {t.legendBlocked}</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-200 border border-violet-400" /> {t.legendSynced}</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 border border-gray-300 border-dashed" style={{borderStyle:'dashed'}} /> {lang === 'ro' ? 'Blocat extern' : 'External block'}</span>
+              {!isAllView && (calendarSyncs[activePropId] || []).map((sync: any) => (
+                <span key={sync.id} className="flex items-center gap-2">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded border" style={{ backgroundColor: hexToRgba(sync.color, 0.2), borderColor: sync.color }} />
+                    <span className="capitalize">{sync.platform}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded border" style={{ backgroundColor: hexToRgba(sync.color, 0.1), borderColor: hexToRgba(sync.color, 0.45), borderStyle: 'dashed' }} />
+                    <span>{lang === 'ro' ? 'blocat' : 'blocked'}</span>
+                  </span>
+                </span>
+              ))}
+              {!isAllView && (calendarSyncs[activePropId] || []).length === 0 && (
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-violet-200 border border-violet-400" /> {t.legendSynced}</span>
+              )}
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary-600" /> {t.legendToday}</span>
               {/* TODO: re-add custom price legend when per-day pricing display is available to users
               {!isAllView && (
@@ -1274,15 +1306,16 @@ export default function HostCalendarPage() {
                 <div className="space-y-2 mb-4">
                   <p className="text-xs font-medium text-gray-500">{t.connectedCalendars}</p>
                   {(calendarSyncs[activePropId] || []).map((sync: any) => (
-                    <div key={sync.id} className="flex items-center gap-3 p-2.5 bg-violet-50 border border-violet-200 rounded-lg text-sm">
-                      <Link2 size={14} className="text-violet-600 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <span className="font-medium capitalize">{sync.platform}</span>
-                        <p className="text-xs text-gray-500 truncate">{sync.icalUrl}</p>
-                        {sync.lastSynced && (
-                          <p className="text-[10px] text-gray-400">{t.lastSynced} {format(new Date(sync.lastSynced), 'd MMM HH:mm', { locale: dateFnsLocale })}</p>
-                        )}
-                      </div>
+                    <div key={sync.id} className="flex flex-col gap-2 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: sync.color || '#6366f1' }} />
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium capitalize">{sync.platform}</span>
+                          <p className="text-xs text-gray-500 truncate">{sync.icalUrl}</p>
+                          {sync.lastSynced && (
+                            <p className="text-[10px] text-gray-400">{t.lastSynced} {format(new Date(sync.lastSynced), 'd MMM HH:mm', { locale: dateFnsLocale })}</p>
+                          )}
+                        </div>
                       <button
                         onClick={async () => {
                           setSyncingId(sync.id);
@@ -1340,6 +1373,32 @@ export default function HostCalendarPage() {
                       >
                         <Trash2 size={14} />
                       </button>
+                      </div>
+                      {/* Color picker row */}
+                      <div className="flex items-center gap-1.5 pl-6">
+                        <span className="text-[10px] text-gray-400 mr-0.5">{lang === 'ro' ? 'Culoare:' : 'Color:'}</span>
+                        {SYNC_COLOR_PALETTE.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={async () => {
+                              await fetch(`/api/properties/${activePropId}/calendar-sync`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ syncId: sync.id, color: c }),
+                              });
+                              setCalendarSyncs(prev => ({
+                                ...prev,
+                                [activePropId]: (prev[activePropId] || []).map((s: any) =>
+                                  s.id === sync.id ? { ...s, color: c } : s
+                                ),
+                              }));
+                            }}
+                            className="w-4 h-4 rounded-full transition-transform hover:scale-125"
+                            style={{ backgroundColor: c, outline: (sync.color || '#6366f1') === c ? `2px solid ${c}` : 'none', outlineOffset: '2px' }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1367,6 +1426,20 @@ export default function HostCalendarPage() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">{lang === 'ro' ? 'Culoare calendar' : 'Calendar color'}</label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {SYNC_COLOR_PALETTE.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setSyncColor(c)}
+                          className="w-5 h-5 rounded-full transition-transform hover:scale-110"
+                          style={{ backgroundColor: c, outline: syncColor === c ? `2px solid ${c}` : 'none', outlineOffset: '2px' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={async () => {
@@ -1374,7 +1447,7 @@ export default function HostCalendarPage() {
                         const res = await fetch(`/api/properties/${activePropId}/calendar-sync`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ platform: syncPlatform, icalUrl: syncUrl.trim() }),
+                          body: JSON.stringify({ platform: syncPlatform, icalUrl: syncUrl.trim(), color: syncColor }),
                         });
                         const data = await res.json();
                         if (res.ok) {
@@ -1383,6 +1456,7 @@ export default function HostCalendarPage() {
                             [activePropId]: [...(prev[activePropId] || []), data.sync],
                           }));
                           setSyncUrl('');
+                          setSyncColor('#6366f1');
                           setShowSyncForm(false);
                           toast.success(t.syncConnected(syncPlatform));
                         } else {
@@ -1637,11 +1711,13 @@ export default function HostCalendarPage() {
                   <input className="input" placeholder={tm.guestNamePlaceholder} value={editSyncedForm.guestName}
                     onChange={e => setEditSyncedForm(f => ({ ...f, guestName: e.target.value }))} />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className="label">{tm.revenue}</label>
-                  <input type="number" min="0" step="0.01" className="input" placeholder="0.00"
-                    value={editSyncedForm.revenue} onChange={e => setEditSyncedForm(f => ({ ...f, revenue: e.target.value }))} />
-                </div>
+                {editSyncedForm.isBlockManual !== true && (
+                  <div className="sm:col-span-2">
+                    <label className="label">{tm.revenue}</label>
+                    <input type="number" min="0" step="0.01" className="input" placeholder="0.00"
+                      value={editSyncedForm.revenue} onChange={e => setEditSyncedForm(f => ({ ...f, revenue: e.target.value }))} />
+                  </div>
+                )}
                 <div className="sm:col-span-2">
                   <label className="label">{tm.notes}</label>
                   <textarea className="input min-h-[60px] resize-none" placeholder={tm.notesPlaceholder}
@@ -1672,7 +1748,13 @@ export default function HostCalendarPage() {
                     {lang === 'ro' ? 'Rezervare' : 'Reservation'}
                   </button>
                   <button
-                    onClick={() => setEditSyncedForm(f => ({ ...f, isBlockManual: true }))}
+                    onClick={() => {
+                      if (parseFloat(editSyncedForm.revenue) > 0) {
+                        setShowSyncedBlockWarn(true);
+                      } else {
+                        setEditSyncedForm(f => ({ ...f, isBlockManual: true }));
+                      }
+                    }}
                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                       editSyncedForm.isBlockManual === true
                         ? 'bg-gray-200 text-gray-700'
@@ -1703,6 +1785,36 @@ export default function HostCalendarPage() {
               <button onClick={saveSyncedEdit} disabled={savingSyncedEdit}
                 className="btn-primary disabled:opacity-50 flex items-center gap-2">
                 {savingSyncedEdit ? <><Loader2 size={14} className="animate-spin" /> {tm.saving}</> : tm.save}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revenue removal warning modal */}
+      {showSyncedBlockWarn && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 className="font-semibold text-base mb-2">
+              {lang === 'ro' ? 'Elimini venitul?' : 'Remove revenue?'}
+            </h3>
+            <p className="text-sm text-gray-600 mb-5">
+              {lang === 'ro'
+                ? `Dacă marchezi aceste date ca blocate, venitul de ${formatRON(parseFloat(editSyncedForm.revenue))} va fi eliminat și nu va fi inclus în rapoarte.`
+                : `Marking this as blocked will remove the revenue of ${formatRON(parseFloat(editSyncedForm.revenue))} and exclude it from reports.`}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowSyncedBlockWarn(false)} className="btn-secondary text-sm">
+                {tm.cancel}
+              </button>
+              <button
+                onClick={() => {
+                  setEditSyncedForm(f => ({ ...f, isBlockManual: true, revenue: '0' }));
+                  setShowSyncedBlockWarn(false);
+                }}
+                className="btn-primary text-sm"
+              >
+                {lang === 'ro' ? 'Confirmă' : 'Confirm'}
               </button>
             </div>
           </div>
