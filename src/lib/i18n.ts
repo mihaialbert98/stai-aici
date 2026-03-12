@@ -403,6 +403,8 @@ export const dashboardT = {
       delete: 'Șterge',
       deleteConfirm: 'Ștergi această sarcină?',
       progress: (done: number, total: number) => `${done} din ${total} finalizate`,
+      clearCompleted: 'Șterge finalizate',
+      clearCompletedConfirm: (n: number) => `Ștergi cele ${n} sarcini finalizate? Acțiunea nu poate fi anulată.`,
     },
     guestNav: {
       title: 'Contul meu',
@@ -809,6 +811,8 @@ export const dashboardT = {
       delete: 'Delete',
       deleteConfirm: 'Delete this task?',
       progress: (done: number, total: number) => `${done} of ${total} complete`,
+      clearCompleted: 'Clear completed',
+      clearCompletedConfirm: (n: number) => `Delete all ${n} completed tasks? This cannot be undone.`,
     },
     guestNav: {
       title: 'My account',

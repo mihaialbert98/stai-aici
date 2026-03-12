@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList } from 'lucide-react';
+import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 
@@ -21,9 +21,12 @@ export default function TasksPage() {
 
   const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
   const [selectedPropId, setSelectedPropId] = useState('');
+  const [propOpen, setPropOpen] = useState(false);
+  const propDropdownRef = useRef<HTMLDivElement>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Add task
   const [newTitle, setNewTitle] = useState('');
@@ -35,6 +38,10 @@ export default function TasksPage() {
   const [editTitle, setEditTitle] = useState('');
   const [saving, setSaving] = useState<string | null>(null);
 
+  // Confirm modal: { message, onConfirm } | null
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
   useEffect(() => {
     fetch('/api/host/properties')
       .then(r => r.json())
@@ -42,7 +49,18 @@ export default function TasksPage() {
         const props = d.properties || [];
         setProperties(props);
         if (props.length > 0) setSelectedPropId(props[0].id);
+        setInitialLoad(true);
       });
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (propDropdownRef.current && !propDropdownRef.current.contains(e.target as Node)) {
+        setPropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const fetchTasks = useCallback(async () => {
@@ -53,6 +71,7 @@ export default function TasksPage() {
       setTasks(data.tasks || []);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   }, [selectedPropId]);
 
@@ -114,14 +133,45 @@ export default function TasksPage() {
     }
   };
 
-  const deleteTask = async (id: string) => {
-    if (!confirm(t.deleteConfirm)) return;
-    setSaving(id);
+  const deleteTask = (id: string) => {
+    setConfirmModal({
+      message: t.deleteConfirm,
+      onConfirm: async () => {
+        setSaving(id);
+        try {
+          await fetch(`/api/host/tasks/${id}`, { method: 'DELETE' });
+          setTasks(prev => prev.filter(t => t.id !== id));
+        } finally {
+          setSaving(null);
+        }
+      },
+    });
+  };
+
+  const clearCompleted = () => {
+    const doneTasks = tasks.filter(t => t.done);
+    if (doneTasks.length === 0) return;
+    setConfirmModal({
+      message: t.clearCompletedConfirm(doneTasks.length),
+      onConfirm: async () => {
+        try {
+          await Promise.all(doneTasks.map(t => fetch(`/api/host/tasks/${t.id}`, { method: 'DELETE' })));
+          setTasks(prev => prev.filter(t => !t.done));
+        } catch (err) {
+          console.error('clearCompleted', err);
+        }
+      },
+    });
+  };
+
+  const runConfirm = async () => {
+    if (!confirmModal) return;
+    setConfirming(true);
     try {
-      await fetch(`/api/host/tasks/${id}`, { method: 'DELETE' });
-      setTasks(prev => prev.filter(t => t.id !== id));
+      await confirmModal.onConfirm();
     } finally {
-      setSaving(null);
+      setConfirming(false);
+      setConfirmModal(null);
     }
   };
 
@@ -145,24 +195,33 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Property selector */}
-      {properties.length > 1 && (
-        <div className="mb-5">
-          <div className="flex flex-wrap gap-2">
-            {properties.map(p => (
-              <button
-                key={p.id}
-                onClick={() => setSelectedPropId(p.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                  selectedPropId === p.id
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {p.title}
-              </button>
-            ))}
-          </div>
+      {/* Property selector dropdown */}
+      {properties.length > 0 && (
+        <div className="mb-5 relative w-fit" ref={propDropdownRef}>
+          <button
+            onClick={() => setPropOpen(o => !o)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition shadow-sm min-w-[200px]"
+          >
+            <span className="flex-1 text-left truncate">
+              {properties.find(p => p.id === selectedPropId)?.title ?? t.selectProperty}
+            </span>
+            {propOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+          </button>
+          {propOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-20 min-w-full w-64">
+              {properties.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => { setTasks([]); setInitialLoad(true); setSelectedPropId(p.id); setPropOpen(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 truncate ${
+                    selectedPropId === p.id ? 'text-primary-600 font-medium' : 'text-gray-700'
+                  }`}
+                >
+                  {p.title}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -173,59 +232,10 @@ export default function TasksPage() {
         </div>
       ) : (
         <div className="card">
-          {/* Progress */}
-          {total > 0 && (
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-gray-700">{t.progress(doneCount, total)}</span>
-                <span className="text-sm font-semibold text-primary-600">{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2.5">
-                <div
-                  className="bg-primary-600 h-2.5 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              {doneCount === total && (
-                <p className="text-sm text-green-600 font-medium mt-2 text-center">🎉 {t.allDone}</p>
-              )}
-            </div>
-          )}
-
-          {/* Filter tabs */}
-          <div className="flex gap-1 mb-4">
-            {(['all', 'active', 'done'] as Filter[]).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                  filter === f ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {f === 'all' ? t.filterAll : f === 'active' ? t.filterActive : t.filterDone}
-                {f === 'all' && total > 0 && (
-                  <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === 'all' ? 'bg-white/20' : 'bg-gray-200'}`}>
-                    {total}
-                  </span>
-                )}
-                {f === 'active' && (
-                  <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === 'active' ? 'bg-white/20' : 'bg-gray-200'}`}>
-                    {total - doneCount}
-                  </span>
-                )}
-                {f === 'done' && doneCount > 0 && (
-                  <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === 'done' ? 'bg-white/20' : 'bg-gray-200'}`}>
-                    {doneCount}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
           {/* Add task input */}
           <form
             onSubmit={e => { e.preventDefault(); addTask(); }}
-            className="flex gap-2 mb-4"
+            className="flex gap-2 mb-5"
           >
             <input
               ref={addInputRef}
@@ -245,8 +255,67 @@ export default function TasksPage() {
             </button>
           </form>
 
+          {/* Progress */}
+          {total > 0 && (
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">{t.progress(doneCount, total)}</span>
+                <span className="text-sm font-semibold text-primary-600">{progress}%</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5">
+                <div
+                  className="bg-primary-600 h-2.5 rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              {doneCount === total && total > 0 && (
+                <p className="text-sm text-green-600 font-medium mt-2 text-center">🎉 {t.allDone}</p>
+              )}
+            </div>
+          )}
+
+          {/* Filter tabs + clear completed */}
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex gap-1">
+              {(['all', 'active', 'done'] as Filter[]).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                    filter === f ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {f === 'all' ? t.filterAll : f === 'active' ? t.filterActive : t.filterDone}
+                  {f === 'all' && total > 0 && (
+                    <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === 'all' ? 'bg-white/20' : 'bg-gray-200'}`}>
+                      {total}
+                    </span>
+                  )}
+                  {f === 'active' && (
+                    <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === 'active' ? 'bg-white/20' : 'bg-gray-200'}`}>
+                      {total - doneCount}
+                    </span>
+                  )}
+                  {f === 'done' && doneCount > 0 && (
+                    <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === 'done' ? 'bg-white/20' : 'bg-gray-200'}`}>
+                      {doneCount}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {doneCount > 0 && (
+              <button
+                onClick={clearCompleted}
+                className="text-xs text-red-500 hover:text-red-700 font-medium transition flex-shrink-0"
+              >
+                {t.clearCompleted}
+              </button>
+            )}
+          </div>
+
           {/* Task list */}
-          {loading ? (
+          {loading && initialLoad ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => <div key={i} className="animate-pulse h-12 bg-gray-100 rounded-lg" />)}
             </div>
@@ -331,6 +400,38 @@ export default function TasksPage() {
               ))}
             </ul>
           )}
+        </div>
+      )}
+      {/* Confirm modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+              <h2 className="font-semibold text-base">{lang === 'ro' ? 'Confirmare' : 'Confirm'}</h2>
+              <button onClick={() => setConfirmModal(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-700">{confirmModal.message}</p>
+            </div>
+            <div className="flex gap-2 px-5 pb-5 justify-end">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+              >
+                {lang === 'ro' ? 'Anulează' : 'Cancel'}
+              </button>
+              <button
+                onClick={runConfirm}
+                disabled={confirming}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition flex items-center gap-1.5"
+              >
+                {confirming && <Loader2 size={13} className="animate-spin" />}
+                {lang === 'ro' ? 'Șterge' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
