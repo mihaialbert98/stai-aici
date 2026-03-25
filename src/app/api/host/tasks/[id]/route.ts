@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const updated = await prisma.propertyTask.update({ where: { id: params.id }, data });
     return NextResponse.json({ task: updated });
   } catch (err) {
-    console.error('[tasks PUT]', err);
+    logger.error('[tasks PUT]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -44,7 +45,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     await prisma.propertyTask.delete({ where: { id: params.id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[tasks DELETE]', err);
+    logger.error('[tasks DELETE]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { getHostProperty } from '@/lib/api-helpers';
 
 export const dynamic = 'force-dynamic';
-
-async function getHostProperty(propertyId: string, userId: string) {
-  return prisma.property.findFirst({
-    where: { id: propertyId, hostId: userId },
-    select: { id: true },
-  });
-}
 
 // GET /api/properties/[id]/checkin-link — get or create link for a property
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {

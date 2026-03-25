@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json({ tasks });
   } catch (err) {
-    console.error('[tasks GET]', err);
+    logger.error('[tasks GET]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     const task = await prisma.propertyTask.create({ data: { propertyId, title } });
     return NextResponse.json({ task }, { status: 201 });
   } catch (err) {
-    console.error('[tasks POST]', err);
+    logger.error('[tasks POST]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
