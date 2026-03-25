@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useDropdown } from '@/hooks/useDropdown';
+import { useConfirmModal } from '@/hooks/useConfirmModal';
 import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
@@ -38,9 +39,8 @@ export default function TasksPage() {
   const [editTitle, setEditTitle] = useState('');
   const [saving, setSaving] = useState<string | null>(null);
 
-  // Confirm modal: { message, onConfirm } | null
-  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  // Confirm modal
+  const { modal: confirmModal, openModal, closeModal, runConfirm, confirming } = useConfirmModal();
 
   useEffect(() => {
     fetch('/api/host/properties')
@@ -124,7 +124,7 @@ export default function TasksPage() {
   };
 
   const deleteTask = (id: string) => {
-    setConfirmModal({
+    openModal({
       message: t.deleteConfirm,
       onConfirm: async () => {
         setSaving(id);
@@ -141,7 +141,7 @@ export default function TasksPage() {
   const clearCompleted = () => {
     const doneTasks = tasks.filter(t => t.done);
     if (doneTasks.length === 0) return;
-    setConfirmModal({
+    openModal({
       message: t.clearCompletedConfirm(doneTasks.length),
       onConfirm: async () => {
         try {
@@ -152,17 +152,6 @@ export default function TasksPage() {
         }
       },
     });
-  };
-
-  const runConfirm = async () => {
-    if (!confirmModal) return;
-    setConfirming(true);
-    try {
-      await confirmModal.onConfirm();
-    } finally {
-      setConfirming(false);
-      setConfirmModal(null);
-    }
   };
 
   const doneCount = tasks.filter(t => t.done).length;
@@ -398,7 +387,7 @@ export default function TasksPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
               <h2 className="font-semibold text-base">{lang === 'ro' ? 'Confirmare' : 'Confirm'}</h2>
-              <button onClick={() => setConfirmModal(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => closeModal()} className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
@@ -407,7 +396,7 @@ export default function TasksPage() {
             </div>
             <div className="flex gap-2 px-5 pb-5 justify-end">
               <button
-                onClick={() => setConfirmModal(null)}
+                onClick={() => closeModal()}
                 className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
               >
                 {lang === 'ro' ? 'Anulează' : 'Cancel'}
