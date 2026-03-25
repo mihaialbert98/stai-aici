@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useDropdown } from '@/hooks/useDropdown';
 import { useConfirmModal } from '@/hooks/useConfirmModal';
-import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
+import { Modal } from '@/components/Modal';
 
 type Task = {
   id: string;
@@ -383,20 +384,14 @@ export default function TasksPage() {
       )}
       {/* Confirm modal */}
       {confirmModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
-              <h2 className="font-semibold text-base">{lang === 'ro' ? 'Confirmare' : 'Confirm'}</h2>
-              <button onClick={() => closeModal()} className="text-gray-400 hover:text-gray-600">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-sm text-gray-700">{confirmModal.message}</p>
-            </div>
-            <div className="flex gap-2 px-5 pb-5 justify-end">
+        <Modal
+          open={!!confirmModal}
+          onClose={closeModal}
+          title={lang === 'ro' ? 'Confirmare' : 'Confirm'}
+          footer={
+            <>
               <button
-                onClick={() => closeModal()}
+                onClick={closeModal}
                 className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
               >
                 {lang === 'ro' ? 'Anulează' : 'Cancel'}
@@ -409,9 +404,11 @@ export default function TasksPage() {
                 {confirming && <Loader2 size={13} className="animate-spin" />}
                 {lang === 'ro' ? 'Șterge' : 'Delete'}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <p className="text-sm text-gray-700">{confirmModal.message}</p>
+        </Modal>
       )}
     </div>
   );
