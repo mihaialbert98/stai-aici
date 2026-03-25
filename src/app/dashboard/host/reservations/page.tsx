@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useDropdown } from '@/hooks/useDropdown';
+import { usePagination } from '@/hooks/usePagination';
 import { format, startOfDay } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import {
@@ -71,9 +72,7 @@ export default function ReservationsPage() {
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [page, setPage] = useState(1);
+  const { page, totalPages, total, setPage, setPaginationData, resetPage } = usePagination();
   const [loading, setLoading] = useState(true);
 
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
@@ -129,8 +128,7 @@ export default function ReservationsPage() {
       const data = await fetch(`/api/host/reservations?${params}`).then(r => r.json());
       setReservations(data.reservations || []);
       setTotalRevenue(data.totalRevenue || 0);
-      setTotal(data.total ?? 0);
-      setTotalPages(data.totalPages ?? 1);
+      setPaginationData({ total: data.total ?? 0, totalPages: data.totalPages ?? 1, page: data.page ?? page });
       if (data.platforms) setPlatforms(data.platforms);
     } finally {
       setLoading(false);
@@ -143,7 +141,7 @@ export default function ReservationsPage() {
 
   // Reset to page 1 when filters change
   useEffect(() => {
-    setPage(1);
+    resetPage();
   }, [timeFilter, typeFilter, selectedPropId, customFrom, customTo]);
 
   const openEdit = (r: Reservation) => {
