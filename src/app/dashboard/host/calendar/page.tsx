@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useDropdown } from '@/hooks/useDropdown';
 import {
   format, addDays, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -13,15 +13,8 @@ import { toast } from 'sonner';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 import { useCalendarState } from './useCalendarState';
+import { useCalendarData } from './useCalendarData';
 import { BookingData, ManualReservationData, SyncedReservationData } from '@/types';
-
-interface PeriodPricing {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  pricePerNight: number;
-}
 
 const PROPERTY_COLORS = [
   { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-800', pill: 'bg-blue-200 text-blue-900 border-blue-400' },
@@ -53,19 +46,6 @@ export default function HostCalendarPage() {
   const lang = useLang();
   const t = dashboardT[lang].calendar;
   const dateFnsLocale = lang === 'ro' ? ro : enUS;
-  // Data-fetching state (kept in page.tsx)
-  const [properties, setProperties] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<BookingData[]>([]);
-  const [manualReservations, setManualReservations] = useState<ManualReservationData[]>([]);
-  const [syncedReservations, setSyncedReservations] = useState<SyncedReservationData[]>([]);
-  const [manualBlockedDates, setManualBlockedDates] = useState<Record<string, Set<string>>>({});
-  const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [syncedDates, setSyncedDates] = useState<Record<string, Record<string, string>>>({});
-  // syncedDates[propertyId][dateStr] = source (e.g. "booking", "airbnb")
-  const [calendarSyncs, setCalendarSyncs] = useState<Record<string, any[]>>({});
-  const [periodPricings, setPeriodPricings] = useState<Record<string, PeriodPricing[]>>({});
-
   // UI state (from useCalendarState hook)
   const {
     activePropId, setActivePropId,
@@ -98,6 +78,16 @@ export default function HostCalendarPage() {
     manualForm, setManualForm,
     savingManual, setSavingManual,
   } = useCalendarState();
+
+  // Data-fetching state (from useCalendarData hook)
+  const {
+    properties, bookings, manualReservations, syncedReservations,
+    manualBlockedDates, blockedDates, syncedDates, calendarSyncs,
+    periodPricings, loading,
+    refetch: refreshCalendarData,
+    setBlockedDates, setSyncedDates, setCalendarSyncs, setPeriodPricings,
+  } = useCalendarData((id) => setActivePropId(id));
+
   const tm = dashboardT[lang].manualReservation;
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -105,103 +95,6 @@ export default function HostCalendarPage() {
 
   const isAllView = activePropId === 'all';
   const activeProp = properties.find(p => p.id === activePropId);
-
-  const refreshCalendarData = async () => {
-    const data = await fetch('/api/host/calendar').then(r => r.json());
-    const myProps = data.properties || [];
-    setProperties(myProps);
-    setBookings(data.bookings || []);
-    const blocked: Record<string, string[]> = {};
-    const synced: Record<string, Record<string, string>> = {};
-    const manualBlocked: Record<string, Set<string>> = {};
-    for (const p of myProps) {
-      const dates = p.blockedDates || [];
-      manualBlocked[p.id] = new Set<string>();
-      blocked[p.id] = [];
-      synced[p.id] = {};
-      dates.forEach((bd: any) => {
-        const dateStr = format(new Date(bd.date), 'yyyy-MM-dd');
-        if (bd.source?.startsWith('external:')) {
-          manualBlocked[p.id].add(dateStr);
-          blocked[p.id].push(dateStr);
-        } else {
-          blocked[p.id].push(dateStr);
-          if (bd.source) synced[p.id][dateStr] = bd.source;
-        }
-      });
-    }
-    setBlockedDates(blocked);
-    setSyncedDates(synced);
-    setManualBlockedDates(manualBlocked);
-    setManualReservations((data.manualReservations || []).map((mr: any) => ({
-      ...mr,
-      checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
-      checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
-    })));
-    setSyncedReservations((data.syncedReservations || []).map((sr: any) => ({
-      ...sr,
-      checkIn: format(new Date(sr.checkIn), 'yyyy-MM-dd'),
-      checkOut: format(new Date(sr.checkOut), 'yyyy-MM-dd'),
-    })));
-  };
-
-  useEffect(() => {
-    (async () => {
-      const data = await fetch('/api/host/calendar').then(r => r.json());
-      const myProps = data.properties || [];
-      setProperties(myProps);
-      setBookings(data.bookings || []);
-
-      const blocked: Record<string, string[]> = {};
-      const synced: Record<string, Record<string, string>> = {};
-      const manualBlocked: Record<string, Set<string>> = {};
-      const syncsMap: Record<string, any[]> = {};
-      const pricingsMap: Record<string, PeriodPricing[]> = {};
-      for (const p of myProps) {
-        const dates = p.blockedDates || [];
-        manualBlocked[p.id] = new Set<string>();
-        blocked[p.id] = [];
-        synced[p.id] = {};
-        dates.forEach((bd: any) => {
-          const dateStr = format(new Date(bd.date), 'yyyy-MM-dd');
-          if (bd.source?.startsWith('external:')) {
-            // Manual reservation blocks — tracked separately, shown as pills
-            manualBlocked[p.id].add(dateStr);
-            blocked[p.id].push(dateStr); // still block for canClick
-          } else {
-            blocked[p.id].push(dateStr);
-            if (bd.source) synced[p.id][dateStr] = bd.source;
-          }
-        });
-        syncsMap[p.id] = p.calendarSyncs || [];
-        pricingsMap[p.id] = (p.periodPricings || []).map((pp: any) => ({
-          id: pp.id,
-          name: pp.name,
-          startDate: pp.startDate,
-          endDate: pp.endDate,
-          pricePerNight: pp.pricePerNight,
-        }));
-      }
-      setBlockedDates(blocked);
-      setSyncedDates(synced);
-      setManualBlockedDates(manualBlocked);
-      setManualReservations((data.manualReservations || []).map((mr: any) => ({
-        ...mr,
-        checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
-        checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
-      })));
-      setSyncedReservations((data.syncedReservations || []).map((sr: any) => ({
-        ...sr,
-        checkIn: format(new Date(sr.checkIn), 'yyyy-MM-dd'),
-        checkOut: format(new Date(sr.checkOut), 'yyyy-MM-dd'),
-      })));
-      setCalendarSyncs(syncsMap);
-      setPeriodPricings(pricingsMap);
-
-      if (myProps.length === 1) setActivePropId(myProps[0].id);
-      setLoading(false);
-    })();
-  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
