@@ -7,14 +7,8 @@ import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList, Chev
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 import { Modal } from '@/components/Modal';
-
-type Task = {
-  id: string;
-  propertyId: string;
-  title: string;
-  done: boolean;
-  createdAt: string;
-};
+import { api } from '@/lib/api-client';
+import { Task } from '@/types';
 
 type Filter = 'all' | 'active' | 'done';
 
@@ -44,22 +38,22 @@ export default function TasksPage() {
   const { modal: confirmModal, openModal, closeModal, runConfirm, confirming } = useConfirmModal();
 
   useEffect(() => {
-    fetch('/api/host/properties')
-      .then(r => r.json())
+    api.get<{ properties: { id: string; title: string }[] }>('/api/host/properties')
       .then(d => {
-        const props = d.properties || [];
+        const props = d.properties ?? [];
         setProperties(props);
         if (props.length > 0) setSelectedPropId(props[0].id);
         setInitialLoad(true);
-      });
+      })
+      .catch(() => {});
   }, []);
 
   const fetchTasks = useCallback(async () => {
     if (!selectedPropId) return;
     setLoading(true);
     try {
-      const data = await fetch(`/api/host/tasks?propertyId=${selectedPropId}`).then(r => r.json());
-      setTasks(data.tasks || []);
+      const data = await api.get<{ tasks: Task[] }>(`/api/host/tasks?propertyId=${selectedPropId}`);
+      setTasks(data.tasks);
     } finally {
       setLoading(false);
       setInitialLoad(false);
@@ -75,11 +69,7 @@ export default function TasksPage() {
     if (!title || !selectedPropId) return;
     setAdding(true);
     try {
-      const data = await fetch('/api/host/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyId: selectedPropId, title }),
-      }).then(r => r.json());
+      const data = await api.post<{ task: Task }>('/api/host/tasks', { propertyId: selectedPropId, title });
       setTasks(prev => [...prev, data.task]);
       setNewTitle('');
       addInputRef.current?.focus();
@@ -91,11 +81,7 @@ export default function TasksPage() {
   const toggleDone = async (task: Task) => {
     setSaving(task.id);
     try {
-      const data = await fetch(`/api/host/tasks/${task.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ done: !task.done }),
-      }).then(r => r.json());
+      const data = await api.put<{ task: Task }>(`/api/host/tasks/${task.id}`, { done: !task.done });
       setTasks(prev => prev.map(t => t.id === task.id ? data.task : t));
     } finally {
       setSaving(null);
@@ -112,11 +98,7 @@ export default function TasksPage() {
     if (!title) { setEditingId(null); return; }
     setSaving(id);
     try {
-      const data = await fetch(`/api/host/tasks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
-      }).then(r => r.json());
+      const data = await api.put<{ task: Task }>(`/api/host/tasks/${id}`, { title });
       setTasks(prev => prev.map(t => t.id === id ? data.task : t));
       setEditingId(null);
     } finally {
@@ -130,7 +112,7 @@ export default function TasksPage() {
       onConfirm: async () => {
         setSaving(id);
         try {
-          await fetch(`/api/host/tasks/${id}`, { method: 'DELETE' });
+          await api.delete<{ ok: boolean }>(`/api/host/tasks/${id}`);
           setTasks(prev => prev.filter(t => t.id !== id));
         } finally {
           setSaving(null);
@@ -146,7 +128,7 @@ export default function TasksPage() {
       message: t.clearCompletedConfirm(doneTasks.length),
       onConfirm: async () => {
         try {
-          await Promise.all(doneTasks.map(t => fetch(`/api/host/tasks/${t.id}`, { method: 'DELETE' })));
+          await Promise.all(doneTasks.map(t => api.delete<{ ok: boolean }>(`/api/host/tasks/${t.id}`)));
           setTasks(prev => prev.filter(t => !t.done));
         } catch (err) {
           console.error('clearCompleted', err);
