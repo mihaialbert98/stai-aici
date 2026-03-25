@@ -15,10 +15,19 @@ export default function HostReviewsPage() {
   );
 }
 
+interface HostReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  guest?: { name: string };
+  property?: { title: string };
+}
+
 function HostReviewsContent() {
   const searchParams = useSearchParams();
   const propertyIds = searchParams.get('propertyIds') || '';
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<HostReviewItem[]>([]);
   const [average, setAverage] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +79,7 @@ function HostReviewsContent() {
           </div>
 
           <div className="space-y-4">
-            {reviews.map((r: any) => (
+            {reviews.map((r) => (
               <div key={r.id} className="card">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">

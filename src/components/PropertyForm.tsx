@@ -13,8 +13,26 @@ import { PropertyType } from '@/lib/validations';
 // TODO: uncomment when full form fields are enabled
 // import { PROPERTY_TYPES, PROPERTY_TYPE_LABELS, PropertyType } from '@/lib/validations';
 
+export interface PropertyInitialData {
+  title?: string;
+  description?: string;
+  city?: string;
+  address?: string;
+  pricePerNight?: number;
+  maxGuests?: number;
+  baseGuests?: number;
+  extraGuestPrice?: number;
+  propertyType?: string;
+  checkInInfo?: string;
+  houseRules?: string;
+  localTips?: string;
+  cancellationPolicy?: string;
+  amenities?: { amenityId?: string; amenity?: { id: string } }[];
+  images?: { url: string }[];
+}
+
 interface Props {
-  initialData?: any;
+  initialData?: PropertyInitialData;
   propertyId?: string;
 }
 
@@ -44,8 +62,8 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     houseRules: initialData?.houseRules || '',
     localTips: initialData?.localTips || '',
     cancellationPolicy: initialData?.cancellationPolicy || 'FLEXIBLE',
-    amenityIds: initialData?.amenities?.map((a: any) => a.amenityId || a.amenity?.id) || [] as string[],
-    imageUrls: initialData?.images?.map((i: any) => i.url) || [] as string[],
+    amenityIds: initialData?.amenities?.map((a) => a.amenityId || a.amenity?.id).filter((id): id is string => id !== undefined) || [] as string[],
+    imageUrls: initialData?.images?.map((i) => i.url) || [] as string[],
   });
 
   // TODO: uncomment when amenities are enabled
@@ -53,7 +71,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
   //   fetch('/api/amenities').then(r => r.json()).then(d => setAmenities(d.amenities || []));
   // }, []);
 
-  const update = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
+  const update = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm(f => ({ ...f, [key]: value }));
 
   // TODO: uncomment when amenities are enabled
   // const toggleAmenity = (id: string) => {

@@ -2,9 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatRON, formatDate } from '@/lib/utils';
+import { BookingData } from '@/types';
 
 interface Props {
-  booking: any;
+  booking: BookingData;
   href: string;
   subtitle?: string;
 }

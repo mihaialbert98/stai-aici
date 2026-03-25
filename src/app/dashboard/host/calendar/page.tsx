@@ -97,7 +97,7 @@ export default function HostCalendarPage() {
   };
 
   const getSyncColor = useCallback((propertyId: string, source: string): string => {
-    const sync = (calendarSyncs[propertyId] || []).find((s: any) => s.platform === source);
+    const sync = (calendarSyncs[propertyId] || []).find((s) => s.platform === source);
     return sync?.color || '#6366f1';
   }, [calendarSyncs]);
 

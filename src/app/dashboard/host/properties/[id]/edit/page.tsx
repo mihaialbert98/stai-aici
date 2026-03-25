@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { PropertyForm } from '@/components/PropertyForm';
+import { PropertyForm, PropertyInitialData } from '@/components/PropertyForm';
 // TODO: uncomment when period pricing is enabled
 // import { PeriodPricingManager } from '@/components/PeriodPricingManager';
 import { useLang } from '@/lib/useLang';
@@ -12,7 +12,7 @@ export default function EditPropertyPage() {
   const lang = useLang();
   const t = dashboardT[lang].properties;
   const { id } = useParams();
-  const [property, setProperty] = useState<any>(null);
+  const [property, setProperty] = useState<PropertyInitialData | null>(null);
 
   useEffect(() => {
     fetch(`/api/properties/${id}`).then(r => r.json()).then(d => setProperty(d.property));
@@ -31,7 +31,7 @@ export default function EditPropertyPage() {
         <div>
           <PeriodPricingManager
             propertyId={id as string}
-            initialPricings={property.periodPricings?.map((p: any) => ({
+            initialPricings={property.periodPricings?.map((p) => ({
               id: p.id,
               name: p.name,
               startDate: p.startDate,

@@ -12,6 +12,56 @@ import { ro, enUS } from 'date-fns/locale';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 
+interface BookingProperty {
+  id: string;
+  title: string;
+  city?: string;
+  address?: string;
+  cancellationPolicy?: string;
+  checkInInfo?: string | null;
+  houseRules?: string | null;
+  localTips?: string | null;
+}
+
+interface BookingGuest {
+  id?: string;
+  name: string;
+  email: string;
+}
+
+interface BookingReview {
+  rating: number;
+  comment?: string | null;
+}
+
+interface BookingDetail {
+  id: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  totalPrice: number;
+  guests?: number;
+  guestId?: string;
+  guest: BookingGuest;
+  property: BookingProperty;
+  review?: BookingReview | null;
+  hostReview?: BookingReview | null;
+}
+
+interface CurrentUser {
+  userId: string;
+  role: string;
+  name?: string;
+}
+
+interface GuestHostReview {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  host?: { name: string };
+}
+
 interface Props {
   role: 'guest' | 'host';
 }
@@ -22,8 +72,8 @@ export function BookingDetail({ role }: Props) {
   const t = dashboardT[lang].bookingDetail;
   const dateFnsLocale = lang === 'ro' ? ro : enUS;
 
-  const [booking, setBooking] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   // Guest review state
   const [reviewRating, setReviewRating] = useState(0);
@@ -42,7 +92,7 @@ export function BookingDetail({ role }: Props) {
   const [hostReviewDone, setHostReviewDone] = useState(false);
 
   // Guest reputation (past host reviews) — only loaded for host view
-  const [guestReviews, setGuestReviews] = useState<any[]>([]);
+  const [guestReviews, setGuestReviews] = useState<GuestHostReview[]>([]);
   const [guestAvgRating, setGuestAvgRating] = useState<number | null>(null);
 
   useEffect(() => {
@@ -229,7 +279,7 @@ export function BookingDetail({ role }: Props) {
                 </span>
               </div>
               <div className="space-y-3 border-t border-gray-100 pt-3">
-                {guestReviews.map((r: any) => (
+                {guestReviews.map((r) => (
                   <div key={r.id} className="text-sm">
                     <div className="flex items-center gap-2 mb-0.5">
                       {renderStars(r.rating, 14)}

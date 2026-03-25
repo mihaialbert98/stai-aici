@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { formatRON } from '@/lib/utils';
 import {
@@ -140,7 +140,7 @@ export default function HostDashboard() {
 
   const singlePropertyId = selectedPropertyIds.size === 1 ? Array.from(selectedPropertyIds)[0] : null;
 
-  const cards: { label: string; value: any; icon: any; color: string; bg: string; link?: string }[] = stats ? [
+  const cards: { label: string; value: string | number; icon: React.ElementType; color: string; bg: string; link?: string }[] = stats ? [
     { label: t.bookings, value: stats.totalBookings, icon: CalendarDays, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: t.nights, value: stats.totalNights, icon: Moon, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: t.revenue, value: formatRON(stats.totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },

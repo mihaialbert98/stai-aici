@@ -11,16 +11,24 @@ import { Plus, Edit } from 'lucide-react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 
+interface PropertyListItem {
+  id: string;
+  title: string;
+  city?: string;
+  hostId: string;
+  images?: { url: string }[];
+}
+
 export default function HostPropertiesPage() {
   const lang = useLang();
   const t = dashboardT[lang].properties;
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<PropertyListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/properties?limit=100').then(r => r.json()).then(async d => {
       const me = await fetch('/api/auth/me').then(r => r.json());
-      const myProps = (d.properties || []).filter((p: any) => p.hostId === me.user?.userId);
+      const myProps = (d.properties as PropertyListItem[] || []).filter((p) => p.hostId === me.user?.userId);
       setProperties(myProps);
       setLoading(false);
     });

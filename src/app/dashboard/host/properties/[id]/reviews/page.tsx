@@ -7,9 +7,17 @@ import { Star, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 
+interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  guest?: { name: string };
+}
+
 export default function PropertyReviewsPage() {
   const { id } = useParams();
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [average, setAverage] = useState<number | null>(null);
   const [propertyTitle, setPropertyTitle] = useState('');
   const [loading, setLoading] = useState(true);
@@ -62,7 +70,7 @@ export default function PropertyReviewsPage() {
           </div>
 
           <div className="space-y-4">
-            {reviews.map((r: any) => (
+            {reviews.map((r) => (
               <div key={r.id} className="card">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">

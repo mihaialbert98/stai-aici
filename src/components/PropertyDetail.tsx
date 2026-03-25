@@ -19,12 +19,91 @@ export function PropertyDetail() {
   );
 }
 
+interface PropertyBlockedDate {
+  date: string;
+  source?: string | null;
+}
+
+interface PropertyBookingItem {
+  id: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+interface PropertyAmenity {
+  amenity: { id: string; name: string };
+}
+
+interface PropertyImage {
+  id: string;
+  url: string;
+}
+
+interface PropertyReview {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  guest: { name: string };
+}
+
+interface PropertyPeriodPricing {
+  startDate: string;
+  endDate: string;
+  pricePerNight: number;
+}
+
+interface PropertyData {
+  id: string;
+  title: string;
+  description?: string;
+  city?: string;
+  address?: string;
+  pricePerNight: number;
+  maxGuests: number;
+  baseGuests?: number;
+  extraGuestPrice?: number;
+  cancellationPolicy?: string;
+  checkInInfo?: string | null;
+  houseRules?: string | null;
+  localTips?: string | null;
+  host: { id: string; name: string };
+  images: PropertyImage[];
+  amenities: PropertyAmenity[];
+  reviews: PropertyReview[];
+  blockedDates: PropertyBlockedDate[];
+  bookings: PropertyBookingItem[];
+  periodPricings: PropertyPeriodPricing[];
+}
+
+interface NightlyPrice {
+  date: string;
+  price: number;
+  periodName?: string;
+}
+
+interface PriceBreakdown {
+  totalPrice: number;
+  basePrice: number;
+  nights: number;
+  extraGuestFee: number;
+  extraGuests: number;
+  nightlyPrices: NightlyPrice[];
+  savings?: number;
+}
+
+interface CurrentUser {
+  userId: string;
+  role: string;
+}
+
 function PropertyContent() {
   const { id } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [property, setProperty] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [property, setProperty] = useState<PropertyData | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Booking form — pre-fill from search params
@@ -35,7 +114,7 @@ function PropertyContent() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [priceBreakdown, setPriceBreakdown] = useState<any>(null);
+  const [priceBreakdown, setPriceBreakdown] = useState<PriceBreakdown | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
 
   useEffect(() => {
@@ -78,8 +157,8 @@ function PropertyContent() {
 
     // Compute unavailable dates inside useMemo to avoid dependency issues
     const blockedSet = new Set([
-      ...property.blockedDates.map((d: any) => new Date(d.date).toISOString().split('T')[0]),
-      ...property.bookings.flatMap((b: any) => {
+      ...property.blockedDates.map((d) => new Date(d.date).toISOString().split('T')[0]),
+      ...property.bookings.flatMap((b) => {
         const dates: string[] = [];
         const s = new Date(b.startDate);
         const e = new Date(b.endDate);
@@ -127,8 +206,8 @@ function PropertyContent() {
     const start = new Date(checkIn);
     const end = new Date(checkOut);
     const blocked = new Set([
-      ...property.blockedDates.map((d: any) => new Date(d.date).toISOString().split('T')[0]),
-      ...property.bookings.flatMap((b: any) => {
+      ...property.blockedDates.map((d) => new Date(d.date).toISOString().split('T')[0]),
+      ...property.bookings.flatMap((b) => {
         const dates: string[] = [];
         const s = new Date(b.startDate);
         const e = new Date(b.endDate);
@@ -147,8 +226,8 @@ function PropertyContent() {
   // Suggest alternative dates
   const suggestedDates = unavailableOverlap && property ? (() => {
     const blocked = new Set([
-      ...property.blockedDates.map((d: any) => new Date(d.date).toISOString().split('T')[0]),
-      ...property.bookings.flatMap((b: any) => {
+      ...property.blockedDates.map((d) => new Date(d.date).toISOString().split('T')[0]),
+      ...property.bookings.flatMap((b) => {
         const dates: string[] = [];
         const s = new Date(b.startDate);
         const e = new Date(b.endDate);
@@ -211,13 +290,13 @@ function PropertyContent() {
   if (!property) return <div className="max-w-6xl mx-auto p-8 text-red-500">Proprietatea nu a fost găsită.</div>;
 
   const reviewAvg = property.reviews?.length > 0
-    ? property.reviews.reduce((s: number, r: any) => s + r.rating, 0) / property.reviews.length
+    ? property.reviews.reduce((s: number, r) => s + r.rating, 0) / property.reviews.length
     : 0;
 
   // Gather blocked/booked dates for display
   const unavailableDates = [
-    ...property.blockedDates.map((d: any) => new Date(d.date).toISOString().split('T')[0]),
-    ...property.bookings.flatMap((b: any) => {
+    ...property.blockedDates.map((d) => new Date(d.date).toISOString().split('T')[0]),
+    ...property.bookings.flatMap((b) => {
       const dates: string[] = [];
       const start = new Date(b.startDate);
       const end = new Date(b.endDate);
@@ -239,7 +318,7 @@ function PropertyContent() {
         </div>
       ) : property.images.length <= 3 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-2xl overflow-hidden mb-8">
-          {property.images.map((img: any, i: number) => (
+          {property.images.map((img, i) => (
             <div key={img.id} className={`${i === 0 ? 'md:row-span-2' : ''} aspect-[4/3] bg-gray-200 cursor-pointer relative`} onClick={() => setLightboxIndex(i)}>
               <Image src={img.url} alt={`${property.title} – imagine ${i + 1} – cazare ${property.city}`} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority={i === 0} />
             </div>
@@ -247,7 +326,7 @@ function PropertyContent() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-2xl overflow-hidden mb-8">
-          {property.images.slice(0, 5).map((img: any, i: number) => (
+          {property.images.slice(0, 5).map((img, i) => (
             <div key={img.id} className={`${i === 0 ? 'col-span-2 row-span-2' : ''} aspect-[4/3] bg-gray-200 relative cursor-pointer`} onClick={() => setLightboxIndex(i)}>
               <Image src={img.url} alt={`${property.title} – imagine ${i + 1} – cazare ${property.city}`} fill sizes={i === 0 ? '(max-width: 768px) 100vw, 50vw' : '25vw'} className="object-cover" priority={i === 0} />
               {i === 4 && property.images.length > 5 && (
@@ -313,7 +392,7 @@ function PropertyContent() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Facilități</h2>
             <div className="flex flex-wrap gap-2">
-              {property.amenities.map((pa: any) => (
+              {property.amenities.map((pa) => (
                 <span key={pa.amenity.id} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
                   <CheckCircle size={14} className="text-green-500" /> {pa.amenity.name}
                 </span>
@@ -354,7 +433,7 @@ function PropertyContent() {
                 {(Math.round(reviewAvg * 10) / 10).toFixed(1)} · {property.reviews.length} {property.reviews.length === 1 ? 'recenzie' : 'recenzii'}
               </h2>
               <div className="space-y-4">
-                {property.reviews.map((r: any) => (
+                {property.reviews.map((r) => (
                   <div key={r.id} className="card">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-sm">{r.guest.name}</span>
@@ -418,13 +497,13 @@ function PropertyContent() {
                     ) : priceBreakdown ? (
                       <>
                         {/* Check if prices vary across nights */}
-                        {priceBreakdown.nightlyPrices.some((n: any, i: number, arr: any[]) => i > 0 && n.price !== arr[0].price) ? (
+                        {priceBreakdown.nightlyPrices.some((n, i, arr) => i > 0 && n.price !== arr[0].price) ? (
                           <details className="text-xs">
                             <summary className="cursor-pointer text-primary-600 hover:underline">
                               Vezi detalii ({priceBreakdown.nights} nopți)
                             </summary>
                             <div className="mt-2 space-y-1 max-h-32 overflow-y-auto text-gray-600">
-                              {priceBreakdown.nightlyPrices.map((n: any, i: number) => (
+                              {priceBreakdown.nightlyPrices.map((n, i) => (
                                 <div key={i} className="flex justify-between">
                                   <span>{n.date}{n.periodName && ` (${n.periodName})`}</span>
                                   <span>{formatRON(n.price)}</span>
@@ -452,11 +531,11 @@ function PropertyContent() {
                         </div>
 
                         {/* Savings display - only show if user saved money (positive savings) */}
-                        {priceBreakdown.savings > 0 && (
+                        {(priceBreakdown.savings ?? 0) > 0 && (
                           <div className="flex items-center gap-2 mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
                             <Tag size={14} className="text-emerald-600 flex-shrink-0" />
                             <span className="text-xs text-emerald-700">
-                              Economisești <span className="font-bold">{formatRON(priceBreakdown.savings)}</span> față de prețul standard!
+                              Economisești <span className="font-bold">{formatRON(priceBreakdown.savings ?? 0)}</span> față de prețul standard!
                             </span>
                           </div>
                         )}

@@ -6,7 +6,7 @@ import {
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, ExternalLink, MessageSquare, X } from 'lucide-react';
 import { hexToRgba, formatRON } from '@/lib/utils';
-import { BookingData, ManualReservationData, SyncedReservationData } from '@/types';
+import { BookingData, ManualReservationData, SyncedReservationData, CalendarSync } from '@/types';
 import { Locale } from 'date-fns';
 
 // ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ export interface CalendarGridProps {
   blockedDates: Record<string, string[]>;
   manualBlockedDates: Record<string, Set<string>>;
   syncedDates: Record<string, Record<string, string>>;
-  calendarSyncs: Record<string, any[]>;
+  calendarSyncs: Record<string, CalendarSync[]>;
   propBlocked: string[];
   previewDates: Set<string>;
   rangeStart: string | null;
@@ -628,10 +628,10 @@ export function CalendarGrid({
       {/* Legend */}
       <div className="flex flex-wrap gap-4 mt-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> {t.legendBlocked}</span>
-        {!isAllView && (calendarSyncs[activePropId] || []).map((sync: any) => (
+        {!isAllView && (calendarSyncs[activePropId] || []).map((sync: CalendarSync) => (
           <span key={sync.id} className="flex items-center gap-2">
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded border" style={{ backgroundColor: hexToRgba(sync.color, 0.2), borderColor: sync.color }} />
+              <span className="w-3 h-3 rounded border" style={{ backgroundColor: hexToRgba(sync.color, 0.2), borderColor: sync.color ?? undefined }} />
               <span className="capitalize">{sync.platform}</span>
             </span>
             <span className="flex items-center gap-1">

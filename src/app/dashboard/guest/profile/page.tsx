@@ -9,8 +9,43 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 
+interface GuestBooking {
+  id: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  totalPrice: number;
+  property: { id: string; title: string; city?: string; images?: { url: string }[] };
+}
+
+interface GuestReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  host?: { name: string };
+  property: { id: string; title: string; city?: string };
+}
+
+interface GuestHostReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  host?: { name: string };
+}
+
+interface GuestProfileData {
+  guestRating: number | null;
+  guestReviewCount: number;
+  hostReviews: GuestHostReview[];
+  upcomingBookings: GuestBooking[];
+  pastBookings: GuestBooking[];
+  myReviews: GuestReviewItem[];
+}
+
 export default function GuestProfilePage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<GuestProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +66,7 @@ export default function GuestProfilePage() {
     </span>
   );
 
-  const BookingCard = ({ b }: { b: any }) => (
+  const BookingCard = ({ b }: { b: GuestBooking }) => (
     <Link href={`/dashboard/guest/bookings/${b.id}`} className="card hover:shadow-md transition-shadow flex gap-4">
       <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
         {b.property.images?.[0]?.url ? (
@@ -76,7 +111,7 @@ export default function GuestProfilePage() {
         {/* Host reviews about the guest */}
         {data.hostReviews.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-            {data.hostReviews.map((r: any) => (
+            {data.hostReviews.map((r) => (
               <div key={r.id} className="text-sm">
                 <div className="flex items-center gap-2 mb-0.5">
                   {renderStars(r.rating, 14)}
@@ -100,7 +135,7 @@ export default function GuestProfilePage() {
           <p className="text-sm text-gray-500">Nu ai rezervări viitoare.</p>
         ) : (
           <div className="space-y-3">
-            {data.upcomingBookings.map((b: any) => <BookingCard key={b.id} b={b} />)}
+            {data.upcomingBookings.map((b) => <BookingCard key={b.id} b={b} />)}
           </div>
         )}
       </div>
@@ -114,7 +149,7 @@ export default function GuestProfilePage() {
           <p className="text-sm text-gray-500">Nu ai rezervări anterioare.</p>
         ) : (
           <div className="space-y-3">
-            {data.pastBookings.map((b: any) => <BookingCard key={b.id} b={b} />)}
+            {data.pastBookings.map((b) => <BookingCard key={b.id} b={b} />)}
           </div>
         )}
       </div>
@@ -126,7 +161,7 @@ export default function GuestProfilePage() {
             <Star size={18} /> Recenziile mele
           </h2>
           <div className="space-y-3">
-            {data.myReviews.map((r: any) => (
+            {data.myReviews.map((r) => (
               <div key={r.id} className="card">
                 <div className="flex items-center justify-between mb-1">
                   <Link href={`/property/${r.property.id}`} className="font-medium text-sm hover:text-primary-600">

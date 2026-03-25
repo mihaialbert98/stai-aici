@@ -5,6 +5,7 @@ import { X, Lock, Unlock, RefreshCw, Trash2, Copy, Plus, DollarSign, Loader2 } f
 import { formatRON } from '@/lib/utils';
 import { toast } from 'sonner';
 import { ManualReservationData, SyncedReservationData, CalendarSync } from '@/types';
+import { dashboardT } from '@/lib/i18n';
 import { Locale } from 'date-fns';
 
 const SYNC_COLOR_PALETTE = ['#ef4444','#f97316','#f59e0b','#10b981','#06b6d4','#6366f1','#8b5cf6','#ec4899','#64748b'];
@@ -101,8 +102,8 @@ interface CalendarSidebarProps {
   // i18n
   lang: string;
   dateFnsLocale: Locale;
-  t: any;
-  tm: any;
+  t: typeof dashboardT['ro']['calendar'];
+  tm: typeof dashboardT['ro']['manualReservation'];
 
   // Refresh
   refreshCalendarData: () => Promise<void>;
@@ -205,7 +206,7 @@ export function CalendarSidebar({
           {(calendarSyncs[activePropId] || []).length > 0 && (
             <div className="space-y-2 mb-4">
               <p className="text-xs font-medium text-gray-500">{t.connectedCalendars}</p>
-              {(calendarSyncs[activePropId] || []).map((sync: any) => (
+              {(calendarSyncs[activePropId] || []).map((sync: CalendarSync) => (
                 <div key={sync.id} className="flex flex-col gap-2 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm">
                   <div className="flex items-center gap-3">
                     <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: sync.color || '#6366f1' }} />
@@ -252,7 +253,7 @@ export function CalendarSidebar({
                         });
                         setCalendarSyncs(prev => ({
                           ...prev,
-                          [activePropId]: (prev[activePropId] || []).filter((s: any) => s.id !== sync.id),
+                          [activePropId]: (prev[activePropId] || []).filter((s: CalendarSync) => s.id !== sync.id),
                         }));
                         // Remove synced blocked dates for this platform from local state
                         setSyncedDates(prev => {
@@ -289,7 +290,7 @@ export function CalendarSidebar({
                           });
                           setCalendarSyncs(prev => ({
                             ...prev,
-                            [activePropId]: (prev[activePropId] || []).map((s: any) =>
+                            [activePropId]: (prev[activePropId] || []).map((s: CalendarSync) =>
                               s.id === sync.id ? { ...s, color: c } : s
                             ),
                           }));

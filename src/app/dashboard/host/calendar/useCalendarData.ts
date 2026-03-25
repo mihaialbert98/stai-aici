@@ -2,28 +2,42 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
-import { BookingData, ManualReservationData, SyncedReservationData, PeriodPricing } from '@/types';
+import { BookingData, ManualReservationData, SyncedReservationData, PeriodPricing, CalendarSync } from '@/types';
+
+interface BlockedDate {
+  date: string;
+  source: string | null;
+}
+
+interface PropertyWithCalendar {
+  id: string;
+  title: string;
+  pricePerNight: number;
+  blockedDates: BlockedDate[];
+  calendarSyncs: CalendarSync[];
+  periodPricings: PeriodPricing[];
+}
 
 export interface UseCalendarDataReturn {
-  properties: any[];
+  properties: PropertyWithCalendar[];
   bookings: BookingData[];
   manualReservations: ManualReservationData[];
   syncedReservations: SyncedReservationData[];
   manualBlockedDates: Record<string, Set<string>>;
   blockedDates: Record<string, string[]>;
   syncedDates: Record<string, Record<string, string>>;
-  calendarSyncs: Record<string, any[]>;
+  calendarSyncs: Record<string, CalendarSync[]>;
   periodPricings: Record<string, PeriodPricing[]>;
   loading: boolean;
   refetch: () => Promise<void>;
   setBlockedDates: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   setSyncedDates: React.Dispatch<React.SetStateAction<Record<string, Record<string, string>>>>;
-  setCalendarSyncs: React.Dispatch<React.SetStateAction<Record<string, any[]>>>;
+  setCalendarSyncs: React.Dispatch<React.SetStateAction<Record<string, CalendarSync[]>>>;
   setPeriodPricings: React.Dispatch<React.SetStateAction<Record<string, PeriodPricing[]>>>;
 }
 
 export function useCalendarData(onSingleProperty?: (id: string) => void): UseCalendarDataReturn {
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<PropertyWithCalendar[]>([]);
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [manualReservations, setManualReservations] = useState<ManualReservationData[]>([]);
   const [syncedReservations, setSyncedReservations] = useState<SyncedReservationData[]>([]);
@@ -31,10 +45,10 @@ export function useCalendarData(onSingleProperty?: (id: string) => void): UseCal
   const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [syncedDates, setSyncedDates] = useState<Record<string, Record<string, string>>>({});
-  const [calendarSyncs, setCalendarSyncs] = useState<Record<string, any[]>>({});
+  const [calendarSyncs, setCalendarSyncs] = useState<Record<string, CalendarSync[]>>({});
   const [periodPricings, setPeriodPricings] = useState<Record<string, PeriodPricing[]>>({});
 
-  const processCalendarResponse = useCallback((data: any) => {
+  const processCalendarResponse = useCallback((data: { properties?: PropertyWithCalendar[]; bookings?: BookingData[]; manualReservations?: ManualReservationData[]; syncedReservations?: SyncedReservationData[] }) => {
     const myProps = data.properties || [];
     setProperties(myProps);
     setBookings(data.bookings || []);
@@ -48,7 +62,7 @@ export function useCalendarData(onSingleProperty?: (id: string) => void): UseCal
       manualBlocked[p.id] = new Set<string>();
       blocked[p.id] = [];
       synced[p.id] = {};
-      dates.forEach((bd: any) => {
+      dates.forEach((bd: BlockedDate) => {
         const dateStr = format(new Date(bd.date), 'yyyy-MM-dd');
         if (bd.source?.startsWith('external:')) {
           manualBlocked[p.id].add(dateStr);
@@ -63,12 +77,12 @@ export function useCalendarData(onSingleProperty?: (id: string) => void): UseCal
     setBlockedDates(blocked);
     setSyncedDates(synced);
     setManualBlockedDates(manualBlocked);
-    setManualReservations((data.manualReservations || []).map((mr: any) => ({
+    setManualReservations((data.manualReservations || []).map((mr: ManualReservationData) => ({
       ...mr,
       checkIn: format(new Date(mr.checkIn), 'yyyy-MM-dd'),
       checkOut: format(new Date(mr.checkOut), 'yyyy-MM-dd'),
     })));
-    setSyncedReservations((data.syncedReservations || []).map((sr: any) => ({
+    setSyncedReservations((data.syncedReservations || []).map((sr: SyncedReservationData) => ({
       ...sr,
       checkIn: format(new Date(sr.checkIn), 'yyyy-MM-dd'),
       checkOut: format(new Date(sr.checkOut), 'yyyy-MM-dd'),
@@ -88,11 +102,11 @@ export function useCalendarData(onSingleProperty?: (id: string) => void): UseCal
       const myProps = processCalendarResponse(data);
 
       // Also set calendarSyncs and periodPricings on initial load
-      const syncsMap: Record<string, any[]> = {};
+      const syncsMap: Record<string, CalendarSync[]> = {};
       const pricingsMap: Record<string, PeriodPricing[]> = {};
       for (const p of myProps) {
         syncsMap[p.id] = p.calendarSyncs || [];
-        pricingsMap[p.id] = (p.periodPricings || []).map((pp: any) => ({
+        pricingsMap[p.id] = (p.periodPricings || []).map((pp: PeriodPricing) => ({
           id: pp.id,
           name: pp.name,
           startDate: pp.startDate,
