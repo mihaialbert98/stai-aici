@@ -12,31 +12,13 @@ import {
 import Link from 'next/link';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
-import { formatRON } from '@/lib/utils';
+import { formatRON, hexToRgba, statusBadgeClass } from '@/lib/utils';
+import { api } from '@/lib/api-client';
+import { Reservation } from '@/types';
 
 type TimeFilter = 'upcoming' | 'past' | 'all' | 'custom';
 // 'all' | 'manual' | 'synced' | 'synced:[source]' (e.g. 'synced:airbnb')
 type TypeFilter = string;
-
-type Reservation = {
-  id: string;
-  type: 'platform' | 'manual' | 'synced';
-  propertyId: string;
-  propertyTitle: string;
-  guestName: string;
-  guestEmail: string | null;
-  checkIn: string;
-  checkOut: string;
-  nights: number;
-  revenue: number;
-  source: string | null;
-  status: string;
-  notes: string | null;
-  bookingId: string | null;
-  blockCalendar?: boolean;
-  isBlockManual?: boolean | null;
-  color?: string;
-};
 
 type EditForm = {
   guestName: string;
@@ -45,24 +27,6 @@ type EditForm = {
   revenue: string;
   source: string;
   notes: string;
-};
-
-function hexToRgba(hex: string | undefined | null, alpha: number): string {
-  const safe = (hex && /^#[0-9a-f]{6}$/i.test(hex)) ? hex : '#6366f1';
-  const r = parseInt(safe.slice(1, 3), 16);
-  const g = parseInt(safe.slice(3, 5), 16);
-  const b = parseInt(safe.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-const STATUS_STYLE: Record<string, string> = {
-  ACCEPTED: 'bg-green-100 text-green-700',
-  PENDING:  'bg-yellow-100 text-yellow-700',
-  CANCELLED:'bg-gray-100 text-gray-500',
-  REJECTED: 'bg-red-100 text-red-600',
-  MANUAL:   'bg-blue-100 text-blue-700',
-  SYNCED:   'bg-violet-100 text-violet-700',
-  BLOCKED:  'bg-gray-100 text-gray-500',
 };
 
 export default function ReservationsPage() {
@@ -99,7 +63,8 @@ export default function ReservationsPage() {
   const [showSyncedBlockWarn, setShowSyncedBlockWarn] = useState(false);
 
   useEffect(() => {
-    fetch('/api/host/properties').then(r => r.json()).then(d => setProperties(d.properties || []));
+    api.get<{ properties: { id: string; title: string }[] }>('/api/host/properties')
+      .then(d => setProperties(d.properties || []));
   }, []);
 
   const fetchReservations = useCallback(async () => {
@@ -126,7 +91,14 @@ export default function ReservationsPage() {
     params.set('page', String(page));
 
     try {
-      const data = await fetch(`/api/host/reservations?${params}`).then(r => r.json());
+      const data = await api.get<{
+        reservations: Reservation[];
+        total: number;
+        totalPages: number;
+        page: number;
+        totalRevenue: number;
+        platforms: { source: string; color: string }[];
+      }>(`/api/host/reservations?${params}`);
       setReservations(data.reservations || []);
       setTotalRevenue(data.totalRevenue || 0);
       setPaginationData({ total: data.total ?? 0, totalPages: data.totalPages ?? 1, page: data.page ?? page });
@@ -161,18 +133,14 @@ export default function ReservationsPage() {
     if (!editingManual) return;
     setSavingEdit(true);
     try {
-      await fetch(`/api/host/manual-reservations/${editingManual.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestName: editForm.guestName || null,
-          checkIn: editForm.checkIn,
-          checkOut: editForm.checkOut,
-          revenue: parseFloat(editForm.revenue) || 0,
-          source: editForm.source || null,
-          notes: editForm.notes || null,
-          blockCalendar: true,
-        }),
+      await api.put(`/api/host/manual-reservations/${editingManual.id}`, {
+        guestName: editForm.guestName || null,
+        checkIn: editForm.checkIn,
+        checkOut: editForm.checkOut,
+        revenue: parseFloat(editForm.revenue) || 0,
+        source: editForm.source || null,
+        notes: editForm.notes || null,
+        blockCalendar: true,
       });
       setEditingManual(null);
       fetchReservations();
@@ -185,7 +153,7 @@ export default function ReservationsPage() {
     if (!editingManual || !confirm(tm.deleteConfirm)) return;
     setDeletingEdit(true);
     try {
-      await fetch(`/api/host/manual-reservations/${editingManual.id}`, { method: 'DELETE' });
+      await api.delete(`/api/host/manual-reservations/${editingManual.id}`);
       setEditingManual(null);
       fetchReservations();
     } finally {
@@ -202,15 +170,11 @@ export default function ReservationsPage() {
     if (!editingSynced) return;
     setSavingSyncedEdit(true);
     try {
-      await fetch(`/api/host/synced-reservations/${editingSynced.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestName: editSyncedForm.guestName || null,
-          revenue: editSyncedForm.isBlockManual === true ? 0 : (parseFloat(editSyncedForm.revenue) || 0),
-          notes: editSyncedForm.notes || null,
-          isBlockManual: editSyncedForm.isBlockManual,
-        }),
+      await api.put(`/api/host/synced-reservations/${editingSynced.id}`, {
+        guestName: editSyncedForm.guestName || null,
+        revenue: editSyncedForm.isBlockManual === true ? 0 : (parseFloat(editSyncedForm.revenue) || 0),
+        notes: editSyncedForm.notes || null,
+        isBlockManual: editSyncedForm.isBlockManual,
       });
       setEditingSynced(null);
       fetchReservations();
@@ -461,7 +425,7 @@ export default function ReservationsPage() {
                     {r.status !== 'BLOCKED' && (
                       <p className="font-bold text-green-600">{formatRON(r.revenue)}</p>
                     )}
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLE[r.status] || 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusBadgeClass(r.status)}`}>
                       {statusLabel(r.status)}
                     </span>
                   </div>
