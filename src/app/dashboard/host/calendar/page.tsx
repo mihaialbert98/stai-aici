@@ -12,6 +12,7 @@ import { formatRON } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
+import { useCalendarState, BookingData, ManualReservationData, SyncedReservationData } from './useCalendarState';
 
 interface PeriodPricing {
   id: string;
@@ -19,43 +20,6 @@ interface PeriodPricing {
   startDate: string;
   endDate: string;
   pricePerNight: number;
-}
-
-interface ManualReservationData {
-  id: string;
-  propertyId: string;
-  guestName: string | null;
-  checkIn: string;
-  checkOut: string;
-  revenue: number;
-  source: string | null;
-  notes: string | null;
-  blockCalendar: boolean;
-}
-
-interface SyncedReservationData {
-  id: string;
-  propertyId: string;
-  source: string;
-  checkIn: string;
-  checkOut: string;
-  guestName: string | null;
-  revenue: number;
-  notes: string | null;
-  isBlock: boolean;
-  isBlockManual: boolean | null;
-  summary: string | null;
-}
-
-interface BookingData {
-  id: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  totalPrice: number;
-  guests: number;
-  guest: { id: string; name: string; email: string };
-  property: { id: string; title: string; images: { url: string }[] };
 }
 
 const PROPERTY_COLORS = [
@@ -88,57 +52,51 @@ export default function HostCalendarPage() {
   const lang = useLang();
   const t = dashboardT[lang].calendar;
   const dateFnsLocale = lang === 'ro' ? ro : enUS;
+  // Data-fetching state (kept in page.tsx)
   const [properties, setProperties] = useState<any[]>([]);
-  const [activePropId, setActivePropId] = useState<string>('all');
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [manualReservations, setManualReservations] = useState<ManualReservationData[]>([]);
   const [syncedReservations, setSyncedReservations] = useState<SyncedReservationData[]>([]);
   const [manualBlockedDates, setManualBlockedDates] = useState<Record<string, Set<string>>>({});
-  const [editingManual, setEditingManual] = useState<ManualReservationData | null>(null);
-  const [editManualForm, setEditManualForm] = useState({ guestName: '', checkIn: '', checkOut: '', revenue: '', source: '', notes: '' });
-  const [savingManualEdit, setSavingManualEdit] = useState(false);
-  const [editingSynced, setEditingSynced] = useState<SyncedReservationData | null>(null);
-  const [editSyncedForm, setEditSyncedForm] = useState({ guestName: '', revenue: '', notes: '', isBlockManual: null as boolean | null });
-  const [showSyncedBlockWarn, setShowSyncedBlockWarn] = useState(false);
-  const [savingSyncedEdit, setSavingSyncedEdit] = useState(false);
   const [blockedDates, setBlockedDates] = useState<Record<string, string[]>>({});
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  const [tooltip, setTooltip] = useState<{ booking: BookingData; x: number; y: number } | null>(null);
-  const [overflowTooltip, setOverflowTooltip] = useState<{ bookings: BookingData[]; x: number; y: number } | null>(null);
-  const [blockedTooltip, setBlockedTooltip] = useState<{ properties: string[]; x: number; y: number } | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Range selection state
-  const [rangeStart, setRangeStart] = useState<string | null>(null);
-  const [rangeEnd, setRangeEnd] = useState<string | null>(null);
-  const [hoverDate, setHoverDate] = useState<string | null>(null);
-  const [blocking, setBlocking] = useState(false);
-  const [conflictMsg, setConflictMsg] = useState<string | null>(null);
-
-  // Sync state
   const [syncedDates, setSyncedDates] = useState<Record<string, Record<string, string>>>({});
   // syncedDates[propertyId][dateStr] = source (e.g. "booking", "airbnb")
   const [calendarSyncs, setCalendarSyncs] = useState<Record<string, any[]>>({});
-  const [showSyncForm, setShowSyncForm] = useState(false);
-  const [syncPlatform, setSyncPlatform] = useState('booking');
-  const [syncUrl, setSyncUrl] = useState('');
-  const [syncColor, setSyncColor] = useState('#6366f1');
-  const [syncingId, setSyncingId] = useState<string | null>(null);
-
-  // Period pricing state
   const [periodPricings, setPeriodPricings] = useState<Record<string, PeriodPricing[]>>({});
-  const [showPriceModal, setShowPriceModal] = useState(false);
-  const [priceForm, setPriceForm] = useState({ name: '', pricePerNight: 0 });
-  const [savingPrice, setSavingPrice] = useState(false);
 
-  // Manual reservation modal state
-  const [showManualModal, setShowManualModal] = useState(false);
-  const [manualForm, setManualForm] = useState({
-    propertyId: '', guestName: '', checkIn: '', checkOut: '',
-    revenue: '', source: '', notes: '', blockCalendar: true,
-  });
-  const [savingManual, setSavingManual] = useState(false);
+  // UI state (from useCalendarState hook)
+  const {
+    activePropId, setActivePropId,
+    currentMonth, setCurrentMonth,
+    isMobile, setIsMobile,
+    tooltip, setTooltip,
+    overflowTooltip, setOverflowTooltip,
+    blockedTooltip, setBlockedTooltip,
+    editingManual, setEditingManual,
+    editManualForm, setEditManualForm,
+    savingManualEdit, setSavingManualEdit,
+    editingSynced, setEditingSynced,
+    editSyncedForm, setEditSyncedForm,
+    showSyncedBlockWarn, setShowSyncedBlockWarn,
+    savingSyncedEdit, setSavingSyncedEdit,
+    rangeStart, setRangeStart,
+    rangeEnd, setRangeEnd,
+    hoverDate, setHoverDate,
+    blocking, setBlocking,
+    conflictMsg, setConflictMsg,
+    showSyncForm, setShowSyncForm,
+    syncPlatform, setSyncPlatform,
+    syncUrl, setSyncUrl,
+    syncColor, setSyncColor,
+    syncingId, setSyncingId,
+    showPriceModal, setShowPriceModal,
+    priceForm, setPriceForm,
+    savingPrice, setSavingPrice,
+    showManualModal, setShowManualModal,
+    manualForm, setManualForm,
+    savingManual, setSavingManual,
+  } = useCalendarState();
   const tm = dashboardT[lang].manualReservation;
 
   const gridRef = useRef<HTMLDivElement>(null);
