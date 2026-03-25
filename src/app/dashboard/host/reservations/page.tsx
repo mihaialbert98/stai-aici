@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useDropdown } from '@/hooks/useDropdown';
 import { usePagination } from '@/hooks/usePagination';
+import { Dropdown } from '@/components/Dropdown';
 import { format, startOfDay } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import {
@@ -270,78 +271,90 @@ export default function ReservationsPage() {
           </div>
 
           {/* Type / platform filter dropdown */}
-          <div className="relative" ref={typeDropdownRef}>
+          <div>
             <p className="text-xs font-medium text-gray-500 mb-1.5">{lang === 'ro' ? 'Tip' : 'Type'}</p>
-            <button
-              onClick={() => setTypeOpen(o => !o)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition min-w-[160px]"
-            >
-              <span className="flex-1 text-left truncate">
-                {typeFilter === 'all'
-                  ? (lang === 'ro' ? 'Toate rezervările' : 'All reservations')
-                  : typeFilter === 'manual'
-                  ? (lang === 'ro' ? 'Rezervări manuale' : 'Manual reservations')
-                  : typeFilter === 'synced'
-                  ? (lang === 'ro' ? 'Externe (toate)' : 'External (all)')
-                  : typeFilter.startsWith('synced:')
-                  ? typeFilter.slice('synced:'.length)
-                  : typeFilter}
-              </span>
-              {typeOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {typeOpen && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-20 w-56">
-                {[
-                  { value: 'all', label: lang === 'ro' ? 'Toate rezervările' : 'All reservations' },
-                  { value: 'manual', label: lang === 'ro' ? 'Rezervări manuale' : 'Manual reservations' },
-                  { value: 'synced', label: lang === 'ro' ? 'Externe (toate)' : 'External (all)' },
-                  ...platforms.map(p => ({ value: `synced:${p.source}`, label: p.source, color: p.color })),
-                ].map(opt => (
+            <div ref={typeDropdownRef}>
+              <Dropdown
+                open={typeOpen}
+                onToggle={() => setTypeOpen(o => !o)}
+                trigger={
                   <button
-                    key={opt.value}
-                    onClick={() => { setTypeFilter(opt.value); setTypeOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 flex items-center gap-2 ${typeFilter === opt.value ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition min-w-[160px]"
                   >
-                    {'color' in opt && opt.color && (
-                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />
-                    )}
-                    {opt.label}
+                    <span className="flex-1 text-left truncate">
+                      {typeFilter === 'all'
+                        ? (lang === 'ro' ? 'Toate rezervările' : 'All reservations')
+                        : typeFilter === 'manual'
+                        ? (lang === 'ro' ? 'Rezervări manuale' : 'Manual reservations')
+                        : typeFilter === 'synced'
+                        ? (lang === 'ro' ? 'Externe (toate)' : 'External (all)')
+                        : typeFilter.startsWith('synced:')
+                        ? typeFilter.slice('synced:'.length)
+                        : typeFilter}
+                    </span>
+                    {typeOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
-                ))}
-              </div>
-            )}
+                }
+              >
+                <div className="py-1 w-56">
+                  {[
+                    { value: 'all', label: lang === 'ro' ? 'Toate rezervările' : 'All reservations' },
+                    { value: 'manual', label: lang === 'ro' ? 'Rezervări manuale' : 'Manual reservations' },
+                    { value: 'synced', label: lang === 'ro' ? 'Externe (toate)' : 'External (all)' },
+                    ...platforms.map(p => ({ value: `synced:${p.source}`, label: p.source, color: p.color })),
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setTypeFilter(opt.value); setTypeOpen(false); }}
+                      className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 flex items-center gap-2 ${typeFilter === opt.value ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
+                    >
+                      {'color' in opt && opt.color && (
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: opt.color }} />
+                      )}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </Dropdown>
+            </div>
           </div>
 
           {/* Property filter */}
           {properties.length > 1 && (
-            <div className="relative" ref={propDropdownRef}>
+            <div>
               <p className="text-xs font-medium text-gray-500 mb-1.5">{lang === 'ro' ? 'Proprietate' : 'Property'}</p>
-              <button
-                onClick={() => setPropOpen(o => !o)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
-              >
-                <span className="max-w-[140px] truncate">{propLabel}</span>
-                {propOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {propOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-20 w-56">
-                  <button
-                    onClick={() => { setSelectedPropId(''); setPropOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 ${!selectedPropId ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
-                  >
-                    {t.allProperties}
-                  </button>
-                  {properties.map(p => (
+              <div ref={propDropdownRef}>
+                <Dropdown
+                  open={propOpen}
+                  onToggle={() => setPropOpen(o => !o)}
+                  trigger={
                     <button
-                      key={p.id}
-                      onClick={() => { setSelectedPropId(p.id); setPropOpen(false); }}
-                      className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 truncate ${selectedPropId === p.id ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
                     >
-                      {p.title}
+                      <span className="max-w-[140px] truncate">{propLabel}</span>
+                      {propOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
-                  ))}
-                </div>
-              )}
+                  }
+                >
+                  <div className="py-1 w-56">
+                    <button
+                      onClick={() => { setSelectedPropId(''); setPropOpen(false); }}
+                      className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 ${!selectedPropId ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
+                    >
+                      {t.allProperties}
+                    </button>
+                    {properties.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedPropId(p.id); setPropOpen(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm bg-white hover:bg-gray-50 truncate ${selectedPropId === p.id ? 'text-primary-600 font-medium' : 'text-gray-700'}`}
+                      >
+                        {p.title}
+                      </button>
+                    ))}
+                  </div>
+                </Dropdown>
+              </div>
             </div>
           )}
         </div>
