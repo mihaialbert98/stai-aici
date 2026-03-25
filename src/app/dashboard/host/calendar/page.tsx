@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useDropdown } from '@/hooks/useDropdown';
 import {
   format, addDays, addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
   getDay, isToday, parseISO, isSameDay, isBefore, isAfter, isWithinInterval,
@@ -141,8 +142,7 @@ export default function HostCalendarPage() {
   const tm = dashboardT[lang].manualReservation;
 
   const gridRef = useRef<HTMLDivElement>(null);
-  const propDropdownRef = useRef<HTMLDivElement>(null);
-  const [propDropdownOpen, setPropDropdownOpen] = useState(false);
+  const { open: propDropdownOpen, setOpen: setPropDropdownOpen, ref: propDropdownRef } = useDropdown();
 
   const isAllView = activePropId === 'all';
   const activeProp = properties.find(p => p.id === activePropId);
@@ -259,9 +259,6 @@ export default function HostCalendarPage() {
         setTooltip(null);
         setOverflowTooltip(null);
         setBlockedTooltip(null);
-      }
-      if (propDropdownRef.current && !propDropdownRef.current.contains(target)) {
-        setPropDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);

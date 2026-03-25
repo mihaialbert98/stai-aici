@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useDropdown } from '@/hooks/useDropdown';
 import { CheckSquare, Square, Pencil, Trash2, Plus, Loader2, ClipboardList, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
@@ -21,8 +22,7 @@ export default function TasksPage() {
 
   const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
   const [selectedPropId, setSelectedPropId] = useState('');
-  const [propOpen, setPropOpen] = useState(false);
-  const propDropdownRef = useRef<HTMLDivElement>(null);
+  const { open: propOpen, setOpen: setPropOpen, ref: propDropdownRef } = useDropdown();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(false);
@@ -51,16 +51,6 @@ export default function TasksPage() {
         if (props.length > 0) setSelectedPropId(props[0].id);
         setInitialLoad(true);
       });
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (propDropdownRef.current && !propDropdownRef.current.contains(e.target as Node)) {
-        setPropOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const fetchTasks = useCallback(async () => {

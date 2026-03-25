@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useDropdown } from '@/hooks/useDropdown';
 import { format, startOfDay } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import {
@@ -81,13 +82,11 @@ export default function ReservationsPage() {
   const [customTo, setCustomTo] = useState('');
 
   const [platforms, setPlatforms] = useState<{ source: string; color: string }[]>([]);
-  const [typeOpen, setTypeOpen] = useState(false);
-  const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const { open: typeOpen, setOpen: setTypeOpen, ref: typeDropdownRef } = useDropdown();
 
   const [properties, setProperties] = useState<{ id: string; title: string }[]>([]);
   const [selectedPropId, setSelectedPropId] = useState('');
-  const [propOpen, setPropOpen] = useState(false);
-  const propDropdownRef = useRef<HTMLDivElement>(null);
+  const { open: propOpen, setOpen: setPropOpen, ref: propDropdownRef } = useDropdown();
 
   const [editingManual, setEditingManual] = useState<Reservation | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({ guestName: '', checkIn: '', checkOut: '', revenue: '', source: '', notes: '' });
@@ -101,19 +100,6 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     fetch('/api/host/properties').then(r => r.json()).then(d => setProperties(d.properties || []));
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (propDropdownRef.current && !propDropdownRef.current.contains(e.target as Node)) {
-        setPropOpen(false);
-      }
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target as Node)) {
-        setTypeOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const fetchReservations = useCallback(async () => {
