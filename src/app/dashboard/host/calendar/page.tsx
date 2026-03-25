@@ -12,7 +12,8 @@ import { formatRON } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
-import { useCalendarState, BookingData, ManualReservationData, SyncedReservationData } from './useCalendarState';
+import { useCalendarState } from './useCalendarState';
+import { BookingData, ManualReservationData, SyncedReservationData } from '@/types';
 
 interface PeriodPricing {
   id: string;

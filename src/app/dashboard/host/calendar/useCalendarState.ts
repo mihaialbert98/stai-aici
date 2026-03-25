@@ -1,42 +1,6 @@
 'use client';
 import { useState } from 'react';
-
-export interface ManualReservationData {
-  id: string;
-  propertyId: string;
-  guestName: string | null;
-  checkIn: string;
-  checkOut: string;
-  revenue: number;
-  source: string | null;
-  notes: string | null;
-  blockCalendar: boolean;
-}
-
-export interface SyncedReservationData {
-  id: string;
-  propertyId: string;
-  source: string;
-  checkIn: string;
-  checkOut: string;
-  guestName: string | null;
-  revenue: number;
-  notes: string | null;
-  isBlock: boolean;
-  isBlockManual: boolean | null;
-  summary: string | null;
-}
-
-export interface BookingData {
-  id: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  totalPrice: number;
-  guests: number;
-  guest: { id: string; name: string; email: string };
-  property: { id: string; title: string; images: { url: string }[] };
-}
+import { BookingData, ManualReservationData, SyncedReservationData } from '@/types';
 
 export function useCalendarState() {
   // Property selector
