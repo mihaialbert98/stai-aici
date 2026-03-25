@@ -89,7 +89,7 @@ export async function POST(
     return NextResponse.json({ periodPricing }, { status: 201 });
   } catch (err: any) {
     log.error('Failed to create period pricing', err, { propertyId: params.id });
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err?.name === 'ZodError' ? err.message : 'Eroare internă' }, { status: 400 });
   }
 }
 
@@ -155,7 +155,7 @@ export async function PUT(
     log.error('Failed to update period pricing', err, {
       propertyId: params.id,
     });
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err?.name === 'ZodError' ? err.message : 'Eroare internă' }, { status: 400 });
   }
 }
 
@@ -209,6 +209,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     log.error('Failed to delete period pricing', err, { propertyId: params.id });
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err?.name === 'ZodError' ? err.message : 'Eroare internă' }, { status: 400 });
   }
 }

@@ -56,6 +56,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const { status } = await req.json();
 
+  // Whitelist allowed status values — reject anything else before ownership checks
+  const ALLOWED_STATUSES = ['ACCEPTED', 'REJECTED', 'CANCELLED'];
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'Status invalid' }, { status: 400 });
+  }
+
   // Host can accept/reject pending bookings
   if ((status === 'ACCEPTED' || status === 'REJECTED') && booking.hostId !== session.userId && session.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Doar gazda poate modifica statusul' }, { status: 403 });

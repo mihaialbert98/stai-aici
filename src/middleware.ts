@@ -41,6 +41,10 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/admin') && session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
     }
+    // Host-only API routes
+    if (pathname.startsWith('/api/host/') && session.role !== 'HOST' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
+    }
     return NextResponse.next();
   }
 

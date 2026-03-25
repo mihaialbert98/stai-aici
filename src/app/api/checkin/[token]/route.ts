@@ -7,7 +7,17 @@ export const dynamic = 'force-dynamic';
 export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
   const link = await prisma.checkInLink.findUnique({
     where: { token: params.token },
-    include: {
+    select: {
+      isActive: true,
+      checkInFrom: true, checkInTo: true, checkOutBy: true,
+      parkingAvailable: true, parkingInfo: true, parkingLocation: true, parkingCode: true, transportInfo: true,
+      buildingEntrance: true, buildingFloor: true, buildingCode: true, buildingNotes: true,
+      accessType: true, accessCode: true, accessLocation: true, accessNotes: true,
+      wifiName: true, wifiPassword: true,
+      apartmentGuide: true, houseRules: true,
+      checkOutNotes: true,
+      hostPhone: true, emergencyPhone: true,
+      videoUrl: true,
       property: {
         select: {
           title: true,

@@ -76,8 +76,36 @@ async function deduplicateSyncedBlocks(propertyId: string) {
   }
 }
 
+/** Reject URLs pointing to private/internal infrastructure */
+function validateIcalUrl(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return 'URL iCal invalid';
+  }
+  if (parsed.protocol !== 'https:') return 'URL-ul iCal trebuie să fie HTTPS';
+  const host = parsed.hostname.toLowerCase();
+  // Reject localhost and private IP ranges
+  if (
+    host === 'localhost' ||
+    host === '0.0.0.0' ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^169\.254\./.test(host) ||
+    host === '::1'
+  ) {
+    return 'URL iCal nepermis';
+  }
+  return null;
+}
+
 async function syncSingleCalendar(sync: { id: string; propertyId: string; platform: string; icalUrl: string }) {
-  const res = await fetch(sync.icalUrl, { cache: 'no-store' });
+  const urlError = validateIcalUrl(sync.icalUrl);
+  if (urlError) throw new Error(urlError);
+  const res = await fetch(sync.icalUrl, { cache: 'no-store', redirect: 'error' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
   const events = parseIcalEvents(text);
@@ -217,6 +245,10 @@ export async function POST(
   if (!platform || !icalUrl) {
     return NextResponse.json({ error: 'Platforma și URL-ul sunt necesare' }, { status: 400 });
   }
+  const urlError = validateIcalUrl(icalUrl);
+  if (urlError) {
+    return NextResponse.json({ error: urlError }, { status: 400 });
+  }
 
   // Auto-assign a color from the palette based on how many syncs already exist
   const PALETTE = ['#ef4444','#f97316','#f59e0b','#10b981','#06b6d4','#6366f1','#8b5cf6','#ec4899','#64748b'];
@@ -314,6 +346,6 @@ export async function PATCH(
     const result = await syncSingleCalendar(sync);
     return NextResponse.json({ ok: true, dates: result.dates, lastSynced: new Date() });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Eroare la sincronizare' }, { status: 500 });
+    return NextResponse.json({ error: 'Eroare la sincronizare' }, { status: 500 });
   }
 }

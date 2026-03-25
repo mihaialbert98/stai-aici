@@ -53,6 +53,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     videoUrl,
   } = body;
 
+  // Validate videoUrl — must be HTTPS from an allowed video host
+  if (videoUrl) {
+    const ALLOWED_VIDEO_HOSTS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'player.vimeo.com', 'vimeo.com'];
+    try {
+      const parsed = new URL(videoUrl);
+      if (parsed.protocol !== 'https:') {
+        return NextResponse.json({ error: 'URL-ul video trebuie să fie HTTPS' }, { status: 400 });
+      }
+      if (!ALLOWED_VIDEO_HOSTS.includes(parsed.hostname)) {
+        return NextResponse.json({ error: 'Sunt acceptate doar URL-uri YouTube sau Vimeo' }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'URL video invalid' }, { status: 400 });
+    }
+  }
+
   const data = {
     isActive: isActive ?? true,
     checkInFrom: checkInFrom || null,

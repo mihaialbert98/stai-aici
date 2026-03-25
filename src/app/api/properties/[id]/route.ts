@@ -72,6 +72,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     return NextResponse.json({ property: updated });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err?.name === 'ZodError' ? err.message : 'Eroare internă' }, { status: 400 });
   }
 }

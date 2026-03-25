@@ -63,6 +63,9 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
   if (!String(signatureImage).startsWith('data:image/')) {
     return NextResponse.json({ error: 'Semnătura este invalidă' }, { status: 400 });
   }
+  if (String(signatureImage).length > 500_000) {
+    return NextResponse.json({ error: 'Semnătura depășește dimensiunea maximă permisă' }, { status: 400 });
+  }
 
   const seriesValue = requiresSeries ? sanitizeText(String(idSeries)) : '';
 

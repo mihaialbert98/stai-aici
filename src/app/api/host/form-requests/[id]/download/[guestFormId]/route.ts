@@ -48,7 +48,10 @@ export async function GET(
 
   // Legacy: content stored on filesystem
   if (guestForm.wordFilePath && guestForm.wordFilePath !== 'db') {
-    const absolutePath = path.join(process.cwd(), guestForm.wordFilePath);
+    const absolutePath = path.resolve(process.cwd(), guestForm.wordFilePath);
+    if (!absolutePath.startsWith(process.cwd() + path.sep)) {
+      return NextResponse.json({ error: 'Cale de fișier invalidă' }, { status: 400 });
+    }
     if (fs.existsSync(absolutePath)) {
       const fileBuffer = fs.readFileSync(absolutePath);
       return new NextResponse(new Uint8Array(fileBuffer), {

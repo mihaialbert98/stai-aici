@@ -33,6 +33,9 @@ export async function PUT(req: NextRequest) {
   if (!signature || !String(signature).startsWith('data:image/')) {
     return NextResponse.json({ error: 'Semnătură invalidă' }, { status: 400 });
   }
+  if (String(signature).length > 500_000) {
+    return NextResponse.json({ error: 'Semnătura depășește dimensiunea maximă permisă' }, { status: 400 });
+  }
 
   await prisma.user.update({
     where: { id: session.userId },

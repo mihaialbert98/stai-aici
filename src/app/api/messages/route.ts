@@ -77,6 +77,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err?.name === 'ZodError' ? err.message : 'Eroare internă' }, { status: 400 });
   }
 }

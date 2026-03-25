@@ -46,12 +46,15 @@ export async function DELETE(req: NextRequest) {
   const { url } = await req.json();
   if (!url) return NextResponse.json({ error: 'URL necesar' }, { status: 400 });
 
-  // Check if this image belongs to another user's property
+  // Ownership check — only delete blobs that belong to the calling user's property
   const image = await prisma.propertyImage.findFirst({
     where: { url },
     include: { property: { select: { hostId: true } } },
   });
-  if (image && image.property.hostId !== session.userId && session.role !== 'ADMIN') {
+  if (!image) {
+    return NextResponse.json({ error: 'Imagine negăsită' }, { status: 404 });
+  }
+  if (image.property.hostId !== session.userId && session.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Nu ai permisiunea să ștergi această imagine' }, { status: 403 });
   }
 

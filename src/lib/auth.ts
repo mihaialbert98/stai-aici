@@ -22,6 +22,8 @@ export async function createToken(payload: SessionPayload): Promise<string> {
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, secret);
+    // Reject purpose-scoped tokens (verification, reset) — they must not be used as sessions
+    if ((payload as any).purpose) return null;
     return payload as unknown as SessionPayload;
   } catch {
     return null;

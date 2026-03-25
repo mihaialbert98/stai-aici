@@ -16,6 +16,25 @@ function isBlockEvent(summary: string | null, nights: number): boolean {
   return BLOCK_SUMMARY_RE.test(summary);
 }
 
+/** Reject URLs pointing to private/internal infrastructure */
+function validateIcalUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== 'https:') return false;
+  const host = parsed.hostname.toLowerCase();
+  if (
+    host === 'localhost' || host === '0.0.0.0' ||
+    /^127\./.test(host) || /^10\./.test(host) ||
+    /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^169\.254\./.test(host) || host === '::1'
+  ) return false;
+  return true;
+}
+
 /** Simple iCal parser — extracts VEVENT date ranges + SUMMARY */
 function parseIcalEvents(text: string): { start: Date; end: Date; summary: string | null }[] {
   const events: { start: Date; end: Date; summary: string | null }[] = [];
@@ -87,7 +106,7 @@ async function deduplicateSyncedBlocks(propertyId: string) {
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -101,7 +120,8 @@ export async function GET(req: NextRequest) {
 
   for (const sync of syncs) {
     try {
-      const res = await fetch(sync.icalUrl, { cache: 'no-store' });
+      if (!validateIcalUrl(sync.icalUrl)) throw new Error('URL iCal nepermis');
+      const res = await fetch(sync.icalUrl, { cache: 'no-store', redirect: 'error' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       const events = parseIcalEvents(text);

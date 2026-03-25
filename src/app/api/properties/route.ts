@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ properties: propertiesWithRating, total, pages: Math.ceil(total / limit) });
   } catch (err: any) {
     logger.error('GET /api/properties failed', err);
-    return NextResponse.json({ error: err.message, properties: [], total: 0, pages: 0 }, { status: 500 });
+    return NextResponse.json({ error: 'Eroare internă', properties: [], total: 0, pages: 0 }, { status: 500 });
   }
 }
 
@@ -127,6 +127,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ property }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json({ error: err?.name === 'ZodError' ? err.message : 'Eroare internă' }, { status: 400 });
   }
 }

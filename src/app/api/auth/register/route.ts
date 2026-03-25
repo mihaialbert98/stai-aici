@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
-      data: { email: data.email, passwordHash, name: data.name, role: data.role as any },
+      data: { email: data.email, passwordHash, name: data.name, role: data.role },
     });
 
     const token = await createVerificationToken(user.id, user.email);
