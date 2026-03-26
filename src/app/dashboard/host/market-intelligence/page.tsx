@@ -103,7 +103,7 @@ export default function MarketIntelligencePage() {
       setDays(diffDays > 0 ? diffDays : 30);
       setOccupancy(getOccupancyDefault(city, checkinDate.getMonth() + 1));
     } catch {
-      setErrorMsg('Eroare de rețea. Încearcă din nou.');
+      setErrorMsg(t.networkError);
       setStatus('error');
     }
   }
@@ -220,7 +220,7 @@ export default function MarketIntelligencePage() {
         {status === 'loading' && (
           <div className="flex items-center justify-center h-64 bg-white border border-gray-200 rounded-lg text-gray-400 text-sm gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />
-            Se caută listări...
+            {t.loading}
           </div>
         )}
 

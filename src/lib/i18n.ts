@@ -428,6 +428,8 @@ export const dashboardT = {
       retry: 'Încearcă din nou',
       viewOnAirbnb: 'Vezi pe Airbnb',
       cachedNote: (date: string) => `Date din cache — actualizate la ${date}`,
+      loading: 'Se caută listări...',
+      networkError: 'Eroare de rețea. Încearcă din nou.',
     },
     guestNav: {
       title: 'Contul meu',
@@ -859,6 +861,8 @@ export const dashboardT = {
       retry: 'Try again',
       viewOnAirbnb: 'View on Airbnb',
       cachedNote: (date: string) => `Cached data — updated at ${date}`,
+      loading: 'Searching listings...',
+      networkError: 'Network error. Please try again.',
     },
     guestNav: {
       title: 'My account',
