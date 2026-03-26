@@ -20,6 +20,7 @@ vi.mock('@/lib/airbnb-scraper', () => ({
 
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { searchAirbnb } from '@/lib/airbnb-scraper';
 
 const mockSession = { userId: 'user1', role: 'HOST', email: 'host@test.com' };
 
@@ -40,6 +41,8 @@ const validParams = {
 describe('GET /api/host/market-intelligence', () => {
   beforeEach(() => {
     vi.mocked(getSession).mockResolvedValue(mockSession as any);
+    vi.mocked(prisma.marketSearchCache.findUnique).mockResolvedValue(null);
+    vi.mocked(searchAirbnb).mockResolvedValue([]);
   });
 
   it('returns 403 when not authenticated', async () => {
@@ -92,5 +95,29 @@ describe('GET /api/host/market-intelligence', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.cached).toBe(true);
+  });
+
+  it('returns 403 when role is GUEST', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 'u1', role: 'GUEST', email: 'g@test.com' } as any);
+    const res = await GET(makeRequest(validParams));
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 200 when role is ADMIN', async () => {
+    vi.mocked(getSession).mockResolvedValue({ userId: 'u1', role: 'ADMIN', email: 'a@test.com' } as any);
+    const res = await GET(makeRequest(validParams));
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 502 when Airbnb returns 403', async () => {
+    vi.mocked(searchAirbnb).mockRejectedValueOnce(new Error('Airbnb API returned 403'));
+    const res = await GET(makeRequest(validParams));
+    expect(res.status).toBe(502);
+  });
+
+  it('returns 504 when Airbnb times out', async () => {
+    vi.mocked(searchAirbnb).mockRejectedValueOnce(new Error('The operation was aborted'));
+    const res = await GET(makeRequest(validParams));
+    expect(res.status).toBe(504);
   });
 });
