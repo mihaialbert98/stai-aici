@@ -1,0 +1,66 @@
+<h2>Market Intelligence — Page Layout</h2>
+<p class="subtitle">Which layout feels right for the filters + results?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8f9fa;border-radius:6px;">
+      <div class="mock-nav" style="margin-bottom:10px;font-size:11px;">Filters</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;background:#e2e8f0;border-radius:4px;padding:6px;font-size:10px;">📍 City</div>
+        <div style="flex:1;background:#e2e8f0;border-radius:4px;padding:6px;font-size:10px;">👥 Guests</div>
+        <div style="flex:1;background:#e2e8f0;border-radius:4px;padding:6px;font-size:10px;">📅 Dates</div>
+        <div style="flex:2;background:#e2e8f0;border-radius:4px;padding:6px;font-size:10px;">✓ Amenities</div>
+        <div style="background:#3b82f6;color:white;border-radius:4px;padding:6px;font-size:10px;">Search</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;background:#dbeafe;border-radius:4px;padding:8px;text-align:center;font-size:10px;"><div style="font-weight:bold;font-size:14px;">245 RON</div>avg/night</div>
+        <div style="flex:1;background:#dcfce7;border-radius:4px;padding:8px;text-align:center;font-size:10px;"><div style="font-weight:bold;font-size:14px;">210 RON</div>median</div>
+        <div style="flex:1;background:#fef9c3;border-radius:4px;padding:8px;text-align:center;font-size:10px;"><div style="font-weight:bold;font-size:14px;">4,900 RON</div>est. revenue/mo</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:6px;font-size:9px;">🏠 Apt · 2BR<br><b>280 RON</b></div>
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:6px;font-size:9px;">🏠 Studio<br><b>195 RON</b></div>
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:6px;font-size:9px;">🏠 Apt · 1BR<br><b>240 RON</b></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Top Filters Bar</h3>
+      <p>Filters in a horizontal bar at top. Stats row below. Listings in a grid. Compact, familiar (like Airbnb's own layout).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8f9fa;border-radius:6px;">
+      <div style="display:flex;gap:10px;">
+        <div style="width:140px;flex-shrink:0;">
+          <div style="background:#e2e8f0;border-radius:4px;padding:6px;font-size:9px;margin-bottom:6px;">📍 City<br><b>Cluj-Napoca</b></div>
+          <div style="background:#e2e8f0;border-radius:4px;padding:6px;font-size:9px;margin-bottom:6px;">👥 Guests<br><b>2</b></div>
+          <div style="background:#e2e8f0;border-radius:4px;padding:6px;font-size:9px;margin-bottom:6px;">📅 Check-in / out</div>
+          <div style="background:#e2e8f0;border-radius:4px;padding:6px;font-size:9px;margin-bottom:6px;">✓ Parking<br>✓ WiFi<br>✓ Kitchen<br>☐ Pool</div>
+          <div style="background:#3b82f6;color:white;border-radius:4px;padding:6px;font-size:9px;text-align:center;">Search</div>
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <div style="flex:1;background:#dbeafe;border-radius:4px;padding:6px;text-align:center;font-size:9px;"><b>245 RON</b><br>avg</div>
+            <div style="flex:1;background:#dcfce7;border-radius:4px;padding:6px;text-align:center;font-size:9px;"><b>4,900</b><br>revenue</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:6px;font-size:9px;display:flex;justify-content:space-between;">🏠 Apt · 2BR, parking, WiFi <span><b>280 RON</b></span></div>
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:6px;font-size:9px;display:flex;justify-content:space-between;">🏠 Studio, WiFi <span><b>195 RON</b></span></div>
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:6px;font-size:9px;display:flex;justify-content:space-between;">🏠 Apt · 1BR, kitchen <span><b>240 RON</b></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Left Sidebar Filters</h3>
+      <p>Filters in a persistent left panel. Results + stats on the right as a list. More detail per listing, easier to re-filter.</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+  <p style="margin:0;font-size:13px;">Both layouts include: city dropdown, guests input, date range, 8 amenity checkboxes, avg/median stats, revenue estimator, and ~100–200 individual listing cards.</p>
+</div>

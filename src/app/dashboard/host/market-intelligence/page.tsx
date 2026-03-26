@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useLang } from '@/lib/useLang';
 import { dashboardT } from '@/lib/i18n';
 import {
@@ -14,6 +14,15 @@ import type { AirbnbListing } from '@/lib/airbnb-scraper';
 import type { MarketStats } from '@/lib/market-intelligence';
 import { Star, ExternalLink, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+
+function normalizeDiacritics(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[țţ]/g, 't')
+    .replace(/[șş]/g, 's')
+    .replace(/[ăâ]/g, 'a')
+    .replace(/[î]/g, 'i');
+}
 
 interface SearchResult {
   listings: AirbnbListing[];
@@ -31,6 +40,8 @@ export default function MarketIntelligencePage() {
   // Filter state
   const [city, setCity] = useState('');
   const [citySearch, setCitySearch] = useState('');
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const cityContainerRef = useRef<HTMLDivElement>(null);
   const [guests, setGuests] = useState(2);
   const [checkin, setCheckin] = useState('');
   const [checkout, setCheckout] = useState('');
@@ -47,7 +58,7 @@ export default function MarketIntelligencePage() {
 
   const filteredCities = useMemo(() =>
     ROMANIAN_CITIES.filter(c =>
-      citySearch === '' || c.name.toLowerCase().includes(citySearch.toLowerCase())
+      citySearch === '' || normalizeDiacritics(c.name).includes(normalizeDiacritics(citySearch))
     ),
     [citySearch]
   );
@@ -58,6 +69,22 @@ export default function MarketIntelligencePage() {
     seaside: filteredCities.filter(c => c.type === 'seaside'),
     other: filteredCities.filter(c => c.type === 'other'),
   }), [filteredCities]);
+
+  const handleCitySelect = useCallback((name: string) => {
+    setCity(name);
+    setCitySearch('');
+    setShowCityDropdown(false);
+  }, []);
+
+  const handleCityInputBlur = useCallback(() => {
+    // Delay so click on dropdown option registers first
+    setTimeout(() => {
+      if (!cityContainerRef.current?.matches(':focus-within')) {
+        setShowCityDropdown(false);
+        setCitySearch('');
+      }
+    }, 150);
+  }, []);
 
   function toggleAmenity(key: AmenityKey) {
     setAmenities(prev =>
@@ -117,43 +144,71 @@ export default function MarketIntelligencePage() {
       {/* Filter Sidebar */}
       <aside className="w-64 flex-shrink-0 bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-4 self-start sticky top-4">
         {/* City */}
-        <div>
+        <div ref={cityContainerRef} className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-1">📍 Oraș / Zonă</label>
           <input
             type="text"
-            placeholder={t.searchPlaceholder}
-            value={citySearch}
+            placeholder={showCityDropdown ? t.searchPlaceholder : (city || t.searchPlaceholder)}
+            value={showCityDropdown ? citySearch : city}
+            onFocus={() => {
+              setCitySearch('');
+              setShowCityDropdown(true);
+            }}
             onChange={e => setCitySearch(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-1"
+            onBlur={handleCityInputBlur}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <select
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            size={6}
-            className="w-full border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">— Selectează —</option>
-            {cityGroups.urban.length > 0 && (
-              <optgroup label="Orașe principale">
-                {cityGroups.urban.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-              </optgroup>
-            )}
-            {cityGroups.mountain.length > 0 && (
-              <optgroup label="Stațiuni montane">
-                {cityGroups.mountain.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-              </optgroup>
-            )}
-            {cityGroups.seaside.length > 0 && (
-              <optgroup label="Litoral">
-                {cityGroups.seaside.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-              </optgroup>
-            )}
-            {cityGroups.other.length > 0 && (
-              <optgroup label="Alte zone turistice">
-                {cityGroups.other.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-              </optgroup>
-            )}
-          </select>
+          {showCityDropdown && (
+            <div className="absolute z-10 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-56 overflow-y-auto text-sm">
+              {filteredCities.length === 0 && (
+                <div className="px-3 py-2 text-gray-400">Niciun rezultat</div>
+              )}
+              {cityGroups.urban.length > 0 && (
+                <>
+                  <div className="px-3 py-1 text-xs font-semibold text-gray-400 bg-gray-50 sticky top-0">Orașe principale</div>
+                  {cityGroups.urban.map(c => (
+                    <button key={c.name} type="button" onMouseDown={() => handleCitySelect(c.name)}
+                      className={`w-full text-left px-3 py-1.5 hover:bg-blue-50 hover:text-blue-700 ${city === c.name ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}>
+                      {c.name}
+                    </button>
+                  ))}
+                </>
+              )}
+              {cityGroups.mountain.length > 0 && (
+                <>
+                  <div className="px-3 py-1 text-xs font-semibold text-gray-400 bg-gray-50 sticky top-0">Stațiuni montane</div>
+                  {cityGroups.mountain.map(c => (
+                    <button key={c.name} type="button" onMouseDown={() => handleCitySelect(c.name)}
+                      className={`w-full text-left px-3 py-1.5 hover:bg-blue-50 hover:text-blue-700 ${city === c.name ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}>
+                      {c.name}
+                    </button>
+                  ))}
+                </>
+              )}
+              {cityGroups.seaside.length > 0 && (
+                <>
+                  <div className="px-3 py-1 text-xs font-semibold text-gray-400 bg-gray-50 sticky top-0">Litoral</div>
+                  {cityGroups.seaside.map(c => (
+                    <button key={c.name} type="button" onMouseDown={() => handleCitySelect(c.name)}
+                      className={`w-full text-left px-3 py-1.5 hover:bg-blue-50 hover:text-blue-700 ${city === c.name ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}>
+                      {c.name}
+                    </button>
+                  ))}
+                </>
+              )}
+              {cityGroups.other.length > 0 && (
+                <>
+                  <div className="px-3 py-1 text-xs font-semibold text-gray-400 bg-gray-50 sticky top-0">Alte zone turistice</div>
+                  {cityGroups.other.map(c => (
+                    <button key={c.name} type="button" onMouseDown={() => handleCitySelect(c.name)}
+                      className={`w-full text-left px-3 py-1.5 hover:bg-blue-50 hover:text-blue-700 ${city === c.name ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}>
+                      {c.name}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Guests */}
