@@ -84,6 +84,18 @@ export default function NewRegistrationPage() {
     }).finally(() => setLoading(false));
   }, []);
 
+  // Scale canvas buffer to device pixel ratio for crisp rendering on retina displays
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    if (dpr === 1) return;
+    const w = canvas.clientWidth || canvas.width;
+    const h = canvas.clientHeight || canvas.height;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+  }, [hasSignature, showPad]);
+
   // Canvas helpers — coordinates scaled to internal canvas resolution
   const getPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -120,7 +132,7 @@ export default function NewRegistrationPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const { x, y } = getPos(e);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#111827';
     ctx.lineTo(x, y);
