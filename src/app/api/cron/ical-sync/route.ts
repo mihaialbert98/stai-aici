@@ -236,7 +236,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Remove mirror blocks — isBlock records that overlap with a real reservation from another source
-  for (const propertyId of syncedPropertyIds) {
+  for (const propertyId of Array.from(syncedPropertyIds)) {
     try {
       await deduplicateSyncedBlocks(propertyId);
     } catch (err) {
