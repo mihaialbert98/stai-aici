@@ -16,8 +16,9 @@ export async function GET() {
     select: {
       id: true,
       title: true,
+      guestCapacity: true,
       images: { orderBy: { order: 'asc' }, take: 1, select: { url: true } },
-      guestFormLink: { select: { id: true, token: true, isActive: true } },
+      guestFormLink: { select: { id: true, token: true, isActive: true, activeGuestCount: true } },
     },
     orderBy: { title: 'asc' },
   });

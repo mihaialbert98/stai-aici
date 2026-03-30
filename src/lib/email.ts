@@ -230,6 +230,42 @@ export async function sendReviewReminderEmail(guestEmail: string, guestName: str
   });
 }
 
+export async function sendGuestFormsSubmittedEmail(
+  hostEmail: string,
+  hostName: string,
+  propertyTitle: string,
+  checkInDate: string,
+  submissions: Array<{ name: string; downloadUrl: string }>,
+  bulkDownloadUrl: string
+): Promise<void> {
+  const submissionListHtml = submissions
+    .map(
+      s =>
+        `<tr><td style="padding:8px 0;color:#18181b;font-size:14px;">${s.name}</td>` +
+        `<td style="padding:8px 0;text-align:right;"><a href="${s.downloadUrl}" style="color:#4f46e5;font-size:14px;">Descarcă fișă</a></td></tr>`
+    )
+    .join('');
+
+  await sendEmail({
+    to: hostEmail,
+    subject: `Fișe de cazare noi – ${propertyTitle}`,
+    html: emailLayout(
+      `<h2>Salut, ${hostName}!</h2>
+       <p>Oaspeții tăi de la <strong>${propertyTitle}</strong> au completat fișele de cazare pentru <strong>${checkInDate}</strong>.</p>
+       <div class="info-box">
+         <table width="100%" cellpadding="0" cellspacing="0">
+           ${submissionListHtml}
+         </table>
+       </div>
+       <p style="text-align:center;">
+         <a href="${bulkDownloadUrl}" class="btn">Descarcă toate fișele (ZIP)</a>
+       </p>
+       <p class="muted">Fișele sunt disponibile și în dashboard-ul tău StayViara.</p>`,
+      `${submissions.length} fișe de cazare noi pentru ${propertyTitle}`
+    ),
+  });
+}
+
 export async function sendCheckInReminderEmail(
   guestEmail: string,
   guestName: string,

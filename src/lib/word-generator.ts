@@ -43,6 +43,10 @@ export async function generateRegistrationDoc(data: RegistrationData): Promise<B
   const imageModule = new ImageModule({
     centered: false,
     getImage(tagValue: string) {
+      if (!tagValue) {
+        // 1×1 transparent PNG — used when no signature is provided
+        return Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+      }
       return base64ToBuffer(tagValue);
     },
     getSize() {
@@ -77,4 +81,33 @@ export async function generateRegistrationDoc(data: RegistrationData): Promise<B
   });
 
   return doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' }) as Buffer;
+}
+
+export function generateFileName(
+  propertyTitle: string,
+  firstName: string,
+  lastName: string,
+  checkInDate: Date,
+  submissionId: string
+): string {
+  const diacritics: Record<string, string> = {
+    ă: 'a', â: 'a', î: 'i', ș: 's', ț: 't',
+    Ă: 'A', Â: 'A', Î: 'I', Ș: 'S', Ț: 'T',
+  };
+  const slug = (s: string) =>
+    s
+      .split('')
+      .map(c => diacritics[c] ?? c)
+      .join('')
+      .replace(/[^a-zA-Z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+
+  const shortId = submissionId.slice(-4);
+  const year  = checkInDate.getFullYear();
+  const month = String(checkInDate.getMonth() + 1).padStart(2, '0');
+  const day   = String(checkInDate.getDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
+
+  return `${slug(propertyTitle)}_${slug(lastName)}${slug(firstName)}_${dateStr}_${shortId}.docx`;
 }

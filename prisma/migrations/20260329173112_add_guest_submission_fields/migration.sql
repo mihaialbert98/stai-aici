@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE "GuestSubmission" ADD COLUMN     "city" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "country" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "idSeries" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "placeOfBirth" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "purposeOfTravel" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "street" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "streetNumber" TEXT NOT NULL DEFAULT '';

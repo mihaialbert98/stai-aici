@@ -97,6 +97,7 @@ model Property {
   houseRules     String?
   localTips      String?  // local recommendations
   cancellationPolicy CancellationPolicy @default(FLEXIBLE)
+  guestCapacity  Int      @default(1)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -175,11 +176,12 @@ model CheckInLink {
 }
 
 model GuestFormLink {
-  id         String            @id @default(cuid())
-  propertyId String            @unique
-  token      String            @unique @default(cuid())
-  isActive   Boolean           @default(true)
-  createdAt  DateTime          @default(now())
+  id               String            @id @default(cuid())
+  propertyId       String            @unique
+  token            String            @unique @default(cuid())
+  isActive         Boolean           @default(true)
+  activeGuestCount Int               @default(1)
+  createdAt        DateTime          @default(now())
 
   property   Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   submissions GuestSubmission[]
@@ -194,6 +196,13 @@ model GuestSubmission {
   firstName      String
   dateOfBirth    DateTime
   citizenship    String
+  placeOfBirth   String   @default("")
+  city           String   @default("")
+  street         String   @default("")
+  streetNumber   String   @default("")
+  country        String   @default("")
+  purposeOfTravel String  @default("")
+  idSeries       String   @default("")
   documentType   String
   documentNumber String
   checkInDate    DateTime
@@ -202,6 +211,9 @@ model GuestSubmission {
   gdprConsent    Boolean
   submittedAt    DateTime @default(now())
   retentionDate  DateTime
+  isDuplicate    Boolean  @default(false)
+  wordFileContent Bytes?
+  fileName       String?
 
   formLink  GuestFormLink @relation(fields: [formLinkId], references: [id])
   property  Property      @relation(fields: [propertyId], references: [id])

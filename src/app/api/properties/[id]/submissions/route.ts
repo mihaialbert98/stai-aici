@@ -19,9 +19,23 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const limit = 20;
   const skip = (page - 1) * limit;
 
+  const monthParam = req.nextUrl.searchParams.get('month');
+  const yearParam = req.nextUrl.searchParams.get('year');
+
+  const dateFilter = yearParam
+    ? {
+        checkInDate: {
+          gte: new Date(Number(yearParam), monthParam ? Number(monthParam) - 1 : 0, 1),
+          lt:  new Date(Number(yearParam), monthParam ? Number(monthParam) : 12, 1),
+        },
+      }
+    : {};
+
+  const whereClause = { propertyId: params.id, ...dateFilter };
+
   const [submissions, total] = await Promise.all([
     prisma.guestSubmission.findMany({
-      where: { propertyId: params.id },
+      where: whereClause,
       orderBy: { submittedAt: 'desc' },
       skip,
       take: limit,
@@ -38,9 +52,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         numberOfGuests: true,
         submittedAt: true,
         retentionDate: true,
+        isDuplicate: true,
+        fileName: true,
       },
     }),
-    prisma.guestSubmission.count({ where: { propertyId: params.id } }),
+    prisma.guestSubmission.count({ where: whereClause }),
   ]);
 
   return NextResponse.json({ submissions, total, page, pages: Math.ceil(total / limit) });
