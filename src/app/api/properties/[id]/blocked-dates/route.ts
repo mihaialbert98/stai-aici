@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 
@@ -14,7 +15,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
   }
 
-  const { dates, block } = await req.json() as { dates: string[]; block: boolean };
+  const rawBody = await req.json().catch(() => null);
+  const parsedBody = z.object({
+    dates: z.array(z.string()).max(366),
+    block: z.boolean(),
+  }).safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: 'Date invalide' }, { status: 400 });
+  }
+  const { dates, block } = parsedBody.data;
 
   if (block) {
     // Add blocked dates (ignore duplicates)

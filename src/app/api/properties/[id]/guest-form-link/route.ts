@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 
@@ -50,7 +51,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const property = await getHostProperty(params.id, session.userId);
   if (!property) return NextResponse.json({ error: 'Proprietate negăsită' }, { status: 404 });
 
-  const { isActive } = await req.json();
+  const body = await req.json().catch(() => null);
+  const parsedBody = z.object({ isActive: z.boolean() }).safeParse(body);
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: 'Date invalide' }, { status: 400 });
+  }
+  const { isActive } = parsedBody.data;
 
   const link = await prisma.guestFormLink.upsert({
     where: { propertyId: params.id },

@@ -16,10 +16,17 @@ export async function DELETE(
       id: params.id,
       property: { hostId: session.userId },
     },
-    select: { id: true },
+    select: { id: true, retentionDate: true },
   });
 
   if (!submission) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  if (submission.retentionDate > new Date()) {
+    return NextResponse.json(
+      { error: 'Formularul nu poate fi șters în perioada de retenție legală (5 ani).' },
+      { status: 403 }
+    );
+  }
 
   await prisma.guestSubmission.delete({ where: { id: params.id } });
 

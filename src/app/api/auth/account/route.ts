@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { getSession, clearSessionCookie } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,9 @@ const deleteAccountSchema = z.object({
 
 export async function DELETE(req: NextRequest) {
   try {
+    const limited = rateLimit(req, { limit: 5, windowMs: 15 * 60 * 1000, prefix: 'account-delete' });
+    if (limited) return limited;
+
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -34,6 +38,19 @@ export async function DELETE(req: NextRequest) {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 400 });
+    }
+
+    const activeSubmissionCount = await prisma.guestSubmission.count({
+      where: {
+        property: { hostId: session.userId },
+        retentionDate: { gt: new Date() },
+      },
+    });
+    if (activeSubmissionCount > 0) {
+      return NextResponse.json(
+        { error: `Contul nu poate fi șters — există ${activeSubmissionCount} fișe de cazare în perioada de retenție legală (5 ani). Revino după expirarea perioadei.` },
+        { status: 400 }
+      );
     }
 
     // Pre-fetch IDs needed for deletion outside of the transaction

@@ -19,6 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const submissions = await prisma.guestSubmission.findMany({
     where: { propertyId: params.id },
     orderBy: { checkInDate: 'desc' },
+    take: 10_000,
     select: {
       lastName: true,
       firstName: true,

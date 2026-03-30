@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyVerificationToken } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, { limit: 10, windowMs: 15 * 60 * 1000, prefix: 'auth-verify' });
+  if (limited) return limited;
+
   try {
     const { token } = await req.json();
     if (!token) {

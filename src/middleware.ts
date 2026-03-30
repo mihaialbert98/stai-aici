@@ -13,7 +13,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/auth') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/host/') ||
-    pathname.startsWith('/api/properties') ||
+    pathname === '/api/properties' ||
+    /^\/api\/properties\/[^/]+$/.test(pathname) ||
+    pathname.startsWith('/api/properties/by-ids') ||
+    /^\/api\/properties\/[^/]+\/price-preview/.test(pathname) ||
+    /^\/api\/properties\/[^/]+\/calendar\.ics/.test(pathname) ||
     pathname.startsWith('/api/amenities') ||
     pathname.startsWith('/api/hosts') ||
     pathname.startsWith('/checkin/') ||

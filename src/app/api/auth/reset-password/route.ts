@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { verifyResetToken } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, { limit: 5, windowMs: 15 * 60 * 1000, prefix: 'reset-password' });
+  if (limited) return limited;
+
   try {
     const { token, password } = await req.json();
     if (!token || !password) {

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/checkin/[token] — public, no auth required
-export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
+  const limited = rateLimit(req, { limit: 30, windowMs: 60 * 1000, prefix: 'checkin-get' });
+  if (limited) return limited;
+
   const link = await prisma.checkInLink.findUnique({
     where: { token: params.token },
     select: {

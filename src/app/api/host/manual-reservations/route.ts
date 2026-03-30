@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { eachDayOfInterval, subDays } from 'date-fns';
@@ -39,12 +40,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { propertyId, guestName, checkIn, checkOut, revenue, source, notes, blockCalendar } = body;
+  const createSchema = z.object({
+    propertyId:    z.string().min(1),
+    checkIn:       z.string().min(1),
+    checkOut:      z.string().min(1),
+    revenue:       z.number().min(0),
+    guestName:     z.string().max(200).default(''),
+    source:        z.string().max(100).default(''),
+    notes:         z.string().max(1000).default(''),
+    blockCalendar: z.boolean().optional(),
+  });
 
-  if (!propertyId || !checkIn || !checkOut || revenue == null) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  const rawBody = await req.json();
+  const parsed = createSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Date invalide' }, { status: 400 });
   }
+
+  const { propertyId, guestName, checkIn, checkOut, revenue, source, notes, blockCalendar } = parsed.data;
 
   // Verify property belongs to this host
   const property = await prisma.property.findFirst({
@@ -65,7 +78,7 @@ export async function POST(req: NextRequest) {
       guestName: guestName || null,
       checkIn: checkInDate,
       checkOut: checkOutDate,
-      revenue: parseFloat(revenue),
+      revenue,
       source: source || null,
       notes: notes || null,
       blockCalendar: shouldBlock,

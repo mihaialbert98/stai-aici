@@ -12,9 +12,16 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const session = await getSession();
+  if (!session) {
+    log.warn('Unauthorized period pricing list attempt', { propertyId: params.id });
+    return NextResponse.json({ error: 'Neautorizat' }, { status: 401 });
+  }
+
   const property = await prisma.property.findUnique({
     where: { id: params.id },
     select: {
+      hostId: true,
       periodPricings: {
         orderBy: { startDate: 'asc' },
       },
@@ -24,6 +31,15 @@ export async function GET(
   if (!property) {
     log.warn('Property not found when listing period pricing', { propertyId: params.id });
     return NextResponse.json({ error: 'Proprietatea nu a fost gasita' }, { status: 404 });
+  }
+
+  if (property.hostId !== session.userId && session.role !== 'ADMIN') {
+    log.warn('Forbidden period pricing list attempt', {
+      propertyId: params.id,
+      userId: session.userId,
+      role: session.role,
+    });
+    return NextResponse.json({ error: 'Acces interzis' }, { status: 403 });
   }
 
   log.debug('Fetched period pricing list', {
