@@ -38,11 +38,11 @@ export const createPropertySchema = z.object({
 
 export const propertySchema = z.object({
   title: cleanStr(5, 'Minim 5 caractere'),
-  description: cleanStr(20, 'Minim 20 caractere'),
-  city: cleanStr(2, 'Introduceți orașul'),
-  address: cleanStr(5, 'Introduceți adresa'),
-  pricePerNight: z.number().min(1, 'Prețul trebuie să fie pozitiv'),
-  maxGuests: z.number().int().min(1, 'Minim 1 oaspete'),
+  description: z.union([z.string().min(20, 'Minim 20 caractere'), z.literal('')]).optional().transform(v => v ? sanitizeText(v) : v),
+  city: cleanStr(2, 'Introduceți orașul').optional(),
+  address: cleanStr(5, 'Introduceți adresa').optional(),
+  pricePerNight: z.number().min(1, 'Prețul trebuie să fie pozitiv').optional(),
+  maxGuests: z.number().int().min(1, 'Minim 1 oaspete').optional(),
   baseGuests: z.number().int().min(0).optional(),
   extraGuestPrice: z.number().min(0).optional(),
   propertyType: z.enum(PROPERTY_TYPES).optional(),
