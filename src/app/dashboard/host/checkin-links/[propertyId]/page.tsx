@@ -13,7 +13,7 @@ import { dashboardT } from '@/lib/i18n';
 
 interface FormState {
   checkInFrom: string; checkInTo: string; checkOutBy: string;
-  parkingAvailable: boolean; parkingInfo: string; parkingLocation: string; parkingCode: string; transportInfo: string;
+  parkingAvailable: boolean; parkingInfo: string; parkingLocation: string; parkingCode: string; parkingMapUrl: string; transportInfo: string;
   buildingEntrance: string; buildingFloor: string; buildingCode: string; buildingNotes: string;
   accessType: string; accessCode: string; accessLocation: string; accessNotes: string;
   wifiName: string; wifiPassword: string;
@@ -25,7 +25,7 @@ interface FormState {
 
 const empty: FormState = {
   checkInFrom: '', checkInTo: '', checkOutBy: '',
-  parkingAvailable: false, parkingInfo: '', parkingLocation: '', parkingCode: '', transportInfo: '',
+  parkingAvailable: false, parkingInfo: '', parkingLocation: '', parkingCode: '', parkingMapUrl: '', transportInfo: '',
   buildingEntrance: '', buildingFloor: '', buildingCode: '', buildingNotes: '',
   accessType: '', accessCode: '', accessLocation: '', accessNotes: '',
   wifiName: '', wifiPassword: '',
@@ -44,6 +44,7 @@ function linkToForm(link: Record<string, unknown>): FormState {
     parkingInfo: (link.parkingInfo as string) || '',
     parkingLocation: (link.parkingLocation as string) || '',
     parkingCode: (link.parkingCode as string) || '',
+    parkingMapUrl: (link.parkingMapUrl as string) || '',
     transportInfo: (link.transportInfo as string) || '',
     buildingEntrance: (link.buildingEntrance as string) || '',
     buildingFloor: (link.buildingFloor as string) || '',
@@ -191,6 +192,11 @@ export default function CheckInLinkEditPage() {
                 <div>
                   <label className="label">{t.parkingCode}</label>
                   <input className={inp} placeholder={t.parkingCodePh} value={form.parkingCode} onChange={set('parkingCode')} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Link Google Maps parcare</label>
+                  <input className={inp} placeholder="https://maps.app.goo.gl/..." value={form.parkingMapUrl} onChange={set('parkingMapUrl')} />
+                  <p className="text-xs text-gray-400 mt-1">Deschide Google Maps → caută locul de parcare → Share → Copy link</p>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="label">{t.parkingAddress}</label>

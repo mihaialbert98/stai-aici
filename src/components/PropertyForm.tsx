@@ -18,6 +18,7 @@ export interface PropertyInitialData {
   description?: string;
   city?: string;
   address?: string;
+  locationMapUrl?: string;
   pricePerNight?: number;
   maxGuests?: number;
   baseGuests?: number;
@@ -53,6 +54,7 @@ export function PropertyForm({ initialData, propertyId }: Props) {
     description: initialData?.description || '',
     city: initialData?.city || '',
     address: initialData?.address || '',
+    locationMapUrl: initialData?.locationMapUrl || '',
     pricePerNight: initialData?.pricePerNight || 0,
     maxGuests: initialData?.maxGuests || 1,
     baseGuests: initialData?.baseGuests || 0,
@@ -185,18 +187,31 @@ export function PropertyForm({ initialData, propertyId }: Props) {
         <label className="label">Descriere</label>
         <textarea className="input min-h-[120px]" placeholder="Descrieți proprietatea, ce o face specială, ce facilități oferă..." value={form.description} onChange={e => update('description', e.target.value)} required />
       </div>
+      */}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="label">Oraș</label>
-          <input className="input" placeholder="ex. Brașov" value={form.city} onChange={e => update('city', e.target.value)} required />
+          <input className="input" placeholder="ex. Brașov" value={form.city} onChange={e => update('city', e.target.value)} />
         </div>
         <div>
           <label className="label">Adresă</label>
-          <input className="input" placeholder="ex. Str. Republicii 42" value={form.address} onChange={e => update('address', e.target.value)} required />
+          <input className="input" placeholder="ex. Str. Republicii 42" value={form.address} onChange={e => update('address', e.target.value)} />
         </div>
       </div>
 
+      <div>
+        <label className="label">Locație pe hartă</label>
+        <input
+          className="input"
+          placeholder="https://maps.app.goo.gl/..."
+          value={form.locationMapUrl}
+          onChange={e => update('locationMapUrl', e.target.value)}
+        />
+        <p className="text-xs text-gray-400 mt-1">Deschide Google Maps → caută proprietatea → Share → Copy link</p>
+      </div>
+
+      {/* TODO: uncomment when full property details are enabled
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="label">Preț per noapte (RON)</label>

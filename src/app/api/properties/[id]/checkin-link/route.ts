@@ -44,6 +44,19 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     parkingInfo:      z.string().max(500).optional(),
     parkingLocation:  z.string().max(500).optional(),
     parkingCode:      z.string().max(200).optional(),
+    parkingMapUrl:    z.string().url().optional().nullable()
+      .refine(
+        (url) => {
+          if (!url) return true;
+          try {
+            const { protocol, hostname } = new URL(url);
+            if (protocol !== 'https:') return false;
+            const h = hostname.toLowerCase();
+            return h === 'www.google.com' || h === 'google.com' || h === 'maps.google.com' || h === 'maps.app.goo.gl' || h === 'goo.gl';
+          } catch { return false; }
+        },
+        { message: 'Must be a valid Google Maps HTTPS link' }
+      ),
     transportInfo:    z.string().max(1000).optional(),
     buildingEntrance: z.string().max(500).optional(),
     buildingFloor:    z.string().max(100).optional(),
@@ -72,7 +85,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const {
     isActive,
     checkInFrom, checkInTo, checkOutBy,
-    parkingAvailable, parkingInfo, parkingLocation, parkingCode, transportInfo,
+    parkingAvailable, parkingInfo, parkingLocation, parkingCode, parkingMapUrl, transportInfo,
     buildingEntrance, buildingFloor, buildingCode, buildingNotes,
     accessType, accessCode, accessLocation, accessNotes,
     wifiName, wifiPassword,
@@ -109,6 +122,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     parkingInfo: st(parkingInfo),
     parkingLocation: st(parkingLocation),
     parkingCode: st(parkingCode),
+    parkingMapUrl: parkingMapUrl ?? null,
     transportInfo: st(transportInfo),
     buildingEntrance: st(buildingEntrance),
     buildingFloor: st(buildingFloor),

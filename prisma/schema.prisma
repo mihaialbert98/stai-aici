@@ -96,6 +96,7 @@ model Property {
   checkInInfo    String?  // check-in instructions
   houseRules     String?
   localTips      String?  // local recommendations
+  locationMapUrl String?  // Google Maps URL for the property location
   cancellationPolicy CancellationPolicy @default(FLEXIBLE)
   guestCapacity  Int      @default(1)
   isActive       Boolean  @default(true)
@@ -139,6 +140,7 @@ model CheckInLink {
   parkingInfo      String?
   parkingLocation  String?
   parkingCode      String?
+  parkingMapUrl    String?  // Google Maps URL for parking location
   transportInfo    String?
 
   // Building & apartment access

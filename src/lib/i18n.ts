@@ -1088,6 +1088,9 @@ export const checkinT = {
     emergency: 'Urgențe',
     whatsapp: 'WhatsApp',
     video: 'Video de bun venit',
+    location: 'Locație',
+    openInMaps: 'Deschide în Google Maps',
+    viewParkingMap: 'Vezi locul de parcare pe hartă',
   },
   en: {
     schedule: 'Schedule',
@@ -1119,6 +1122,9 @@ export const checkinT = {
     emergency: 'Emergency',
     whatsapp: 'WhatsApp',
     video: 'Welcome video',
+    location: 'Location',
+    openInMaps: 'Open in Google Maps',
+    viewParkingMap: 'View parking spot on map',
   },
 } as const;
 

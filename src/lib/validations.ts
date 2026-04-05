@@ -49,6 +49,19 @@ export const propertySchema = z.object({
   checkInInfo: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   houseRules: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   localTips: z.string().optional().transform(v => v ? sanitizeText(v) : v),
+  locationMapUrl: z.string().url().optional().nullable()
+    .refine(
+      (url) => {
+        if (!url) return true;
+        try {
+          const { protocol, hostname } = new URL(url);
+          if (protocol !== 'https:') return false;
+          const h = hostname.toLowerCase();
+          return h === 'www.google.com' || h === 'google.com' || h === 'maps.google.com' || h === 'maps.app.goo.gl' || h === 'goo.gl';
+        } catch { return false; }
+      },
+      { message: 'Must be a valid Google Maps HTTPS link' }
+    ),
   cancellationPolicy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT']).optional(),
   amenityIds: z.array(z.string()).optional(),
   imageUrls: z.array(z.string().url()).optional(),
