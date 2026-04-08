@@ -20,10 +20,10 @@ export function CopyButton({ value, className = '' }: Props) {
   return (
     <button
       onClick={copy}
-      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition ${
+      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md transition ${
         copied
-          ? 'border-green-200 bg-green-50 text-green-600'
-          : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+          ? 'text-emerald-400'
+          : 'text-slate-400 hover:text-slate-200 hover:bg-white/10'
       } ${className}`}
       title="Copiază"
     >

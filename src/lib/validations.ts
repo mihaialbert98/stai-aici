@@ -38,19 +38,20 @@ export const createPropertySchema = z.object({
 
 export const propertySchema = z.object({
   title: cleanStr(5, 'Minim 5 caractere'),
-  description: z.union([z.string().min(20, 'Minim 20 caractere'), z.literal('')]).optional().transform(v => v ? sanitizeText(v) : v),
-  city: cleanStr(2, 'Introduceți orașul').optional(),
-  address: cleanStr(5, 'Introduceți adresa').optional(),
-  pricePerNight: z.number().min(1, 'Prețul trebuie să fie pozitiv').optional(),
-  maxGuests: z.number().int().min(1, 'Minim 1 oaspete').optional(),
+  description: z.preprocess(v => v === '' ? undefined : v, z.string().min(20, 'Minim 20 caractere').optional().transform(v => v ? sanitizeText(v) : v)),
+  city: z.preprocess(v => v === '' ? undefined : v, z.string().min(2, 'Introduceți orașul').optional().transform(v => v ? sanitizeText(v) : v)),
+  address: z.preprocess(v => v === '' ? undefined : v, z.string().min(5, 'Introduceți adresa').optional().transform(v => v ? sanitizeText(v) : v)),
+  pricePerNight: z.preprocess(v => (v === 0 || v === '') ? undefined : v, z.number().min(1, 'Prețul trebuie să fie pozitiv').optional()),
+  maxGuests: z.preprocess(v => (v === 0 || v === '') ? undefined : v, z.number().int().min(1, 'Minim 1 oaspete').optional()),
   baseGuests: z.number().int().min(0).optional(),
   extraGuestPrice: z.number().min(0).optional(),
   propertyType: z.enum(PROPERTY_TYPES).optional(),
   checkInInfo: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   houseRules: z.string().optional().transform(v => v ? sanitizeText(v) : v),
   localTips: z.string().optional().transform(v => v ? sanitizeText(v) : v),
-  locationMapUrl: z.string().url().optional().nullable()
-    .refine(
+  locationMapUrl: z.preprocess(
+    v => v === '' ? undefined : v,
+    z.string().url().optional().nullable().refine(
       (url) => {
         if (!url) return true;
         try {
@@ -61,7 +62,8 @@ export const propertySchema = z.object({
         } catch { return false; }
       },
       { message: 'Must be a valid Google Maps HTTPS link' }
-    ),
+    )
+  ),
   cancellationPolicy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT']).optional(),
   amenityIds: z.array(z.string()).optional(),
   imageUrls: z.array(z.string().url()).optional(),
