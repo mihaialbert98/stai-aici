@@ -27,11 +27,26 @@ const singleSchema = z.object({
   documentType:    z.string().min(1).max(MAX_TEXT),
   idSeries:        z.string().max(MAX_TEXT).default(''),
   idNumber:        z.string().min(1).max(MAX_TEXT),
-  checkInDate:     z.string().min(1).max(MAX_TEXT),
-  checkOutDate:    z.string().min(1).max(MAX_TEXT),
+  checkInDate:     z.string().min(1).max(20).refine(d => {
+    const date = new Date(d);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return !isNaN(date.getTime()) && date >= today;
+  }, { message: 'Check-in date cannot be in the past' }),
+  checkOutDate:    z.string().min(1).max(20),
   numberOfGuests:  z.number().int().min(1).max(100),
   gdprConsent:     z.literal(true),
   touristSignature: z.string().max(MAX_SIGNATURE_BYTES).default(''),
+}).superRefine((data, ctx) => {
+  const ci = new Date(data.checkInDate);
+  const co = new Date(data.checkOutDate);
+  if (!isNaN(ci.getTime()) && !isNaN(co.getTime()) && co <= ci) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Check-out must be after check-in',
+      path: ['checkOutDate'],
+    });
+  }
 });
 
 const bodySchema = z.array(singleSchema).min(1).max(20);

@@ -223,6 +223,7 @@ export default function GuestFormPage({ params }: Props) {
               onChange={(field, value) => setGuest(i, field, value)}
               onSignatureChange={(sig) => setGuest(i, 'touristSignature', sig)}
               t={t}
+              lang={lang}
             />
           ))}
 
@@ -260,18 +261,26 @@ export default function GuestFormPage({ params }: Props) {
   );
 }
 
+function minCheckOut(checkInValue: string): string {
+  const base = checkInValue ? new Date(checkInValue) : new Date();
+  base.setDate(base.getDate() + 1);
+  return base.toISOString().split('T')[0];
+}
+
 function GuestPanel({
   index,
   data,
   onChange,
   onSignatureChange,
   t,
+  lang,
 }: {
   index: number;
   data: SingleGuest;
   onChange: (field: keyof SingleGuest, value: string) => void;
   onSignatureChange: (sig: string) => void;
   t: typeof formT['ro'] | typeof formT['en'];
+  lang: 'ro' | 'en';
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -406,10 +415,12 @@ function GuestPanel({
           </select>
         </div>
         <div className="mt-3 flex gap-3">
-          <div className="w-28 shrink-0">
-            <label className="label">{t.idSeries} *</label>
-            <input className="input" required value={data.idSeries} onChange={e => onChange('idSeries', e.target.value)} placeholder="AB" />
-          </div>
+          {data.documentType === 'CI' && (
+            <div className="w-28 shrink-0">
+              <label className="label">{t.idSeries} ({lang === 'ro' ? 'opțional' : 'optional'})</label>
+              <input className="input" value={data.idSeries} onChange={e => onChange('idSeries', e.target.value)} placeholder="AB" />
+            </div>
+          )}
           <div className="flex-1">
             <label className="label">{t.idNumber} *</label>
             <input className="input" required value={data.idNumber} onChange={e => onChange('idNumber', e.target.value)} placeholder="123456" />
@@ -444,14 +455,19 @@ function GuestPanel({
               <label className="label">{t.checkIn} *</label>
               <div className="relative">
                 <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input type="date" className="input pl-9" required value={data.checkInDate} onChange={e => onChange('checkInDate', e.target.value)} />
+                <input type="date" className="input pl-9" required value={data.checkInDate} min={new Date().toISOString().split('T')[0]} onChange={e => {
+                  onChange('checkInDate', e.target.value);
+                  if (data.checkOutDate && data.checkOutDate <= e.target.value) {
+                    onChange('checkOutDate', '');
+                  }
+                }} />
               </div>
             </div>
             <div>
               <label className="label">{t.checkOut} *</label>
               <div className="relative">
                 <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input type="date" className="input pl-9" required value={data.checkOutDate} onChange={e => onChange('checkOutDate', e.target.value)} />
+                <input type="date" className="input pl-9" required value={data.checkOutDate} min={minCheckOut(data.checkInDate)} onChange={e => onChange('checkOutDate', e.target.value)} />
               </div>
             </div>
           </div>
