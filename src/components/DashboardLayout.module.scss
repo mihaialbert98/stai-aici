@@ -26,9 +26,9 @@
     top-16 bottom-0
     /* Desktop: static */
     md:static md:translate-x-0 md:z-auto md:top-auto md:bottom-auto;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fffd 100%);
-  border-right: 1px solid rgba(20, 184, 166, 0.12);
-  box-shadow: inset -1px 0 0 rgba(20, 184, 166, 0.06);
+  background: #ffffff;
+  border-right: 1px solid rgba(20, 184, 166, 0.14);
+  box-shadow: 1px 0 0 rgba(20, 184, 166, 0.05);
 }
 
 .sidebarOpen {
@@ -52,13 +52,13 @@
 }
 
 .navItem {
-  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition;
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-150;
 }
 
 .navItemActive {
-  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary-700 font-medium;
-  background: linear-gradient(90deg, #ccfbf1 0%, #e6faf8 100%);
-  box-shadow: 0 1px 4px rgba(15, 118, 110, 0.12);
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-teal-700 font-semibold bg-teal-50;
+  border-left: 2px solid #0d9488;
+  padding-left: calc(0.75rem - 2px);
 }
 
 .content {

@@ -1,12 +1,12 @@
 .nav {
-  @apply backdrop-blur-md sticky top-0 z-50;
-  background: rgba(255, 255, 255, 0.82);
-  border-bottom: 1px solid rgba(20, 184, 166, 0.14);
-  box-shadow: 0 1px 12px rgba(15, 118, 110, 0.07);
+  @apply backdrop-blur-lg sticky top-0 z-50;
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(20, 184, 166, 0.18);
+  box-shadow: 0 1px 0 rgba(20, 184, 166, 0.08), 0 2px 16px rgba(15, 118, 110, 0.06);
 }
 
 .container {
-  @apply max-w-7xl mx-auto px-4 h-16 flex items-center justify-between;
+  @apply max-w-7xl mx-auto px-5 h-16 flex items-center justify-between;
 }
 
 /* Left section: logo + mode toggle */
@@ -37,7 +37,7 @@
 }
 
 .registerBtn {
-  @apply text-sm font-medium text-white bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700 transition;
+  @apply text-sm font-semibold text-white bg-primary-600 px-4 py-2 rounded-lg hover:bg-primary-700 active:scale-95 transition-all duration-150 shadow-sm shadow-primary-600/25;
 }
 
 /* Profile dropdown */

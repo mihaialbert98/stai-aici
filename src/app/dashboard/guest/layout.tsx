@@ -7,7 +7,7 @@ import { dashboardT } from '@/lib/i18n';
 
 export default async function GuestLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const lang = (cookies().get('stayviara-lang')?.value || 'ro') as Lang;
+  const lang = (cookies().get('staybird-lang')?.value || 'ro') as Lang;
   const t = dashboardT[lang].guestNav;
 
   const items = [

@@ -10,7 +10,7 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'StayViara – Management cazare',
+  title: 'StayBird – Management cazare',
   description: 'Platforma de management proprietati si cazare',
 };
 

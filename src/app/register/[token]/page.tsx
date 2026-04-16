@@ -362,7 +362,7 @@ export default function RegisterPage({ params }: { params: { token: string } }) 
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          Powered by <a href="/" className="hover:underline">StayViara</a>
+          Powered by <a href="/" className="hover:underline">StayBird</a>
         </p>
       </div>
     </div>

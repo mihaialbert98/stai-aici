@@ -3,13 +3,13 @@ export type Lang = 'ro' | 'en';
 /** Read lang from cookie (client-side only) */
 export function getLangCookie(): Lang {
   if (typeof document === 'undefined') return 'ro';
-  const match = document.cookie.match(/(?:^|;\s*)stayviara-lang=(ro|en)/);
+  const match = document.cookie.match(/(?:^|;\s*)staybird-lang=(ro|en)/);
   return (match?.[1] as Lang) ?? 'ro';
 }
 
 /** Write lang to cookie (client-side only) */
 export function setLangCookie(lang: Lang) {
-  document.cookie = `stayviara-lang=${lang};path=/;max-age=31536000;SameSite=Lax`;
+  document.cookie = `staybird-lang=${lang};path=/;max-age=31536000;SameSite=Lax`;
 }
 
 /**
@@ -387,7 +387,7 @@ export const dashboardT = {
       saveError: 'Eroare la salvare',
       statusAcceptedLabel: 'acceptată',
       statusPendingLabel: 'în așteptare',
-      syncedDateConflict: (source: string) => `Această dată este blocată automat de pe ${source}. Nu trebuie să o blochezi și pe StayViara — sincronizarea se ocupă de asta. Gestionează disponibilitatea de pe platforma externă sau șterge sincronizarea.`,
+      syncedDateConflict: (source: string) => `Această dată este blocată automat de pe ${source}. Nu trebuie să o blochezi și pe StayBird — sincronizarea se ocupă de asta. Gestionează disponibilitatea de pe platforma externă sau șterge sincronizarea.`,
       bookedDateConflict: (date: string, statusLabel: string, guest: string, period: string) => `Nu poți bloca ${date} — există o rezervare ${statusLabel} de la ${guest} (${period}). Anulează rezervarea pentru a putea bloca această perioadă.`,
       rangeConflict: (guest: string, period: string) => `Perioada selectată include o rezervare de la ${guest} (${period}). Anulează rezervarea pentru a putea bloca toată perioada.`,
       addManualReservation: 'Adaugă rezervare manuală',
@@ -466,7 +466,7 @@ export const dashboardT = {
       settings: 'Setări',
       favorites: 'Favorite',
       comingSoonTitle: 'În curând',
-      comingSoonDesc: 'StayViara este momentan o platformă pentru gazde. Funcționalitățile pentru oaspeți — căutare, rezervări și recenzii — vor fi disponibile în curând.',
+      comingSoonDesc: 'StayBird este momentan o platformă pentru gazde. Funcționalitățile pentru oaspeți — căutare, rezervări și recenzii — vor fi disponibile în curând.',
       favoritesEmpty: 'Nu ai nicio proprietate salvată la favorite.',
       findAccom: 'Caută cazare',
     },
@@ -847,7 +847,7 @@ export const dashboardT = {
       saveError: 'Save error',
       statusAcceptedLabel: 'accepted',
       statusPendingLabel: 'pending',
-      syncedDateConflict: (source: string) => `This date is automatically blocked from ${source}. You don't need to block it on StayViara — the sync handles that. Manage availability from the external platform or remove the sync.`,
+      syncedDateConflict: (source: string) => `This date is automatically blocked from ${source}. You don't need to block it on StayBird — the sync handles that. Manage availability from the external platform or remove the sync.`,
       bookedDateConflict: (date: string, statusLabel: string, guest: string, period: string) => `You can't block ${date} — there's a ${statusLabel} booking from ${guest} (${period}). Cancel the booking to block this period.`,
       rangeConflict: (guest: string, period: string) => `The selected range includes a booking from ${guest} (${period}). Cancel the booking to block the entire period.`,
       addManualReservation: 'Add manual reservation',
@@ -926,7 +926,7 @@ export const dashboardT = {
       settings: 'Settings',
       favorites: 'Favourites',
       comingSoonTitle: 'Coming soon',
-      comingSoonDesc: 'StayViara is currently a platform for hosts. Guest features — search, bookings and reviews — will be available soon.',
+      comingSoonDesc: 'StayBird is currently a platform for hosts. Guest features — search, bookings and reviews — will be available soon.',
       favoritesEmpty: "You haven't saved any properties yet.",
       findAccom: 'Find accommodation',
     },

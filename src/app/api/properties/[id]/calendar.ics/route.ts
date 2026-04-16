@@ -9,7 +9,7 @@ function formatICalDate(date: Date): string {
 }
 
 function uid(id: string, type: string): string {
-  return `${id}-${type}@stayviara.com`;
+  return `${id}-${type}@staybird.com`;
 }
 
 // Group consecutive dates into ranges for cleaner iCal output
@@ -62,7 +62,7 @@ export async function GET(
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//StayViara//Calendar//RO',
+    'PRODID:-//StayBird//Calendar//RO',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${property.title}`,
@@ -76,7 +76,7 @@ export async function GET(
       `DTSTART;VALUE=DATE:${formatICalDate(booking.startDate)}`,
       `DTEND;VALUE=DATE:${formatICalDate(booking.endDate)}`,
       `DTSTAMP:${format(now, "yyyyMMdd'T'HHmmss'Z'")}`,
-      `SUMMARY:Rezervare StayViara`,
+      `SUMMARY:Rezervare StayBird`,
       'STATUS:CONFIRMED',
       'TRANSP:OPAQUE',
       'END:VEVENT'
@@ -93,7 +93,7 @@ export async function GET(
       `DTSTART;VALUE=DATE:${formatICalDate(range.start)}`,
       `DTEND;VALUE=DATE:${formatICalDate(range.end)}`,
       `DTSTAMP:${format(now, "yyyyMMdd'T'HHmmss'Z'")}`,
-      `SUMMARY:Blocat StayViara`,
+      `SUMMARY:Blocat StayBird`,
       'STATUS:CONFIRMED',
       'TRANSP:OPAQUE',
       'END:VEVENT'

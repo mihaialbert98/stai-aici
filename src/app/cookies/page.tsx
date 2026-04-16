@@ -24,7 +24,7 @@ export default function CookiePolicyPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Cookies we use</h2>
-            <p>StayViara uses only essential cookies required for the platform to function:</p>
+            <p>StayBird uses only essential cookies required for the platform to function:</p>
 
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-sm border border-gray-200 rounded-lg">
@@ -38,7 +38,7 @@ export default function CookiePolicyPage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">stayviara-token</code></td>
+                    <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">staybird-token</code></td>
                     <td className="px-4 py-2 border-b">User authentication (JWT session)</td>
                     <td className="px-4 py-2 border-b">7 days</td>
                     <td className="px-4 py-2 border-b">Essential</td>
@@ -57,7 +57,7 @@ export default function CookiePolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">3. Third-party cookies</h2>
             <p>
-              Currently, StayViara does not use any third-party cookies (analytics, advertising, social networks).
+              Currently, StayBird does not use any third-party cookies (analytics, advertising, social networks).
               If this changes in the future, we will update this policy and request your consent.
             </p>
           </section>
@@ -107,7 +107,7 @@ export default function CookiePolicyPage() {
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Cookie-urile pe care le folosim</h2>
-          <p>StayViara foloseste exclusiv cookie-uri esentiale necesare pentru functionarea platformei:</p>
+          <p>StayBird foloseste exclusiv cookie-uri esentiale necesare pentru functionarea platformei:</p>
 
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm border border-gray-200 rounded-lg">
@@ -121,7 +121,7 @@ export default function CookiePolicyPage() {
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">stayviara-token</code></td>
+                  <td className="px-4 py-2 border-b"><code className="text-xs bg-gray-100 px-1 py-0.5 rounded">staybird-token</code></td>
                   <td className="px-4 py-2 border-b">Autentificarea utilizatorului (sesiune JWT)</td>
                   <td className="px-4 py-2 border-b">7 zile</td>
                   <td className="px-4 py-2 border-b">Esential</td>
@@ -140,7 +140,7 @@ export default function CookiePolicyPage() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">3. Cookie-uri terte</h2>
           <p>
-            In prezent, StayViara nu foloseste cookie-uri de la terti (analytics, publicitate, retele sociale).
+            In prezent, StayBird nu foloseste cookie-uri de la terti (analytics, publicitate, retele sociale).
             Daca acest lucru se va schimba in viitor, vom actualiza aceasta politica si vom solicita
             consimtamantul dumneavoastra.
           </p>

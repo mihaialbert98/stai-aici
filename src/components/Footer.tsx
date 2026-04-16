@@ -46,7 +46,7 @@ export function Footer() {
           {/* Copyright */}
           <div className="md:text-right">
             <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} StayViara. {t.allRightsReserved}
+              &copy; {new Date().getFullYear()} StayBird. {t.allRightsReserved}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               {t.madeBy} <span className="font-medium text-gray-500">ABT SOFTWARE HUB SRL</span>

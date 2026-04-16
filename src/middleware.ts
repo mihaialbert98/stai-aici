@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('stayviara-token')?.value;
+  const token = request.cookies.get('staybird-token')?.value;
   const { pathname } = request.nextUrl;
 
   // Public routes - allow access

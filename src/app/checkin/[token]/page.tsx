@@ -59,7 +59,7 @@ function InfoRow({ label, value, copy }: { label: string; value: string; copy?: 
 }
 
 export default async function CheckInPage({ params, searchParams }: Props) {
-  const cookieLang = cookies().get('stayviara-lang')?.value;
+  const cookieLang = cookies().get('staybird-lang')?.value;
   const lang: Lang = searchParams.lang === 'en' ? 'en'
     : searchParams.lang === 'ro' ? 'ro'
     : cookieLang === 'en' ? 'en'

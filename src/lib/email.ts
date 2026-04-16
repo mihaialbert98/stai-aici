@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
 
-const FALLBACK_FROM = 'StayViara <onboarding@resend.dev>';
+const FALLBACK_FROM = 'StayBird <onboarding@resend.dev>';
 
 function isValidFrom(value?: string | null): value is string {
   if (!value) return false;
@@ -58,7 +58,7 @@ function emailLayout(content: string, preheader?: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>StayViara</title>
+  <title>StayBird</title>
   ${preheader ? `<span style="display:none;font-size:1px;color:#fff;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}</span>` : ''}
   <style>
     body { margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
@@ -93,16 +93,16 @@ function emailLayout(content: string, preheader?: string): string {
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <h1>StayViara</h1>
+        <h1>StayBird</h1>
       </div>
       <div class="content">
         ${content}
         <div class="signature">
-          <p>Cu drag,<br><strong>Echipa StayViara</strong></p>
+          <p>Cu drag,<br><strong>Echipa StayBird</strong></p>
         </div>
       </div>
       <div class="footer">
-        <p><a href="${APP_URL}">stayviara.com</a> — Platforma de management cazare</p>
+        <p><a href="${APP_URL}">staybird.com</a> — Platforma de management cazare</p>
         <p style="margin-top: 8px;">Acest email a fost trimis automat. Te rugam sa nu raspunzi direct.</p>
       </div>
     </div>
@@ -115,15 +115,15 @@ export async function sendVerificationEmail(email: string, name: string, token: 
   const verifyUrl = `${APP_URL}/auth/verify?token=${token}`;
   await sendEmail({
     to: email,
-    subject: 'Verifica-ti adresa de email – StayViara',
+    subject: 'Verifica-ti adresa de email – StayBird',
     html: emailLayout(`
       <h2>Bun venit, ${name}!</h2>
-      <p>Multumim pentru inregistrare pe StayViara. Pentru a-ti activa contul, te rugam sa-ti verifici adresa de email apasand pe butonul de mai jos.</p>
+      <p>Multumim pentru inregistrare pe StayBird. Pentru a-ti activa contul, te rugam sa-ti verifici adresa de email apasand pe butonul de mai jos.</p>
       <p style="text-align: center;">
         <a href="${verifyUrl}" class="btn">Verifica emailul</a>
       </p>
-      <p class="muted">Linkul este valabil 24 de ore. Daca nu ai creat un cont pe StayViara, ignora acest email.</p>
-    `, `Verifica-ti emailul pentru a-ti activa contul StayViara`),
+      <p class="muted">Linkul este valabil 24 de ore. Daca nu ai creat un cont pe StayBird, ignora acest email.</p>
+    `, `Verifica-ti emailul pentru a-ti activa contul StayBird`),
   });
 }
 
@@ -131,7 +131,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   const resetUrl = `${APP_URL}/auth/reset-password?token=${token}`;
   await sendEmail({
     to: email,
-    subject: 'Resetare parola – StayViara',
+    subject: 'Resetare parola – StayBird',
     html: emailLayout(`
       <h2>Salut, ${name}!</h2>
       <p>Am primit o cerere de resetare a parolei pentru contul tau. Apasa pe butonul de mai jos pentru a seta o parola noua.</p>
@@ -225,7 +225,7 @@ export async function sendReviewReminderEmail(guestEmail: string, guestName: str
       <p style="text-align: center;">
         <a href="${reviewUrl}" class="btn">Lasa o recenzie</a>
       </p>
-      <p class="muted">Multumim ca faci parte din comunitatea StayViara!</p>
+      <p class="muted">Multumim ca faci parte din comunitatea StayBird!</p>
     `, `Lasa o recenzie pentru ${propertyTitle}`),
   });
 }
@@ -260,7 +260,7 @@ export async function sendGuestFormsSubmittedEmail(
        <p style="text-align:center;">
          <a href="${bulkDownloadUrl}" class="btn">Descarcă toate fișele (ZIP)</a>
        </p>
-       <p class="muted">Fișele sunt disponibile și în dashboard-ul tău StayViara.</p>`,
+       <p class="muted">Fișele sunt disponibile și în dashboard-ul tău StayBird.</p>`,
       `${submissions.length} fișe de cazare noi pentru ${propertyTitle}`
     ),
   });
